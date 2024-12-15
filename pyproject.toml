@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "central-marketplace-backend"
+version = "0.1.0"
+description = "central market-place backend"
+authors = ["sahib-sem <semahegnsahib@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = {extras = ["standard"], version = "^0.115.6"}
+motor = "^3.6.0"
+pydantic = "^2.10.3"
+ulid-py = "^1.1.0"
+cattrs = "^24.1.2"
+email-validator = "^2.2.0"
+pydantic-settings = "^2.7.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
