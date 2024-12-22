@@ -209,6 +209,24 @@ uvicorn = {version = ">=0.15.0", extras = ["standard"]}
 standard = ["uvicorn[standard] (>=0.15.0)"]
 
 [[package]]
+name = "fastapi-injector"
+version = "0.6.2"
+description = "python-injector integration for FastAPI"
+optional = false
+python-versions = "<3.14,>=3.8"
+files = [
+    {file = "fastapi_injector-0.6.2-py3-none-any.whl", hash = "sha256:7672a4dd8a810e92aaa089088a6e2953fd6e7127196366525381c9df7a215fdb"},
+    {file = "fastapi_injector-0.6.2.tar.gz", hash = "sha256:cc852dfa64d32ec3fa0866e06bef6ad6d77eba3279aa4182a1d63b2396e6ae9f"},
+]
+
+[package.dependencies]
+injector = ">=0.19.0"
+
+[package.extras]
+slim = ["fastapi-slim (>=0.111.0)"]
+standard = ["fastapi (>=0.70.0)"]
+
+[[package]]
 name = "h11"
 version = "0.14.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -332,6 +350,20 @@ files = [
 
 [package.extras]
 all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2)"]
+
+[[package]]
+name = "injector"
+version = "0.22.0"
+description = "Injector - Python dependency injection framework, inspired by Guice"
+optional = false
+python-versions = "*"
+files = [
+    {file = "injector-0.22.0-py2.py3-none-any.whl", hash = "sha256:74379ccef3b893bc7d0b7d504c255b5160c5a55e97dc7bdcc73cb33cc7dce3a1"},
+    {file = "injector-0.22.0.tar.gz", hash = "sha256:79b2d4a0874c75d3aa735f11c5b32b89d9542711ca07071161882c5e9cc15ed6"},
+]
+
+[package.extras]
+dev = ["black (==24.3.0)", "build (==1.0.3)", "check-manifest (==0.49)", "click (==8.1.7)", "coverage[toml] (==7.3.2)", "exceptiongroup (==1.2.0)", "importlib-metadata (==7.0.0)", "iniconfig (==2.0.0)", "mypy (==1.7.1)", "mypy-extensions (==1.0.0)", "packaging (==23.2)", "pathspec (==0.12.1)", "platformdirs (==4.1.0)", "pluggy (==1.3.0)", "pyproject-hooks (==1.0.0)", "pytest (==7.4.3)", "pytest-cov (==4.1.0)", "tomli (==2.0.1)", "typing-extensions (==4.9.0)", "zipp (==3.17.0)"]
 
 [[package]]
 name = "jinja2"
@@ -1166,5 +1198,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.10"
-content-hash = "6b94b2f8a0e1ff3e4489b1af6a9ff832934c8ebe38b2d7ace81b36e18256c99c"
+python-versions = ">=3.10,<3.14"
+content-hash = "11d7d8ee7ed7e0e00fd3d79add13d04c17764ce1f003c5dc8d5b771a0af0ab95"
