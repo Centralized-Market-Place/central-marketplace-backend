@@ -34,6 +34,9 @@ class DomainConverter(Generic[Entity]):
 
     def decode(self, data: Dict) -> Entity:
         """Converts a MongoDB document to an entity."""
+        data = data.copy()
+        if '_id' in data:
+            data['id'] = str(data.pop('_id')) 
         return self.cls(**data)
 
 

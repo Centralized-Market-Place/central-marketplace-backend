@@ -1,8 +1,7 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Optional, List, Self
 from bson import ObjectId
-from pydantic import BaseModel, EmailStr, Field
 
 from centeral_marketplace.infrastructure.repository import PrivacyEntity
 from core import PyObjectId
@@ -12,34 +11,39 @@ from core import PyObjectId
 class UserBase(PrivacyEntity):
     first_name: str
     last_name: str
-    email: EmailStr
     external_user_id: str
     external_user_name: Optional[str] = None
     image: Optional[str] = None
     
+@dataclass
+class UserBase:
+    first_name: str
+    last_name: str
+    external_user_id: str
+    external_user_name: Optional[str] = None
+    image: Optional[str] = None
 
+@dataclass
 class UserCreate(UserBase):
     pass
 
-
+@dataclass
 class User(UserBase):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    id: PyObjectId = field(default_factory=PyObjectId)
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)
 
-    class Config:
-        allow_population_by_field_name = True
-        json_encoders = {ObjectId: str}
-        schema_extra = {
-            "example": {
-                "id": "5f7d5b2f5a8e3b3a8c8e3b3a",
-                "first_name": "John",
-                "last_name": "Doe",
-                "email": "john.doe@example.com",
-                "external_user_id": "12345",
-                "external_user_name": "johndoe",
-                "created_at": "2024-01-01T00:00:00Z",
-                "updated_at": "2024-01-01T00:00:00Z",
-                "image": "https://example.com/avatar.jpg",
-            }
-        }
+    def to_dict(self) -> dict:
+        """Convert the dataclass to a dictionary with `_id` as the alias for `id`."""
+        data = self.__dict__.copy()
+        if "id" in data:
+            data["_id"] = str(data.pop("id")) 
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "User":
+        """Create a User instance from a dictionary with `_id` as the MongoDB field."""
+        data = data.copy()
+        if "_id" in data:
+            data["id"] = PyObjectId(data.pop("_id"))
+        return cls(**data)
