@@ -32,13 +32,13 @@ class UserRepository(RepositoryInterface[User]):
         return self.delegate.find_one(id)
 
     def find_one_by_username(self, user_name: str):
-        return self.delegate.find_one_by_dict({"external_user_name": user_name})
+        return self.delegate.find_one_by_dict({"username": user_name})
 
     def delete_one(self, id: str):
         return self.delegate.delete_one(id)
 
     def find_all_by(self, **kwargs):
-        return self.delegate.find_all_by_dict(kwargs)
+        return self.delegate.find_one_by_dict(kwargs)
 
     def count_all_by_dict(self, criteria):
         return self.delegate.count_all_by_dict(criteria)

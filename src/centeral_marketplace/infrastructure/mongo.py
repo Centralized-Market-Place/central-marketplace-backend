@@ -148,3 +148,9 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
     def close(self):
         """Clean up resources (not required for MongoDB in most cases)."""
         pass
+    
+    def find_one_by_dict(self, query: dict) -> Entity:
+    # Assume you're using a MongoDB driver like pymongo
+        return self.collection.find_one(query)
+
+
