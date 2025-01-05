@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "centeral-marketplace-backend"
+name = "centeral-marketplace"
 version = "0.1.0"
 description = "centeral market-place backend"
 authors = ["sahib-sem <semahegnsahib@gmail.com>"]

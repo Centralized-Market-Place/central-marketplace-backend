@@ -7,19 +7,13 @@ load_dotenv()
 class Config(BaseSettings):
     mongo_uri: str
     database_name: str
-    DATABASE_URL: str
-    MONGO_INITDB_DATABASE: str
+    jwt_public_key: str
+    jwt_private_key: str
+    refresh_token_expires_in: int
+    access_token_expires_in: int = 3600 * 24
+    jwt_algorithm: str
 
-    JWT_PUBLIC_KEY: str
-    JWT_PRIVATE_KEY: str
-    REFRESH_TOKEN_EXPIRES_IN: int
-    ACCESS_TOKEN_EXPIRES_IN: int = 3600
-    JWT_ALGORITHM: str
 
-    CLIENT_ORIGIN: str
-
-    class Config:
-        env_file = './.env'
 
 
 settings = Config()

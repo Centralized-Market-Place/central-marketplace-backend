@@ -30,15 +30,22 @@ class UserRepository(RepositoryInterface[User]):
 
     def find_one(self, id: str):
         return self.delegate.find_one(id)
+    
+    def find_all_by(self, **kwargs) -> Iterator[User]:
+        return self.delegate.find_all_by_dict(kwargs)
 
-    def find_one_by_username(self, user_name: str):
-        return self.delegate.find_one_by_dict({"username": user_name})
+    def find_one_by_dict(self, criteria: dict) -> User:
+        return self.delegate.find_one_by_dict(criteria)
 
     def delete_one(self, id: str):
         return self.delegate.delete_one(id)
 
-    def find_all_by(self, **kwargs):
-        return self.delegate.find_one_by_dict(kwargs)
+    def find_all_by_dict(
+        self, criteria: dict, pagination = None, sort_by: str | None = None, sort_desc: bool = True
+    ) -> Iterator[User]:
+        return self.delegate.find_all_by_dict(
+            criteria=criteria, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+        )
 
     def count_all_by_dict(self, criteria):
         return self.delegate.count_all_by_dict(criteria)

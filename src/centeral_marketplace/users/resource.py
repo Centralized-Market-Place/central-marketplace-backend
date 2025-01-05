@@ -24,15 +24,14 @@ async def get_users(
 @users_router.post("/register")
 async def register_user(
     user: UserCreate, 
-    user_service: UserService = Injected(UserService)
+    user_service: UserService = Injected(UserService),
+    converter: RestConverter = Injected(RestConverter),
 ):
     new_user = user_service.register_user(
-        first_name=user.first_name,
-        last_name=user.last_name,
-        username = user.username,
-        password=user.password
+        user
     )
-    return {"message": "User registered successfully", "user": new_user.to_dict()}
+    new_user.password = ''
+    return converter.unstructure(new_user)
 
 @users_router.post("/login")
 async def login_user(
