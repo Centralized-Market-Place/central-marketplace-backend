@@ -3,6 +3,7 @@ from fastapi_injector import attach_injector
 
 from config import Config
 from utils import create_injector
+from fastapi.middleware.cors import CORSMiddleware
 from centeral_marketplace.users.resource import users_router
 
 def create_app() -> FastAPI:
@@ -16,5 +17,19 @@ def create_app() -> FastAPI:
         return {"message": "healthy"}
     
     attach_injector(app, injector)
+    origins = (
+        [
+            "http://localhost",
+            "http://localhost:3000",
+        ]
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE"],
+        allow_headers=["*"],
+    )
 
     return app
