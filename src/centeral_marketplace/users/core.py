@@ -3,14 +3,22 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from centeral_marketplace.infrastructure.repository import PrivacyEntity
-from core import PyObjectId
+from pydantic import BaseModel
 
 @dataclass
 class Role(Enum):
     ADMIN = "admin"
     USER = "user"
-    
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+@dataclass
+class UserLogin:
+    username: str
+    password: str
+
 @dataclass
 class UserBase:
     name: str
@@ -23,8 +31,8 @@ class UserCreate(UserBase):
 
 @dataclass
 class User(UserBase):
-    id: PyObjectId = field(default_factory=PyObjectId)
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     password: str = field(default="")
     role: list[Role] = field(default_factory=list)
+    id: Optional[str] = field(default=None)

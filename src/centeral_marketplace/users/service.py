@@ -30,24 +30,25 @@ class UserService:
                 detail="User with the current userName already exist",
             )
         hashed_password = hash_password(user.password)
-        user = User(
+        created_user = User(
             name=user.name,
             username=user.username,
             password=hashed_password,
         )
-        return self.user_repository.save(user)
+        return self.user_repository.save(created_user)
+        
         
 
     def authenticate_user(self, username: str, password: str) -> str:
         user = self.user_repository.find_one_by_dict({"username": username})
-        if not user or not verify_password(password, user["password"]):
+        if not user or not verify_password(password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Incorrect Email or Password",
             )
-        return create_access_token({"user_id": str(user["id"])})
+        return create_access_token({"sub": {"user_id": user.id, "username": user.username}, "name": user.name})
 
     def validate_token(self, token: str) -> User:
         payload = decode_token(token)
-        user_id = payload.get("user_id")
+        user_id = payload.get("sub", {}).get("user_id")
         return self.user_repository.find_one(user_id)

@@ -12,7 +12,7 @@ async def get_current_user(
     try:
         return user_service.validate_token(token)
     except ValueError as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
 
 def require_role(required_role: str):
     def role_checker(current_user: User = Depends(get_current_user)):
