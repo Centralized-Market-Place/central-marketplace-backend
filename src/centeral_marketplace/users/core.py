@@ -1,49 +1,38 @@
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List, Self
-from bson import ObjectId
+from enum import Enum
+from typing import Optional
 
-from centeral_marketplace.infrastructure.repository import PrivacyEntity
-from core import PyObjectId
-
+from pydantic import BaseModel
 
 @dataclass
-class UserBase(PrivacyEntity):
-    first_name: str
-    last_name: str
-    external_user_id: str
-    external_user_name: Optional[str] = None
-    image: Optional[str] = None
-    
+class Role(Enum):
+    ADMIN = "admin"
+    USER = "user"
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+@dataclass
+class UserLogin:
+    username: str
+    password: str
+
 @dataclass
 class UserBase:
-    first_name: str
-    last_name: str
-    external_user_id: str
-    external_user_name: Optional[str] = None
+    name: str
+    username: str
     image: Optional[str] = None
 
 @dataclass
 class UserCreate(UserBase):
-    pass
+    password : Optional[str] = None
 
 @dataclass
 class User(UserBase):
-    id: PyObjectId = field(default_factory=PyObjectId)
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
-
-    def to_dict(self) -> dict:
-        """Convert the dataclass to a dictionary with `_id` as the alias for `id`."""
-        data = self.__dict__.copy()
-        if "id" in data:
-            data["_id"] = str(data.pop("id")) 
-        return data
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "User":
-        """Create a User instance from a dictionary with `_id` as the MongoDB field."""
-        data = data.copy()
-        if "_id" in data:
-            data["id"] = PyObjectId(data.pop("_id"))
-        return cls(**data)
+    password: str = field(default="")
+    role: list[Role] = field(default_factory=list)
+    id: Optional[str] = field(default=None)

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "centeral-marketplace-backend"
+name = "centeral-marketplace"
 version = "0.1.0"
 description = "centeral market-place backend"
 authors = ["sahib-sem <semahegnsahib@gmail.com>"]
@@ -17,6 +17,10 @@ pydantic-settings = "^2.7.0"
 injector = "^0.22.0"
 fastapi-injector = "^0.6.2"
 python-dateutil = "^2.9.0.post0"
+pyjwt = "^2.10.1"
+passlib = "^1.7.4"
+bcrypt = "^4.2.1"
+cryptography = "^44.0.0"
 
 
 [build-system]
