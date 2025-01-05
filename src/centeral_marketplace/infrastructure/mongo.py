@@ -21,7 +21,7 @@ Entity = TypeVar("Entity")
 def provide_database(config: Config) -> Database:
     connection_string = config.mongo_uri
     database_name = config.database_name
-    client = MongoClient(connection_string)
+    client = MongoClient(connection_string, maxPoolSize=50)
     return client[database_name]
 
 class DomainConverter(Generic[Entity]):
@@ -85,12 +85,17 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
 
     def save(self, entity: Entity):
         """Insert or update an entity."""
-        if not hasattr(entity, "id") or not entity.id:
-            raise ValueError("Entity must have an 'id' attribute")
-
         data = self.converter.encode(entity)
+        if hasattr(entity, "id") and  entity.id:
+            _id = ObjectId(entity.id)
+            data["_id"] = _id
+            self.collection.replace_one({"_id": _id}, data, upsert=True)
 
-        self.collection.insert_one(data)
+        else:
+            result = self.collection.insert_one(data)
+            entity.id = str(result.inserted_id)
+
+        return entity
 
     def find_one(self, id: str) -> Entity:
         """Find a single entity by ID."""
@@ -149,8 +154,12 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         """Clean up resources (not required for MongoDB in most cases)."""
         pass
     
-    def find_one_by_dict(self, query: dict) -> Entity:
-    # Assume you're using a MongoDB driver like pymongo
-        return self.collection.find_one(query)
+    def find_one_by_dict(self, query: dict) -> Optional[Entity]:
+        try:
+            document = self.collection.find_one(query)
+            return self.converter.decode(document) if document else None
+        except Exception as e:
+            logger.error(f"Error finding document: {e}")
+            raise
 
 
