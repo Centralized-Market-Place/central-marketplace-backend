@@ -1,6 +1,7 @@
 import logging
 from typing import TypeVar, Generic, Type, Iterator, Optional, List, Dict
 
+from centeral_marketplace.infrastructure.json import create_rest_converter
 from fastapi import Depends
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import DuplicateKeyError
@@ -26,18 +27,20 @@ def provide_database(config: Config) -> Database:
 
 class DomainConverter(Generic[Entity]):
     def __init__(self, cls: Type[Entity]):
+        self.converter = create_rest_converter()
         self.cls = cls
 
     def encode(self, entity: Entity) -> Dict:
         """Converts an entity to a dictionary for MongoDB storage."""
-        return entity.__dict__
+        data = self.converter.unstructure(entity)
+        return data
 
     def decode(self, data: Dict) -> Entity:
         """Converts a MongoDB document to an entity."""
         data = data.copy()
         if '_id' in data:
             data['id'] = str(data.pop('_id')) 
-        return self.cls(**data)
+        return self.converter.structure(data, self.cls)
 
 
 class MongoDBJsonRepositoryDelegate(Generic[Entity]):

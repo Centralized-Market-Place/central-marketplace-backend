@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 import json
 import re
 from base64 import b64encode, b64decode
@@ -210,6 +211,10 @@ def create_rest_converter() -> RestConverter:
     atc.register_structure_hook(datetime.date, string_to_date)
 
     atc.register_structure_hook(Union[str, int], union_str_int_structure_hook)
+
+    atc.register_unstructure_hook(Enum, lambda e: e.value)
+    atc.register_structure_hook(Enum, lambda value, cls: cls(value))
+    
     return atc
 
 

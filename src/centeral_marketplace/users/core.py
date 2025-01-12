@@ -34,5 +34,5 @@ class User(UserBase):
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     password: str = field(default="")
-    role: list[Role] = field(default_factory=list)
+    role: Role =  field(default_factory=lambda: Role.USER)
     id: Optional[str] = field(default=None)

@@ -1,7 +1,8 @@
-from fastapi import HTTPException, Security, Depends, Injected
+from fastapi import HTTPException, Security, Depends
+from fastapi_injector import Injected
 from fastapi.security import OAuth2PasswordBearer
-from src.centeral_marketplace.users.core import User
-from src.centeral_marketplace.users.service import UserService
+from centeral_marketplace.users.core import User
+from centeral_marketplace.users.service import UserService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
@@ -16,7 +17,7 @@ async def get_current_user(
 
 def require_role(required_role: str):
     def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role != required_role:
+        if current_user.role.value != required_role:
             raise HTTPException(status_code=403, detail="Forbidden")
         return current_user
     return role_checker
