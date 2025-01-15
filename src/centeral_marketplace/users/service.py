@@ -46,9 +46,9 @@ class UserService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Incorrect Email or Password",
             )
-        return create_access_token({"sub": {"user_id": user.id, "username": user.username}, "name": user.name})
+        return create_access_token({"sub": user.id })
 
     def validate_token(self, token: str) -> User:
         payload = decode_token(token)
-        user_id = payload.get("sub", {}).get("user_id")
+        user_id = payload.get("sub")
         return self.user_repository.find_one(user_id)

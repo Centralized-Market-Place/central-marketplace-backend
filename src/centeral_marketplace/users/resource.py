@@ -1,10 +1,12 @@
 
+from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi_injector import Injected
 
 from centeral_marketplace.users.service import UserService
 from centeral_marketplace.infrastructure.json import RestConverter
-from centeral_marketplace.users.core import Token, UserCreate, UserLogin
+from centeral_marketplace.users.core import Token, User, UserCreate, UserLogin
+from middleware import require_role
 
 
 users_router = APIRouter(
@@ -13,13 +15,13 @@ users_router = APIRouter(
 )
 
 
-@users_router.get("/")
+@users_router.get("/test")
 async def get_users(
+    current_user: Annotated[User, Depends(require_role("user"))],
     user_service: UserService = Injected(UserService),
     converter: RestConverter = Injected(RestConverter),
 ):
-    users =  user_service.find_all()
-    return converter.unstructure(users)
+    return {"current_user": converter.unstructure(current_user)}
 
 @users_router.post("/register")
 async def register_user(
