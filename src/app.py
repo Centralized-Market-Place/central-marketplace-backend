@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from fastapi_injector import attach_injector
-
-from config import Config
 from utils import create_injector
 from fastapi.middleware.cors import CORSMiddleware
 from centeral_marketplace.users.resource import users_router

@@ -2,10 +2,11 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi_injector import Injected
+from fastapi.responses import JSONResponse
 
 from centeral_marketplace.users.service import UserService
-from centeral_marketplace.infrastructure.json import RestConverter
-from centeral_marketplace.users.core import Token, User, UserCreate, UserLogin
+from centeral_marketplace.infrastructure.json import Pagination, RestConverter
+from centeral_marketplace.users.core import User, UserCreate, UserLogin
 from middleware import require_role
 
 
@@ -15,13 +16,21 @@ users_router = APIRouter(
 )
 
 
-@users_router.get("/test")
+@users_router.get("/")
 async def get_users(
-    current_user: Annotated[User, Depends(require_role("user"))],
+    current_user: Annotated[User, Depends(require_role("ADMIN"))],
+    page: int = 1,
+    page_size: int = 10,
+    sort_by: str = None,
+    sort_desc: bool = True,
     user_service: UserService = Injected(UserService),
     converter: RestConverter = Injected(RestConverter),
+    
 ):
-    return {"current_user": converter.unstructure(current_user)}
+    pagination = Pagination(page=page, size=page_size)
+    
+    users = list(user_service.find_all(pagination=pagination, sort_by=sort_by, sort_desc=sort_desc))
+    return {"data": converter.unstructure(users)}
 
 @users_router.post("/register")
 async def register_user(
@@ -40,5 +49,5 @@ async def login_user(
     user: UserLogin,
     user_service: UserService = Injected(UserService)
 ):
-    token = user_service.authenticate_user(user.username, user.password)
-    return Token(access_token=token, token_type="bearer")
+    access_token = user_service.authenticate_user(user.email, user.password)
+    return JSONResponse({"token": access_token, "email": user.email}, status_code=200)

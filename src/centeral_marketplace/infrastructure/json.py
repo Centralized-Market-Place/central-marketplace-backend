@@ -5,8 +5,8 @@ import re
 from base64 import b64encode, b64decode
 from dataclasses import dataclass
 from decimal import Decimal
-from types import NoneType
-from typing import TypeVar, TypedDict, Union, List
+from typing import Annotated, TypeVar, Union, List
+from pydantic import EmailStr
 
 import ulid
 from cattr import Converter
@@ -214,6 +214,10 @@ def create_rest_converter() -> RestConverter:
 
     atc.register_unstructure_hook(Enum, lambda e: e.value)
     atc.register_structure_hook(Enum, lambda value, cls: cls(value))
+
+    atc.register_unstructure_hook(EmailStr, lambda e: str(e))
+    atc.register_structure_hook(EmailStr, lambda e, _: e if isinstance(e, str) else str(e))
+    atc.register_structure_hook(Annotated, lambda data, obj_type: obj_type(data))
     
     return atc
 

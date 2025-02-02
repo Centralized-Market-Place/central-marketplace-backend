@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Iterator
+from centeral_marketplace.infrastructure.json import Pagination
 from injector import inject, singleton
 from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDelegate
 from centeral_marketplace.infrastructure.repository import RepositoryInterface
@@ -25,14 +26,14 @@ class UserRepository(RepositoryInterface[User]):
     def save_all(self, data: list[User]):
         return self.delegate.save_all(data)
 
-    def find_all(self):
-        return self.delegate.find_all()
+    def find_all(self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None) -> Iterator[User]:
+        return self.delegate.find_all(pagination=pagination, sort_by=sort_by, sort_desc=sort_desc)
 
     def find_one(self, id: str):
         return self.delegate.find_one(id)
     
-    def find_all_by(self, **kwargs) -> Iterator[User]:
-        return self.delegate.find_all_by_dict(kwargs)
+    def find_all_by(self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None, **kwargs) -> Iterator[User]:
+        return self.delegate.find_all_by_dict(criteria=kwargs, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc)
 
     def find_one_by_dict(self, criteria: dict) -> User:
         return self.delegate.find_one_by_dict(criteria)
@@ -52,6 +53,3 @@ class UserRepository(RepositoryInterface[User]):
 
     def delete_all(self):
         return self.delegate.delete_all()
-
-    def find_all_by_dict(self, criteria: dict) -> Iterator[User]:
-        return self.delegate.find_all_by_dict(criteria)

@@ -1,8 +1,7 @@
 import logging
 from typing import TypeVar, Generic, Type, Iterator, Optional, List, Dict
 
-from centeral_marketplace.infrastructure.json import create_rest_converter
-from fastapi import Depends
+from centeral_marketplace.infrastructure.json import Pagination, create_rest_converter
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import DuplicateKeyError
 from pymongo.collection import Collection
@@ -89,16 +88,18 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
     def save(self, entity: Entity):
         """Insert or update an entity."""
         data = self.converter.encode(entity)
-        if hasattr(entity, "id") and  entity.id:
+
+        if hasattr(entity, "id") and entity.id:
             _id = ObjectId(entity.id)
             data["_id"] = _id
             self.collection.replace_one({"_id": _id}, data, upsert=True)
-
         else:
+            data["_id"] = ObjectId()
             result = self.collection.insert_one(data)
             entity.id = str(result.inserted_id)
 
         return entity
+
 
     def find_one(self, id: str) -> Entity:
         """Find a single entity by ID."""
@@ -116,7 +117,7 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
     def find_all_by_dict(
         self, 
         criteria: Dict, 
-        pagination: Optional[Dict] = None, 
+        pagination: Pagination = None, 
         sort_by: Optional[str] = None, 
         sort_desc: bool = True
     ) -> Iterator[Entity]:
@@ -129,8 +130,8 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             cursor = cursor.sort(sort_by, sort_order)
 
         if pagination:
-            skip = (pagination.get("page", 1) - 1) * pagination.get("size", 10)
-            limit = pagination.get("size", 10)
+            skip = (pagination.page - 1) * pagination.size
+            limit = pagination.size
             cursor = cursor.skip(skip).limit(limit)
 
         for document in cursor:
@@ -152,10 +153,6 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             self.collection.insert_many(data)
         except DuplicateKeyError as e:
             raise ValueError(f"Duplicate key error: {e}")
-
-    def close(self):
-        """Clean up resources (not required for MongoDB in most cases)."""
-        pass
     
     def find_one_by_dict(self, query: dict) -> Optional[Entity]:
         try:
