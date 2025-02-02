@@ -14,6 +14,9 @@ class Category:
 @dataclass
 class Product:
     channel_id: str
+    message_id: int
+    forwards: int
+    views: int
     id: str = field(default_factory=lambda: str(ObjectId()))
     name: Optional[str] = None
     description: Optional[str] = None
@@ -25,7 +28,4 @@ class Product:
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     posted_at: Optional[datetime] = None
-    message_id: int
-    forwards: int
-    views: int
     reactions: List[Tuple[str, int]] = field(default_factory=list)
