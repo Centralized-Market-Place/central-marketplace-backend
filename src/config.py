@@ -6,6 +6,7 @@ load_dotenv()
 
 class Config(BaseSettings):
     mongo_uri: str
+    test_mongo_uri: str
     database_name: str
     secret_key: str
     access_token_expires_in: int = 3600 * 24
