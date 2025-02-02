@@ -1,8 +1,7 @@
 import logging
 from typing import TypeVar, Generic, Type, Iterator, Optional, List, Dict
 
-from centeral_marketplace.infrastructure.json import create_rest_converter
-from fastapi import Depends
+from centeral_marketplace.infrastructure.json import Pagination, create_rest_converter
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import DuplicateKeyError
 from pymongo.collection import Collection
@@ -25,6 +24,7 @@ def provide_database(config: Config) -> Database:
     client = MongoClient(connection_string, maxPoolSize=50)
     return client[database_name]
 
+
 class DomainConverter(Generic[Entity]):
     def __init__(self, cls: Type[Entity]):
         self.converter = create_rest_converter()
@@ -38,18 +38,13 @@ class DomainConverter(Generic[Entity]):
     def decode(self, data: Dict) -> Entity:
         """Converts a MongoDB document to an entity."""
         data = data.copy()
-        if '_id' in data:
-            data['id'] = str(data.pop('_id')) 
+        if "_id" in data:
+            data["id"] = str(data.pop("_id"))
         return self.converter.structure(data, self.cls)
 
 
 class MongoDBJsonRepositoryDelegate(Generic[Entity]):
-    def __init__(
-        self,
-        collection_name: str,
-        cls: Type[Entity],
-        config: Config
-    ):
+    def __init__(self, collection_name: str, cls: Type[Entity], config: Config):
         connection_string = config.mongo_uri
         database_name = config.database_name
         client = MongoClient(connection_string)
@@ -64,10 +59,10 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         logger.debug("Index '%s' ensured on field '%s'.", index_name, field)
 
     def find_all(
-        self, 
-        pagination: Optional[Dict] = None, 
-        sort_by: Optional[str] = None, 
-        sort_desc: bool = True
+        self,
+        pagination: Pagination = None,
+        sort_by: Optional[str] = None,
+        sort_desc: bool = True,
     ) -> Iterator[Entity]:
         """Find all entities with optional pagination and sorting."""
         query = {}
@@ -79,8 +74,8 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             cursor = cursor.sort(sort_by, sort_order)
 
         if pagination:
-            skip = (pagination.get("page", 1) - 1) * pagination.get("size", 10)
-            limit = pagination.get("size", 10)
+            skip = (pagination.page - 1) * pagination.size
+            limit = pagination.size
             cursor = cursor.skip(skip).limit(limit)
 
         for document in cursor:
@@ -89,12 +84,13 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
     def save(self, entity: Entity):
         """Insert or update an entity."""
         data = self.converter.encode(entity)
-        if hasattr(entity, "id") and  entity.id:
+
+        if hasattr(entity, "id") and entity.id:
             _id = ObjectId(entity.id)
             data["_id"] = _id
             self.collection.replace_one({"_id": _id}, data, upsert=True)
-
         else:
+            data["_id"] = ObjectId()
             result = self.collection.insert_one(data)
             entity.id = str(result.inserted_id)
 
@@ -114,11 +110,11 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             raise ValueError(f"Entity with ID {id} not found")
 
     def find_all_by_dict(
-        self, 
-        criteria: Dict, 
-        pagination: Optional[Dict] = None, 
-        sort_by: Optional[str] = None, 
-        sort_desc: bool = True
+        self,
+        criteria: Dict,
+        pagination: Pagination = None,
+        sort_by: Optional[str] = None,
+        sort_desc: bool = True,
     ) -> Iterator[Entity]:
         """Find all entities matching the criteria."""
         sort_order = DESCENDING if sort_desc else ASCENDING
@@ -129,8 +125,8 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             cursor = cursor.sort(sort_by, sort_order)
 
         if pagination:
-            skip = (pagination.get("page", 1) - 1) * pagination.get("size", 10)
-            limit = pagination.get("size", 10)
+            skip = (pagination.page - 1) * pagination.size
+            limit = pagination.size
             cursor = cursor.skip(skip).limit(limit)
 
         for document in cursor:
@@ -153,10 +149,6 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         except DuplicateKeyError as e:
             raise ValueError(f"Duplicate key error: {e}")
 
-    def close(self):
-        """Clean up resources (not required for MongoDB in most cases)."""
-        pass
-    
     def find_one_by_dict(self, query: dict) -> Optional[Entity]:
         try:
             document = self.collection.find_one(query)
@@ -164,5 +156,3 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         except Exception as e:
             logger.error(f"Error finding document: {e}")
             raise
-
-

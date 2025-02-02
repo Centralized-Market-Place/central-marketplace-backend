@@ -9,7 +9,6 @@ persistence operations.
 It should not contain any implementation details or behavior.
 """
 
-import typing
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, Iterator
 
@@ -22,6 +21,7 @@ class EntityNotFound(Exception):
 
 class Entity(ABC):
     id: ulid.ULID
+
 
 class PrivacyEntity(Entity, ABC):
     pass

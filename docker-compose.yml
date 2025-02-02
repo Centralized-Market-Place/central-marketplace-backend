@@ -1,13 +1,9 @@
 version: "3.9"
 
 services:
-  fastapi-app:
+  app:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: fastapi_app
-    env_file: 
-      - .env
     ports:
       - "8443:8443"
     volumes:
@@ -15,4 +11,4 @@ services:
       - ./pyproject.toml:/app/pyproject.toml
       - ./poetry.lock:/app/poetry.lock
       - ./.env:/app/.env
-    command: ["uvicorn", "src.main_run:app", "--host", "0.0.0.0", "--port", "8443", "--reload"]
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8443", "--reload"]

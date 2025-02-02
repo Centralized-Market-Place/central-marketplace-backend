@@ -1,31 +1,28 @@
-FROM python:3.12-slim
+FROM python:3.13 AS requirements-stage
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=1.7.0 \
-    APP_HOME=/app
+WORKDIR /tmp
 
-WORKDIR $APP_HOME
+RUN pip install poetry==1.8.5
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    build-essential \
-    libpq-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+COPY ./pyproject.toml ./poetry.lock* /tmp/
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-ENV PATH="/root/.local/bin:$PATH"
+FROM python:3.13
 
-COPY pyproject.toml poetry.lock ./
-
-RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
-
-COPY ./src ./src
-
-COPY .env .env
-
+WORKDIR /code
 EXPOSE 8443
 
-CMD ["uvicorn", "src.main_run:app", "--host", "0.0.0.0", "--port", "8443"]
+COPY --from=requirements-stage /tmp/requirements.txt /code/requirements.txt
+
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive \
+    apt-get install --no-install-recommends --assume-yes \
+      postgresql-client
+
+RUN pip install --no-cache-dir --default-timeout=600 --upgrade -r /code/requirements.txt
+
+COPY ./src /code
+COPY ./.env /code
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8443"]

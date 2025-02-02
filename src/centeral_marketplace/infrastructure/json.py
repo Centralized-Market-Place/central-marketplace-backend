@@ -5,8 +5,8 @@ import re
 from base64 import b64encode, b64decode
 from dataclasses import dataclass
 from decimal import Decimal
-from types import NoneType
-from typing import TypeVar, TypedDict, Union, List
+from typing import Annotated, TypeVar, Union, List
+from pydantic import EmailStr
 
 import ulid
 from cattr import Converter
@@ -26,8 +26,10 @@ def get_class(kls):
 def fullname(o):
     return o.__module__ + "." + o.__class__.__qualname__
 
+
 def datetime_to_millis(dt: datetime.datetime):
     return dt.timestamp() * 1000.0
+
 
 def json_converter(o):
     if isinstance(o, datetime.datetime):
@@ -214,9 +216,14 @@ def create_rest_converter() -> RestConverter:
 
     atc.register_unstructure_hook(Enum, lambda e: e.value)
     atc.register_structure_hook(Enum, lambda value, cls: cls(value))
-    
-    return atc
 
+    atc.register_unstructure_hook(EmailStr, lambda e: str(e))
+    atc.register_structure_hook(
+        EmailStr, lambda e, _: e if isinstance(e, str) else str(e)
+    )
+    atc.register_structure_hook(Annotated, lambda data, obj_type: obj_type(data))
+
+    return atc
 
 
 class JsonModule(Module):
