@@ -55,7 +55,6 @@ async def register_user(
     converter: RestConverter = Injected(RestConverter),
 ):
     new_user = user_service.register_user(user)
-    new_user.password = ""
     return converter.unstructure(new_user)
 
 

@@ -20,7 +20,7 @@ def prepare_injector(modules=None):
 
 def prepare_api_server():
     def step(context):
-        context.app = create_app()
+        context.app = create_app(context.injector)
 
     return step
 

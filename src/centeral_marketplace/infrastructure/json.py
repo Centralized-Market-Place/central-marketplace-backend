@@ -5,7 +5,7 @@ import re
 from base64 import b64encode, b64decode
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Annotated, TypeVar, Union, List
+from typing import TypeVar, Union, List
 from pydantic import EmailStr
 
 import ulid
