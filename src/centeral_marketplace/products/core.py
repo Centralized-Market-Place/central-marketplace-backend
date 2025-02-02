@@ -6,13 +6,14 @@ from bson import ObjectId
 
 @dataclass
 class Category:
-    id: str = field(default_factory=lambda: str(ObjectId()))
     name: str
+    id: str = field(default_factory=lambda: str(ObjectId()))
     description: Optional[str] = None
 
 
 @dataclass
 class Product:
+    channel_id: str
     id: str = field(default_factory=lambda: str(ObjectId()))
     name: Optional[str] = None
     description: Optional[str] = None
@@ -23,5 +24,4 @@ class Product:
     images: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
-    channel_id: str
     posted_at: Optional[datetime] = None

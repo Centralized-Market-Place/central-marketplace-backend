@@ -60,7 +60,7 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
 
     def find_all(
         self,
-        pagination: Optional[Dict] = None,
+        pagination: Pagination = None,
         sort_by: Optional[str] = None,
         sort_desc: bool = True,
     ) -> Iterator[Entity]:
@@ -74,8 +74,8 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             cursor = cursor.sort(sort_by, sort_order)
 
         if pagination:
-            skip = (pagination.get("page", 1) - 1) * pagination.get("size", 10)
-            limit = pagination.get("size", 10)
+            skip = (pagination.page - 1) * pagination.size
+            limit = pagination.size
             cursor = cursor.skip(skip).limit(limit)
 
         for document in cursor:
