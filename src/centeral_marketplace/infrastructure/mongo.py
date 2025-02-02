@@ -24,6 +24,7 @@ def provide_database(config: Config) -> Database:
     client = MongoClient(connection_string, maxPoolSize=50)
     return client[database_name]
 
+
 class DomainConverter(Generic[Entity]):
     def __init__(self, cls: Type[Entity]):
         self.converter = create_rest_converter()
@@ -37,18 +38,13 @@ class DomainConverter(Generic[Entity]):
     def decode(self, data: Dict) -> Entity:
         """Converts a MongoDB document to an entity."""
         data = data.copy()
-        if '_id' in data:
-            data['id'] = str(data.pop('_id')) 
+        if "_id" in data:
+            data["id"] = str(data.pop("_id"))
         return self.converter.structure(data, self.cls)
 
 
 class MongoDBJsonRepositoryDelegate(Generic[Entity]):
-    def __init__(
-        self,
-        collection_name: str,
-        cls: Type[Entity],
-        config: Config
-    ):
+    def __init__(self, collection_name: str, cls: Type[Entity], config: Config):
         connection_string = config.mongo_uri
         database_name = config.database_name
         client = MongoClient(connection_string)
@@ -63,10 +59,10 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         logger.debug("Index '%s' ensured on field '%s'.", index_name, field)
 
     def find_all(
-        self, 
-        pagination: Optional[Dict] = None, 
-        sort_by: Optional[str] = None, 
-        sort_desc: bool = True
+        self,
+        pagination: Optional[Dict] = None,
+        sort_by: Optional[str] = None,
+        sort_desc: bool = True,
     ) -> Iterator[Entity]:
         """Find all entities with optional pagination and sorting."""
         query = {}
@@ -100,7 +96,6 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
 
         return entity
 
-
     def find_one(self, id: str) -> Entity:
         """Find a single entity by ID."""
         document = self.collection.find_one({"_id": ObjectId(id)})
@@ -115,11 +110,11 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             raise ValueError(f"Entity with ID {id} not found")
 
     def find_all_by_dict(
-        self, 
-        criteria: Dict, 
-        pagination: Pagination = None, 
-        sort_by: Optional[str] = None, 
-        sort_desc: bool = True
+        self,
+        criteria: Dict,
+        pagination: Pagination = None,
+        sort_by: Optional[str] = None,
+        sort_desc: bool = True,
     ) -> Iterator[Entity]:
         """Find all entities matching the criteria."""
         sort_order = DESCENDING if sort_desc else ASCENDING
@@ -153,7 +148,7 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             self.collection.insert_many(data)
         except DuplicateKeyError as e:
             raise ValueError(f"Duplicate key error: {e}")
-    
+
     def find_one_by_dict(self, query: dict) -> Optional[Entity]:
         try:
             document = self.collection.find_one(query)
@@ -161,5 +156,3 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         except Exception as e:
             logger.error(f"Error finding document: {e}")
             raise
-
-

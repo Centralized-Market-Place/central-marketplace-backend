@@ -12,6 +12,4 @@ class Config(BaseSettings):
     jwt_algorithm: str
 
 
-
-
 settings = Config()

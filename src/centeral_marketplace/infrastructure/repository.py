@@ -22,6 +22,7 @@ class EntityNotFound(Exception):
 class Entity(ABC):
     id: ulid.ULID
 
+
 class PrivacyEntity(Entity, ABC):
     pass
 

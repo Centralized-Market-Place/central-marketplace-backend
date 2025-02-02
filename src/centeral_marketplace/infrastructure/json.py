@@ -26,8 +26,10 @@ def get_class(kls):
 def fullname(o):
     return o.__module__ + "." + o.__class__.__qualname__
 
+
 def datetime_to_millis(dt: datetime.datetime):
     return dt.timestamp() * 1000.0
+
 
 def json_converter(o):
     if isinstance(o, datetime.datetime):
@@ -216,11 +218,12 @@ def create_rest_converter() -> RestConverter:
     atc.register_structure_hook(Enum, lambda value, cls: cls(value))
 
     atc.register_unstructure_hook(EmailStr, lambda e: str(e))
-    atc.register_structure_hook(EmailStr, lambda e, _: e if isinstance(e, str) else str(e))
+    atc.register_structure_hook(
+        EmailStr, lambda e, _: e if isinstance(e, str) else str(e)
+    )
     atc.register_structure_hook(Annotated, lambda data, obj_type: obj_type(data))
-    
-    return atc
 
+    return atc
 
 
 class JsonModule(Module):

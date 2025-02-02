@@ -4,6 +4,7 @@ from utils import create_injector
 from fastapi.middleware.cors import CORSMiddleware
 from centeral_marketplace.users.resource import users_router
 
+
 def create_app() -> FastAPI:
     app = FastAPI()
 
@@ -13,14 +14,12 @@ def create_app() -> FastAPI:
     @app.get("/health_check")
     async def health_check():
         return {"message": "healthy"}
-    
+
     attach_injector(app, injector)
-    origins = (
-        [
-            "http://localhost",
-            "http://localhost:3000",
-        ]
-    )
+    origins = [
+        "http://localhost",
+        "http://localhost:3000",
+    ]
 
     app.add_middleware(
         CORSMiddleware,
