@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional, Tuple
 from bson import ObjectId
 
 
@@ -25,3 +25,7 @@ class Product:
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     posted_at: Optional[datetime] = None
+    message_id: int
+    forwards: int
+    views: int
+    reactions: List[Tuple[str, int]] = field(default_factory=list)
