@@ -221,7 +221,6 @@ def create_rest_converter() -> RestConverter:
     atc.register_structure_hook(
         EmailStr, lambda e, _: e if isinstance(e, str) else str(e)
     )
-    atc.register_structure_hook(Annotated, lambda data, obj_type: obj_type(data))
 
     return atc
 
