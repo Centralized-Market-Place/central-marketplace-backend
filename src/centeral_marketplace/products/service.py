@@ -28,3 +28,6 @@ class ProductService:
 
     def count_all_by_dict(self, criteria: dict) -> int:
         return self.product_repository.count_all_by_dict(criteria)
+    
+    def find_one(self, product_id: str) -> Product:
+        return self.product_repository.find_one(product_id)

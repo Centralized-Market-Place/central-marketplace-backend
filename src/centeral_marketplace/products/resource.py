@@ -49,3 +49,13 @@ async def get_products(
             items=converter.unstructure(products),
         )
     }
+
+
+@product_router.get("/{product_id}")
+async def get_product(
+    product_id: str,
+    product_service: ProductService = Injected(ProductService),
+    converter: RestConverter = Injected(RestConverter),
+):
+    product = product_service.find_one(product_id)
+    return converter.unstructure(product)
