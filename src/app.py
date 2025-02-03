@@ -10,19 +10,10 @@ from centeral_marketplace.products.resource import product_router
 def create_app(injector:Injector =  None) -> FastAPI:
     app = FastAPI()
 
-    app.include_router(users_router)
-    app.include_router(product_router)
-    if injector is None:
-        injector = create_injector()
-
-    @app.get("/health_check")
-    async def health_check():
-        return {"message": "healthy"}
-
-    attach_injector(app, injector)
     origins = [
         "http://localhost",
         "http://localhost:3000",
+        "*"
     ]
 
     app.add_middleware(
@@ -32,5 +23,17 @@ def create_app(injector:Injector =  None) -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["*"],
     )
+
+    app.include_router(users_router)
+    app.include_router(product_router)
+
+    if injector is None:
+        injector = create_injector()
+
+    @app.get("/health_check")
+    async def health_check():
+        return {"message": "healthy"}
+
+    attach_injector(app, injector)
 
     return app
