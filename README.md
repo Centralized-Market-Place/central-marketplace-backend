@@ -44,5 +44,5 @@ docker compose down
 
 ## API Documentation
 FastAPI automatically generates interactive API docs:
-- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8443/docs)
-- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8443/redoc)
+- **Swagger UI**: [http://localhost:8443/docs](http://localhost:8443/docs)
+- **ReDoc**: [http://localhost:8443/redoc](http://localhost:8443/redoc)
