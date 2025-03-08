@@ -10,7 +10,7 @@ product_router = APIRouter(
 )
 
 
-@product_router.get("/")
+@product_router.get("/", response_model=PaginatedResponse)
 async def get_products(
     page: int = 1,
     page_size: int = 20,
@@ -41,14 +41,13 @@ async def get_products(
         )
     )
 
-    return {
-        "data": PaginatedResponse(
+    return  PaginatedResponse(
             page=page,
             page_size=page_size,
             total=total,
             items=converter.unstructure(products),
         )
-    }
+ 
 
 
 @product_router.get("/{product_id}")

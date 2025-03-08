@@ -39,3 +39,19 @@ class User(UserBase):
     role: Role = field(default_factory=lambda: Role.USER)
     last_login: Optional[datetime] = None
     is_verified: bool = False
+
+@dataclass
+class UserPublic(UserBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    role: Role
+    is_verified: bool
+    image: Optional[str] = None
+    last_login: Optional[datetime] = None
+    
+
+@dataclass
+class AuthResponse:
+    token: str
+    user: User
