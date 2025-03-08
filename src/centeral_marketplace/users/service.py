@@ -29,6 +29,9 @@ class UserService:
 
     def count_all_by_dict(self, criteria: dict) -> int:
         return self.user_repository.count_all_by_dict(criteria)
+    
+    def find_user_by_email(self, email: str) -> User:
+        return self.user_repository.find_one_by_dict({"email": email})
 
     def register_user(self, user: UserCreate) -> User:
         existing_user = self.user_repository.find_one_by_dict({"email": user.email})
