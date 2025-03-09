@@ -76,7 +76,7 @@ class UserService:
         
     def verify_telegram_auth(self, data: TelegramLogin) -> bool:
 
-        received_data = data.model_dump(exclude={"hash"}, by_alias=True)
+        received_data = data.model_dump(by_alias=True)
         data_check_arr = []
         for key in sorted(received_data.keys()):
             value = str(received_data[key])
@@ -137,6 +137,8 @@ class UserService:
 
             self.user_repository.save(user)
             return user
+        except HTTPException as e:
+            raise e
         except Exception as e:
             logger.error(f"Error while logging in telegram user: {e}")
             raise HTTPException(
