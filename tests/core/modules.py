@@ -13,7 +13,6 @@ def prepare_injector(modules=None):
         context.injector = Injector(modules=modules_final)
         config: Config = context.injector.get(Config)
         config.mongo_uri = config.test_mongo_uri
-        
 
     return step
 

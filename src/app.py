@@ -7,15 +7,11 @@ from centeral_marketplace.users.resource import users_router
 from centeral_marketplace.products.resource import product_router
 
 
-def create_app(injector:Injector =  None) -> FastAPI:
+def create_app(injector: Injector = None) -> FastAPI:
     app = FastAPI()
     sub_api = FastAPI()
 
-    origins = [
-        "http://localhost",
-        "http://localhost:3000",
-        "*"
-    ]
+    origins = ["http://localhost", "http://localhost:3000", "*"]
 
     app.add_middleware(
         CORSMiddleware,

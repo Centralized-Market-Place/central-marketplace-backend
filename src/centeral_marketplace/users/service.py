@@ -16,9 +16,16 @@ from centeral_marketplace.users.auth import (
     hash_password,
     verify_password,
 )
-from centeral_marketplace.users.core import Role, TelegramData, TelegramLogin, User, UserCreate
+from centeral_marketplace.users.core import (
+    Role,
+    TelegramData,
+    TelegramLogin,
+    User,
+    UserCreate,
+)
 
 logger = logging.getLogger(__name__)
+
 
 @singleton
 @inject
@@ -36,7 +43,7 @@ class UserService:
 
     def count_all_by_dict(self, criteria: dict) -> int:
         return self.user_repository.count_all_by_dict(criteria)
-    
+
     def find_user_by_email(self, email: str) -> User:
         return self.user_repository.find_one_by_dict({"email": email})
 
@@ -73,16 +80,19 @@ class UserService:
             return self.user_repository.find_one(user_id)
         except Exception:
             raise ValueError("Invalid Token")
-        
+
     def verify_telegram_auth(self, data: TelegramLogin) -> bool:
-
-        received_data = data.model_dump(by_alias=True)
+        received_data = data.model_dump()
         data_check_arr = []
-        for key in sorted(received_data.keys()):
-            value = str(received_data[key])
-            data_check_arr.append(f"{key}={value}")
+        
+        check_hash = received_data.pop('hash')
 
-        data_check_string = '\n'.join(data_check_arr)
+        for key, value in sorted(received_data.items()):
+            if value is not None: 
+                data_check_arr.append(f"{key}={value}")
+
+        data_check_string = "\n".join(data_check_arr)
+        
         secret_key = hashlib.sha256(self.config.telegram_bot_token.encode()).digest()
         
         computed_hash = hmac.new(
@@ -91,13 +101,7 @@ class UserService:
             hashlib.sha256
         ).hexdigest()
 
-        print(data_check_string)
-        print(computed_hash)
-
-        logger.info(f"Computed Hash: {computed_hash}")
-        logger.info(f"Received Hash: {data.hash}")
-
-        return hmac.compare_digest(computed_hash, data.hash)
+        return hmac.compare_digest(computed_hash, check_hash)
     
     def login_telegram_user(self, data: TelegramLogin) -> User:
         try:
@@ -107,30 +111,34 @@ class UserService:
                     detail="Invalid Telegram Auth",
                 )
 
-            if time.time() - data.auth_date.timestamp() > 86400:
+            if time.time() - data.auth_date > 86400:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Telegram Auth Expired",
                 )
-            user = self.user_repository.find_one_by_dict({"telegram.telegram_id": data.telegram_id})
+            user = self.user_repository.find_one_by_dict(
+                {"telegram.id": data.id}
+            )
             if not user:
                 user = User(
-                    name=data.first_name + " " + data.last_name if data.last_name else data.first_name,
+                    name=data.first_name + " " + data.last_name
+                    if data.last_name
+                    else data.first_name,
                     email="",
                     password_hash="",
                     role=Role.USER,
                     telegram=TelegramData(
-                        telegram_id=data.telegram_id,
+                        telegram_id=data.id,
                         first_name=data.first_name,
                         last_name=data.last_name,
                         username=data.username,
                         photo_url=data.photo_url,
                     ),
                 )
-                
+
             else:
                 user.telegram = TelegramData(
-                    telegram_id=data.telegram_id,
+                    telegram_id=data.id,
                     first_name=data.first_name,
                     last_name=data.last_name,
                     username=data.username,

@@ -1,4 +1,8 @@
-from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination, RestConverter
+from centeral_marketplace.infrastructure.json import (
+    PaginatedResponse,
+    Pagination,
+    RestConverter,
+)
 from centeral_marketplace.products.service import ProductService
 from fastapi import APIRouter
 from fastapi_injector import Injected
@@ -21,16 +25,16 @@ async def get_products(
     converter: RestConverter = Injected(RestConverter),
 ):
     criteria = (
-            {
-                "$or": [
-                    {"name": {"$regex": query, "$options": "i"}},
-                    {"description": {"$regex": query, "$options": "i"}},
-                ]
-            }
-            if query
-            else {}
-        )
-    
+        {
+            "$or": [
+                {"name": {"$regex": query, "$options": "i"}},
+                {"description": {"$regex": query, "$options": "i"}},
+            ]
+        }
+        if query
+        else {}
+    )
+
     total = product_service.count_all_by_dict(criteria=criteria)
     products = list(
         product_service.find_all(
@@ -41,13 +45,12 @@ async def get_products(
         )
     )
 
-    return  PaginatedResponse(
-            page=page,
-            page_size=page_size,
-            total=total,
-            items=converter.unstructure(products),
-        )
- 
+    return PaginatedResponse(
+        page=page,
+        page_size=page_size,
+        total=total,
+        items=converter.unstructure(products),
+    )
 
 
 @product_router.get("/{product_id}")
