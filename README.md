@@ -34,8 +34,7 @@ If you prefer to run the backend in a container:
 
 #### 1. Build and start the service:
 ```sh
-docker compose up app # to use production db
-docker compose up app mongo_db # to use local db
+docker compose up 
 ```
 
 #### 2. Stop the service:

@@ -7,20 +7,9 @@ services:
     volumes:
       - ./src:/code
       - ./.env:/.env
-    environment:
-      - MONGO_URI=mongodb://root:example@mongo:27017/centeral_marketplace?authSource=admin
+  
     command:
       ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8443", "--reload"]
-
-  mongo:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    volumes:
-      - mongo-data:/data/db
   
   test_db:
     image: mongo:latest
