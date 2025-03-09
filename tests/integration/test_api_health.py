@@ -19,7 +19,7 @@ def test_api_health_is_ok():
         client: TestClient = context.client
 
         with when("i request api health check"):
-            response = client.get(url="/health_check")
+            response = client.get(url="api/v1/health_check")
 
             with then("status should be OK"):
                 data = response.json()

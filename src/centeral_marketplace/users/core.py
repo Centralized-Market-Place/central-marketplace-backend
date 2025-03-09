@@ -28,13 +28,14 @@ class UserLogin(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(min_length=6)
 
+
 @dataclass
 class TelegramData:
-    telegram_id: int                  
-    first_name: str                   
-    last_name: Optional[str] = None     
-    username: Optional[str] = None  
-    photo_url: Optional[str] = None 
+    telegram_id: int
+    first_name: str
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    photo_url: Optional[str] = None
     auth_date: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -50,6 +51,7 @@ class User(UserBase):
     is_verified: bool = False
     telegram: Optional[TelegramData] = None
 
+
 @dataclass
 class UserPublic(UserBase):
     id: str
@@ -59,15 +61,17 @@ class UserPublic(UserBase):
     is_verified: bool
     image: Optional[str] = None
     last_login: Optional[datetime] = None
-    
+    telegram: Optional[TelegramData] = None
+
 
 @dataclass
 class AuthResponse:
     token: str
     user: User
 
+
 class TelegramLogin(BaseModel):
-    telegram_id: int = Field(..., alias="id")
+    id: int
     first_name: str
     last_name: Optional[str] = None
     username: Optional[str] = None

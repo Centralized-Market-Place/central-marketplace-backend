@@ -1,12 +1,10 @@
-
-
 from centeral_marketplace.users.auth import create_access_token
 from fastapi.testclient import TestClient
 from hamcrest import assert_that, equal_to
 from tests.core.given import given, when
 from tests.core.modules import create_test_client, prepare_api_server, prepare_injector
 from tests.steps.database import database_is_clean, database_repo_is_ready
-from centeral_marketplace.users.core import Role
+from centeral_marketplace.users.core import Role, TelegramLogin
 
 from tests.steps.users import there_is_a_user
 
@@ -18,20 +16,21 @@ def test_users_should_be_able_to_register():
             prepare_api_server(),
             create_test_client(),
             database_repo_is_ready(),
-            database_is_clean()
+            database_is_clean(),
         ]
     ) as context:
         client: TestClient = context.client
 
         with when("i register a user"):
             response = client.post(
-                url="/users/register",
+                url="api/v1/users/register",
                 json={
                     "email": "test@gmail.com",
                     "password": "password",
                     "name": "test",
-                },)
-            
+                },
+            )
+
             assert_that(response.status_code, equal_to(200))
             data = response.json()
             assert_that(data["email"], equal_to("test@gmail.com"))
@@ -47,25 +46,26 @@ def test_users_with_same_email_should_not_be_able_to_register():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password")
+            there_is_a_user(name="test", email="test@gmail.com", password="password"),
         ]
     ) as context:
-        
         client: TestClient = context.client
 
         with when("i register a user with same email"):
             response = client.post(
-                url="/users/register",
+                url="api/v1/users/register",
                 json={
                     "email": "test@gmail.com",
                     "password": "password",
                     "name": "test",
-                },)
-            
+                },
+            )
+
             assert_that(response.status_code, equal_to(409))
             data = response.json()
-            assert_that(data["detail"], equal_to("User with the current email already exist"))
-
+            assert_that(
+                data["detail"], equal_to("User with the current email already exist")
+            )
 
 
 def test_users_should_be_able_to_login():
@@ -76,14 +76,14 @@ def test_users_should_be_able_to_login():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password")
+            there_is_a_user(name="test", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
-        
+
         with when("i login a user"):
             response = client.post(
-                url="/users/login",
+                url="api/v1/users/login",
                 json={
                     "email": "test@gmail.com",
                     "password": "password",
@@ -93,7 +93,8 @@ def test_users_should_be_able_to_login():
             assert_that(response.status_code, equal_to(200))
             data = response.json()
             assert_that("token" in data)
-            assert_that(data["email"], equal_to("test@gmail.com"))
+            assert_that(data["user"]["email"], equal_to("test@gmail.com"))
+
 
 def test_users_should_not_be_able_to_login_with_wrong_password():
     with given(
@@ -103,15 +104,14 @@ def test_users_should_not_be_able_to_login_with_wrong_password():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password")
+            there_is_a_user(name="test", email="test@gmail.com", password="password"),
         ]
     ) as context:
-        
         client: TestClient = context.client
 
         with when("i login a user with wrong password"):
             response = client.post(
-                url="/users/login",
+                url="api/v1/users/login",
                 json={
                     "email": "test@gmail.com",
                     "password": "wrongpassword",
@@ -131,15 +131,14 @@ def test_users_should_not_be_able_to_login_with_wrong_email():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password")
+            there_is_a_user(name="test", email="test@gmail.com", password="password"),
         ]
     ) as context:
-        
         client: TestClient = context.client
 
         with when("i login a user with wrong email"):
             response = client.post(
-                url="/users/login",
+                url="api/v1/users/login",
                 json={
                     "email": "test2@gmail.com",
                     "password": "password",
@@ -159,16 +158,20 @@ def test_admin_should_be_able_to_get_users():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password", role=Role.ADMIN)
+            there_is_a_user(
+                name="test",
+                email="test@gmail.com",
+                password="password",
+                role=Role.ADMIN,
+            ),
         ]
     ) as context:
-        
         client: TestClient = context.client
-        token = create_access_token({"sub" : context.user.id})
+        token = create_access_token({"sub": context.user.id})
 
         with when("i get users"):
             response = client.get(
-                url="/users",
+                url="api/v1/users",
                 headers={"Authorization": f"Bearer {token}"},
             )
 
@@ -185,20 +188,51 @@ def test_non_admin_user_should_not_be_able_to_get_users():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password", role=Role.USER)
+            there_is_a_user(
+                name="test", email="test@gmail.com", password="password", role=Role.USER
+            ),
         ]
     ) as context:
-        
         client: TestClient = context.client
-        token = create_access_token({"sub" : context.user.id})
+        token = create_access_token({"sub": context.user.id})
 
         with when("i get users"):
             response = client.get(
-                url="/users",
+                url="api/v1/users",
                 headers={"Authorization": f"Bearer {token}"},
             )
 
             assert_that(response.status_code, equal_to(403))
             data = response.json()
             assert_that(data["detail"], equal_to("Forbidden"))
-            
+
+
+def test_register_with_telegram():
+    with given(
+        [
+            prepare_injector(),
+            prepare_api_server(),
+            create_test_client(),
+            database_repo_is_ready(),
+            database_is_clean(),
+        ]
+    ) as context:
+        data = TelegramLogin(
+            username="Sah7b",
+            photo_url="https://t.me/i/userpic/320/6H0rE6lelkP-42qgdKIS3RVuCPeHsIkUcCK3VH67Uz0.jpg",
+            id=713289859,
+            first_name="Sahib.S",
+            auth_date=1741536304,
+            hash="71a0a171a68cc9375dbb856ad35a25128a2bc4d3ad607b175eae3dc7c4ab080a",
+        )
+
+        client: TestClient = context.client
+
+        with when("i login with telegram"):
+            response = client.post(url="api/v1/users/telegram", json=data.model_dump())
+
+            assert_that(response.status_code, equal_to(200))
+            data = response.json()
+            assert_that("token" in data)
+            assert_that(data["user"]["telegram"]["telegram_id"], equal_to(713289859))
+

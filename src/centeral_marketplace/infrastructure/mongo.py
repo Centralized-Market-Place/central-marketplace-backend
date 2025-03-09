@@ -5,24 +5,12 @@ from centeral_marketplace.infrastructure.json import Pagination, create_rest_con
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import DuplicateKeyError
 from pymongo.collection import Collection
-from pymongo.database import Database
 from bson import ObjectId
-from injector import singleton, provider, inject
 
 from config import Config
 
 logger = logging.getLogger(__name__)
 Entity = TypeVar("Entity")
-
-
-@singleton
-@provider
-@inject
-def provide_database(config: Config) -> Database:
-    connection_string = config.mongo_uri
-    database_name = config.database_name
-    client = MongoClient(connection_string, maxPoolSize=50)
-    return client[database_name]
 
 
 class DomainConverter(Generic[Entity]):
