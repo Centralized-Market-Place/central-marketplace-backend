@@ -91,6 +91,9 @@ class UserService:
             hashlib.sha256
         ).hexdigest()
 
+        print(data_check_string)
+        print(computed_hash)
+
         logger.info(f"Computed Hash: {computed_hash}")
         logger.info(f"Received Hash: {data.hash}")
 
