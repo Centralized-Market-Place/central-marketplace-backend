@@ -75,7 +75,7 @@ class UserService:
             raise ValueError("Invalid Token")
         
     def verify_telegram_auth(self, data: TelegramLogin) -> bool:
-        
+
         received_data = data.model_dump(exclude={"hash"}, by_alias=True)
         data_check_arr = []
         for key in sorted(received_data.keys()):
@@ -90,6 +90,9 @@ class UserService:
             data_check_string.encode(),
             hashlib.sha256
         ).hexdigest()
+
+        logger.info(f"Computed Hash: {computed_hash}")
+        logger.info(f"Received Hash: {data.hash}")
 
         return hmac.compare_digest(computed_hash, data.hash)
     
