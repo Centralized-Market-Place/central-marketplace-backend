@@ -80,6 +80,6 @@ async def telegram_auth(
     user_service: UserService = Injected(UserService),
     converter: RestConverter = Injected(RestConverter),
 ):
-    user = user_service.verify_telegram_auth(telegram_data)
+    user = user_service.login_telegram_user(telegram_data)
     access_token = create_access_token({"sub": user.id})
     return AuthResponse(token=access_token, user=converter.unstructure(user))

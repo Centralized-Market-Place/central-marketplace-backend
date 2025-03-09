@@ -82,7 +82,7 @@ class UserService:
 
         return hmac.compare_digest(computed_hash, data.hash)
     
-    def login_telegram_user(self, data: TelegramLogin) -> str:
+    def login_telegram_user(self, data: TelegramLogin) -> User:
         if not self.verify_telegram_auth(data):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
