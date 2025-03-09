@@ -1,4 +1,5 @@
 from typing import Annotated
+from centeral_marketplace.users.auth import create_access_token
 from fastapi import APIRouter, Depends
 from fastapi_injector import Injected
 
@@ -8,7 +9,7 @@ from centeral_marketplace.infrastructure.json import (
     RestConverter,
     PaginatedResponse,
 )
-from centeral_marketplace.users.core import User, UserCreate, UserLogin, AuthResponse, UserPublic
+from centeral_marketplace.users.core import TelegramLogin, User, UserCreate, UserLogin, AuthResponse, UserPublic
 from middleware import require_role
 
 
@@ -72,3 +73,13 @@ async def get_me(
     converter: RestConverter = Injected(RestConverter),
 ):
     return converter.unstructure(current_user)
+
+@users_router.post("/telegram", response_model=AuthResponse)
+async def telegram_auth(
+    telegram_data: TelegramLogin,
+    user_service: UserService = Injected(UserService),
+    converter: RestConverter = Injected(RestConverter),
+):
+    user = user_service.verify_telegram_auth(telegram_data)
+    access_token = create_access_token({"sub": user.id})
+    return AuthResponse(token=access_token, user=converter.unstructure(user))

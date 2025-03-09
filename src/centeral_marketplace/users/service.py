@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
+import hashlib
+import hmac
+import time
 from centeral_marketplace.infrastructure.json import Pagination
+from config import Config
 from fastapi import HTTPException, status
 from injector import inject, singleton
 
@@ -11,7 +15,7 @@ from centeral_marketplace.users.auth import (
     hash_password,
     verify_password,
 )
-from centeral_marketplace.users.core import User, UserCreate
+from centeral_marketplace.users.core import Role, TelegramData, TelegramLogin, User, UserCreate
 
 
 @singleton
@@ -19,6 +23,7 @@ from centeral_marketplace.users.core import User, UserCreate
 @dataclass
 class UserService:
     user_repository: UserRepository
+    config: Config
 
     def find_all(
         self, pagination: Pagination = None, sort_by: str = None, sort_desc: bool = True
@@ -60,6 +65,60 @@ class UserService:
         return create_access_token({"sub": user.id})
 
     def validate_token(self, token: str) -> User:
-        payload = decode_token(token)
-        user_id = payload.get("sub")
-        return self.user_repository.find_one(user_id)
+        try:
+            payload = decode_token(token)
+            user_id = payload.get("sub")
+            return self.user_repository.find_one(user_id)
+        except Exception:
+            raise ValueError("Invalid Token")
+        
+    def verify_telegram_auth(self, data: TelegramLogin) -> bool:
+        
+        received_data = data.model_dump(exclude={"hash"}, by_alias=True)
+        data_check_arr = [f"{k}={received_data[k]}" for k in sorted(received_data.keys())]
+        data_check_string = "\n".join(data_check_arr)
+        secret_key = hashlib.sha256(self.config.telegram_bot_token.encode()).digest()
+        computed_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+
+        return hmac.compare_digest(computed_hash, data.hash)
+    
+    def login_telegram_user(self, data: TelegramLogin) -> str:
+        if not self.verify_telegram_auth(data):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Telegram Auth",
+            )
+
+        if time.time() - data.auth_date.timestamp() > 86400:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Telegram Auth Expired",
+            )
+        user = self.user_repository.find_one_by_dict({"telegram.telegram_id": data.telegram_id})
+        if not user:
+            user = User(
+                name=data.first_name + " " + data.last_name if data.last_name else data.first_name,
+                email="",
+                password_hash="",
+                role=Role.USER,
+                telegram=TelegramData(
+                    telegram_id=data.telegram_id,
+                    first_name=data.first_name,
+                    last_name=data.last_name,
+                    username=data.username,
+                    photo_url=data.photo_url,
+                ),
+            )
+            
+        else:
+            user.telegram = TelegramData(
+                telegram_id=data.telegram_id,
+                first_name=data.first_name,
+                last_name=data.last_name,
+                username=data.username,
+                photo_url=data.photo_url,
+            )
+            user.last_login = datetime.utcnow()
+
+        self.user_repository.save(user)
+        return user
