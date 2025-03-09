@@ -17,20 +17,21 @@ async def get_products(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
+    channel_id: str = None, 
     product_service: ProductService = Injected(ProductService),
     converter: RestConverter = Injected(RestConverter),
 ):
-    criteria = (
-            {
-                "$or": [
-                    {"name": {"$regex": query, "$options": "i"}},
-                    {"description": {"$regex": query, "$options": "i"}},
-                ]
-            }
-            if query
-            else {}
-        )
+    criteria = {}
+
+    if query:
+        criteria["$or"] = [
+            {"name": {"$regex": query, "$options": "i"}},
+            {"description": {"$regex": query, "$options": "i"}},
+        ]
     
+    if channel_id:
+        criteria["channelId"] = channel_id
+
     total = product_service.count_all_by_dict(criteria=criteria)
     products = list(
         product_service.find_all(
