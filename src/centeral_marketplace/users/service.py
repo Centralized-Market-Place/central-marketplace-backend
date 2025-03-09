@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import hashlib
 import hmac
+import logging
 import time
 from centeral_marketplace.infrastructure.json import Pagination
 from config import Config
@@ -17,6 +18,7 @@ from centeral_marketplace.users.auth import (
 )
 from centeral_marketplace.users.core import Role, TelegramData, TelegramLogin, User, UserCreate
 
+logger = logging.getLogger(__name__)
 
 @singleton
 @inject
@@ -83,42 +85,49 @@ class UserService:
         return hmac.compare_digest(computed_hash, data.hash)
     
     def login_telegram_user(self, data: TelegramLogin) -> User:
-        if not self.verify_telegram_auth(data):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid Telegram Auth",
-            )
+        try:
+            if not self.verify_telegram_auth(data):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid Telegram Auth",
+                )
 
-        if time.time() - data.auth_date.timestamp() > 86400:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Telegram Auth Expired",
-            )
-        user = self.user_repository.find_one_by_dict({"telegram.telegram_id": data.telegram_id})
-        if not user:
-            user = User(
-                name=data.first_name + " " + data.last_name if data.last_name else data.first_name,
-                email="",
-                password_hash="",
-                role=Role.USER,
-                telegram=TelegramData(
+            if time.time() - data.auth_date.timestamp() > 86400:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Telegram Auth Expired",
+                )
+            user = self.user_repository.find_one_by_dict({"telegram.telegram_id": data.telegram_id})
+            if not user:
+                user = User(
+                    name=data.first_name + " " + data.last_name if data.last_name else data.first_name,
+                    email="",
+                    password_hash="",
+                    role=Role.USER,
+                    telegram=TelegramData(
+                        telegram_id=data.telegram_id,
+                        first_name=data.first_name,
+                        last_name=data.last_name,
+                        username=data.username,
+                        photo_url=data.photo_url,
+                    ),
+                )
+                
+            else:
+                user.telegram = TelegramData(
                     telegram_id=data.telegram_id,
                     first_name=data.first_name,
                     last_name=data.last_name,
                     username=data.username,
                     photo_url=data.photo_url,
-                ),
-            )
-            
-        else:
-            user.telegram = TelegramData(
-                telegram_id=data.telegram_id,
-                first_name=data.first_name,
-                last_name=data.last_name,
-                username=data.username,
-                photo_url=data.photo_url,
-            )
-            user.last_login = datetime.utcnow()
+                )
+                user.last_login = datetime.utcnow()
 
-        self.user_repository.save(user)
-        return user
+            self.user_repository.save(user)
+            return user
+        except Exception as e:
+            logger.error(f"Error while logging in telegram user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal Server Error",
+            )
