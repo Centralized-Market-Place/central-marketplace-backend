@@ -30,6 +30,16 @@ class UserCreate(UserBase):
 
 
 @dataclass
+class TelegramData:
+    telegram_id: int
+    first_name: str
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    photo_url: Optional[str] = None
+    auth_date: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
 class User(UserBase):
     id: str = field(default_factory=lambda: str(ObjectId()))
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -39,6 +49,8 @@ class User(UserBase):
     role: Role = field(default_factory=lambda: Role.USER)
     last_login: Optional[datetime] = None
     is_verified: bool = False
+    telegram: Optional[TelegramData] = None
+
 
 @dataclass
 class UserPublic(UserBase):
@@ -49,9 +61,20 @@ class UserPublic(UserBase):
     is_verified: bool
     image: Optional[str] = None
     last_login: Optional[datetime] = None
-    
+    telegram: Optional[TelegramData] = None
+
 
 @dataclass
 class AuthResponse:
     token: str
     user: User
+
+
+class TelegramLogin(BaseModel):
+    id: int
+    first_name: str
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    photo_url: Optional[str] = None
+    auth_date: int
+    hash: str

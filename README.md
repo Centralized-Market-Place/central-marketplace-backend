@@ -34,12 +34,25 @@ If you prefer to run the backend in a container:
 
 #### 1. Build and start the service:
 ```sh
-docker compose up
+docker compose up 
 ```
 
 #### 2. Stop the service:
 ```sh
 docker compose down
+```
+
+### Running tests
+
+#### 1. start test service
+```sh
+docker compose up test_db
+```
+
+#### 2. run the tests
+```sh
+pytest # run all tests
+pytest tests/integration/test_api_health.py # run all test in a file
 ```
 
 ## API Documentation
