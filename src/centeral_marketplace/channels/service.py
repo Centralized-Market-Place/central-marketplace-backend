@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from centeral_marketplace.infrastructure.json import Pagination
-from centeral_marketplace.channel.core import Channel
-from centeral_marketplace.channel.repository import ChannelRepository
+from centeral_marketplace.channels.core import Channel
+from centeral_marketplace.channels.repository import ChannelRepository
 from injector import inject, singleton
 
 @singleton
