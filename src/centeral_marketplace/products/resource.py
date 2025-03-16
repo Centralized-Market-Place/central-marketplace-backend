@@ -4,7 +4,7 @@ from centeral_marketplace.infrastructure.json import (
     RestConverter,
 )
 from centeral_marketplace.products.service import ProductService
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi_injector import Injected
 
 
@@ -21,6 +21,7 @@ async def get_products(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
+    channel_id: int = Query(None, alias="channelId"),  
     product_service: ProductService = Injected(ProductService),
     converter: RestConverter = Injected(RestConverter),
 ):
@@ -34,6 +35,9 @@ async def get_products(
         if query
         else {}
     )
+
+    if channel_id:
+        criteria["channel_id"] = channel_id
 
     total = product_service.count_all_by_dict(criteria=criteria)
     products = list(

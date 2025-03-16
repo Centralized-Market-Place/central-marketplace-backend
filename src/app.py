@@ -5,6 +5,7 @@ from utils import create_injector
 from fastapi.middleware.cors import CORSMiddleware
 from centeral_marketplace.users.resource import users_router
 from centeral_marketplace.products.resource import product_router
+from centeral_marketplace.channels.resource import channel_router
 
 
 def create_app(injector: Injector = None) -> FastAPI:
@@ -24,6 +25,7 @@ def create_app(injector: Injector = None) -> FastAPI:
 
     sub_api.include_router(users_router)
     sub_api.include_router(product_router)
+    sub_api.include_router(channel_router)
 
     if injector is None:
         injector = create_injector()
