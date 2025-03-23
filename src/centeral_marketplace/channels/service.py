@@ -4,6 +4,7 @@ from centeral_marketplace.channels.core import Channel
 from centeral_marketplace.channels.repository import ChannelRepository
 from injector import inject, singleton
 
+
 @singleton
 @inject
 @dataclass
@@ -17,7 +18,6 @@ class ChannelService:
         sort_desc: bool = True,
         criteria: dict = {},
     ) -> list[Channel]:
-        
         return self.channel_repository.find_all_by_dict(
             pagination=pagination,
             sort_by=sort_by,
@@ -27,6 +27,6 @@ class ChannelService:
 
     def count_all_by_dict(self, criteria: dict) -> int:
         return self.channel_repository.count_all_by_dict(criteria)
-    
+
     def find_one(self, channel_id: str) -> Channel:
         return self.channel_repository.find_one(channel_id)

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterator
-from centeral_marketplace.infrastructure.json import Pagination
+from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination
 from centeral_marketplace.products.core import Product
 from injector import inject, singleton
 from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDelegate
@@ -30,7 +29,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
     def find_all(
         self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None
-    ) -> Iterator[Product]:
+    ) -> PaginatedResponse[Product]:
         return self.delegate.find_all(
             pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
@@ -44,7 +43,7 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_desc: bool = True,
         pagination: Pagination = None,
         **kwargs,
-    ) -> Iterator[Product]:
+    ) -> PaginatedResponse[Product]:
         return self.delegate.find_all_by_dict(
             criteria=kwargs, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
@@ -61,7 +60,7 @@ class ProductRepository(RepositoryInterface[Product]):
         pagination=None,
         sort_by: str | None = None,
         sort_desc: bool = True,
-    ) -> Iterator[Product]:
+    ) -> PaginatedResponse[Product]:
         return self.delegate.find_all_by_dict(
             criteria=criteria,
             pagination=pagination,

@@ -17,7 +17,7 @@ from centeral_marketplace.users.core import (
     AuthResponse,
     UserPublic,
 )
-from middleware import require_role
+from middleware import get_current_user, require_role
 
 
 users_router = APIRouter(
@@ -78,7 +78,7 @@ async def login_user(
 
 @users_router.get("/me", response_model=UserPublic)
 async def get_me(
-    current_user: Annotated[User, Depends()],
+    current_user: Annotated[User, Depends(get_current_user)],
     user_service: UserService = Injected(UserService),
     converter: RestConverter = Injected(RestConverter),
 ):

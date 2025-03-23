@@ -5,6 +5,7 @@ from centeral_marketplace.infrastructure.repository import RepositoryInterface
 from centeral_marketplace.channels.core import Channel
 from config import Config
 
+
 @inject
 @singleton
 @dataclass
@@ -25,9 +26,7 @@ class ChannelRepository(RepositoryInterface[Channel]):
     def save_all(self, data: list[Channel]):
         return self.delegate.save_all(data)
 
-    def find_all(
-        self, sort_by: str = None, sort_desc: bool = True, pagination=None
-    ):
+    def find_all(self, sort_by: str = None, sort_desc: bool = True, pagination=None):
         return self.delegate.find_all(
             pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
@@ -35,10 +34,9 @@ class ChannelRepository(RepositoryInterface[Channel]):
     def find_one(self, id: int):
         document = self.delegate.collection.find_one({"id": id})
         if document:
-            document.pop("_id", None) 
+            document.pop("_id", None)
             return self.delegate.converter.decode(document)
         return None
-
 
     def find_all_by(
         self,
@@ -57,6 +55,7 @@ class ChannelRepository(RepositoryInterface[Channel]):
             document.pop("_id", None)
             return self.converter.decode(document)
         return None
+
     def delete_one(self, id: str):
         return self.delegate.delete_one(id)
 

@@ -1,7 +1,11 @@
 import logging
-from typing import TypeVar, Generic, Type, Iterator, Optional, List, Dict
+from typing import TypeVar, Generic, Type, Optional, List, Dict
 
-from centeral_marketplace.infrastructure.json import Pagination, create_rest_converter
+from centeral_marketplace.infrastructure.json import (
+    Pagination,
+    create_rest_converter,
+    PaginatedResponse,
+)
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import DuplicateKeyError
 from pymongo.collection import Collection
@@ -51,7 +55,7 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         pagination: Pagination = None,
         sort_by: Optional[str] = None,
         sort_desc: bool = True,
-    ) -> Iterator[Entity]:
+    ) -> PaginatedResponse[Entity]:
         """Find all entities with optional pagination and sorting."""
         query = {}
         sort_order = DESCENDING if sort_desc else ASCENDING
@@ -66,8 +70,11 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             limit = pagination.size
             cursor = cursor.skip(skip).limit(limit)
 
-        for document in cursor:
-            yield self.converter.decode(document)
+        total = self.collection.count_documents(query)
+        items = [self.converter.decode(document) for document in cursor]
+        return PaginatedResponse(
+            page=pagination.page, page_size=pagination.size, total=total, items=items
+        )
 
     def save(self, entity: Entity):
         """Insert or update an entity."""
@@ -103,7 +110,7 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         pagination: Pagination = None,
         sort_by: Optional[str] = None,
         sort_desc: bool = True,
-    ) -> Iterator[Entity]:
+    ) -> PaginatedResponse[Entity]:
         """Find all entities matching the criteria."""
         sort_order = DESCENDING if sort_desc else ASCENDING
 
@@ -117,8 +124,11 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             limit = pagination.size
             cursor = cursor.skip(skip).limit(limit)
 
-        for document in cursor:
-            yield self.converter.decode(document)
+        total = self.collection.count_documents(criteria)
+        items = [self.converter.decode(document) for document in cursor]
+        return PaginatedResponse(
+            page=pagination.page, page_size=pagination.size, total=total, items=items
+        )
 
     def count_all_by_dict(self, criteria: Dict) -> int:
         """Count all entities matching the criteria."""

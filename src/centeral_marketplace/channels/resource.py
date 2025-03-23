@@ -1,4 +1,8 @@
-from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination, RestConverter
+from centeral_marketplace.infrastructure.json import (
+    PaginatedResponse,
+    Pagination,
+    RestConverter,
+)
 from centeral_marketplace.channels.service import ChannelService
 from fastapi import APIRouter
 from fastapi_injector import Injected
@@ -7,6 +11,7 @@ channel_router = APIRouter(
     prefix="/channels",
     tags=["channels"],
 )
+
 
 @channel_router.get("/", response_model=PaginatedResponse)
 async def get_channels(
