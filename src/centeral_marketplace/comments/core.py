@@ -7,8 +7,7 @@ from pydantic import BaseModel
 
 class CommentBase(BaseModel):
     message: str
-    likes: int = 0
-    dislikes: int = 0
+    
 
 
 @dataclass
@@ -17,7 +16,9 @@ class Comment(CommentBase):
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     user_id: str
-    post_id: str
+    product_id: str
+    likes: int = 0
+    dislikes: int = 0
     parent_id: Optional[str] = None
 
 
@@ -27,5 +28,3 @@ class CommentCreate(CommentBase):
 
 class CommentUpdate(CommentBase):
     message: Optional[str] = None
-    likes: Optional[int] = None
-    dislikes: Optional[int] = None
