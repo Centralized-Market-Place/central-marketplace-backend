@@ -20,7 +20,9 @@ async def get_comment(
     comment_service: CommentService = Injected(CommentService),
     converter: RestConverter = Injected(RestConverter),
 ):
-    comment = comment_service.find_one(comment_id)
+    comment = comment_service.find_one(
+        comment_id
+    )
     return converter.unstructure(comment)
 
 
@@ -36,7 +38,9 @@ async def get_comment_replies(
     criteria = {"parent_id": comment_id}
     pagination = Pagination(page=page, size=page_size)
     comments = comment_service.find_all(
-        criteria=criteria, pagination=pagination, sort_desc=sort_desc
+        criteria=criteria,
+        pagination=pagination,
+        sort_desc=sort_desc
     )
     return comments
 

@@ -4,6 +4,7 @@ from centeral_marketplace.comments.service import CommentService
 from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination
 from centeral_marketplace.products.core import Product
 from centeral_marketplace.products.repository import ProductRepository
+from centeral_marketplace.reactions.service import ReactionService
 from fastapi import HTTPException, status
 from injector import inject, singleton
 
@@ -14,6 +15,7 @@ from injector import inject, singleton
 class ProductService:
     product_repository: ProductRepository
     comment_service: CommentService
+    reaction_service: ReactionService
 
     def find_all(
         self,
@@ -30,7 +32,10 @@ class ProductService:
         )
 
     def find_all_comments(
-        self, product_id: str, pagination: Pagination = None, sort_desc: bool = True
+        self,
+        product_id: str,
+        pagination: Pagination = None,
+        sort_desc: bool = True,
     ):
         self.find_one(product_id)
         criteria = {"product_id": product_id}
@@ -72,3 +77,5 @@ class ProductService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with ID {product_id} not found",
             )
+        
+        return product

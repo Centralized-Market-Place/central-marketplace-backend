@@ -50,6 +50,10 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         index_name = self.collection.create_index([(field, ASCENDING)], unique=unique)
         logger.debug("Index '%s' ensured on field '%s'.", index_name, field)
 
+    def ensure_compound_index(self, fields: List[tuple], unique: bool = False):
+        index_name = self.collection.create_index(fields, unique=unique)
+        logger.debug("Compound index '%s' ensured on fields '%s'.", index_name, fields)
+
     def find_all(
         self,
         pagination: Pagination = None,

@@ -6,6 +6,7 @@ from typing import Optional
 from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate
 from centeral_marketplace.comments.repository import CommentRepository
 from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination
+from centeral_marketplace.reactions.service import ReactionService
 from fastapi import HTTPException, status
 from injector import inject, singleton
 
@@ -20,13 +21,14 @@ logger.addHandler(logging.StreamHandler())
 @dataclass
 class CommentService:
     comment_repository: CommentRepository
+    reaction_service: ReactionService
 
     def find_all(
         self,
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
-        criteria: dict = {},
+        criteria: dict = {}
     ) -> PaginatedResponse[Comment]:
         return self.comment_repository.find_all_by_dict(
             pagination=pagination,
@@ -42,8 +44,9 @@ class CommentService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"comment with ID {comment_id} Not found",
             )
-        
+
         return comment
+
 
     def create_comment(
         self,

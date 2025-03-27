@@ -73,7 +73,9 @@ async def get_product_comments(
 ):
     pagination = Pagination(page=page, size=page_size)
     comments = product_service.find_all_comments(
-        product_id=product_id, pagination=pagination, sort_desc=sort_desc
+        product_id=product_id,
+        pagination=pagination,
+        sort_desc=sort_desc,
     )
     return comments
 
