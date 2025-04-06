@@ -49,10 +49,13 @@ class ProductService:
     def create_post_comment(
         self, user_id: str, product_id: str, comment_data: CommentCreate
     ) -> Comment:
-        self.find_one(product_id)
-        return self.comment_service.create_comment(
+        product = self.find_one(product_id)
+        comment = self.comment_service.create_comment(
             user_id=user_id, product_id=product_id, comment_data=comment_data
         )
+        product.comments += 1
+        self.product_repository.save(product)
+        return comment
 
     def update_post_comment(
         self,
@@ -67,8 +70,11 @@ class ProductService:
         )
 
     def delete_post_comment(self, product_id: str, user_id: str, comment_id: str):
-        self.find_one(product_id)
-        self.comment_service.delete_comment(user_id=user_id, comment_id=comment_id)
+        product = self.find_one(product_id)
+        comment = self.comment_service.delete_comment(user_id=user_id, comment_id=comment_id)
+        product.comments -= 1
+        self.product_repository.save(product)
+        return comment
 
     def find_one(self, product_id: str) -> Product:
         product = self.product_repository.find_one(product_id)

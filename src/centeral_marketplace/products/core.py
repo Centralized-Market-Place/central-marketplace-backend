@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional, Tuple
 from bson import ObjectId
-from centeral_marketplace.reactions.core import ReactionType
 
 
 @dataclass
@@ -32,5 +31,5 @@ class Product:
     upvotes: int = 0
     downvotes: int = 0
     shares: int = 0
+    comments: int = 0
     reactions: List[Tuple[str, int]] = field(default_factory=list)
-    my_reaction: Optional[ReactionType] = None
