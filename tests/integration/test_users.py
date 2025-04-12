@@ -235,4 +235,3 @@ def test_register_with_telegram():
             data = response.json()
             assert_that("token" in data)
             assert_that(data["user"]["telegram"]["telegram_id"], equal_to(713289859))
-

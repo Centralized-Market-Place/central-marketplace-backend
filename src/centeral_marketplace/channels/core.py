@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
+
 @dataclass
 class Channel:
     id: int
@@ -19,5 +20,5 @@ class Channel:
     scam: bool = False
     has_geo: bool = False
     has_link: bool = False
-    date_created:  Optional[datetime] = None
+    date_created: Optional[datetime] = None
     broadcast: bool = False

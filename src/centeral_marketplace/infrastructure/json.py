@@ -5,7 +5,7 @@ import re
 from base64 import b64encode, b64decode
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import TypeVar, Union, List
+from typing import Generic, TypeVar, Union, List
 from pydantic import EmailStr
 
 import ulid
@@ -234,12 +234,15 @@ class JsonModule(Module):
         return create_rest_converter()
 
 
+T = TypeVar("T")
+
+
 @dataclass
-class PaginatedResponse:
+class PaginatedResponse(Generic[T]):
     page: int
     page_size: int
     total: int
-    items: list
+    items: List[T]
 
 
 @dataclass

@@ -28,4 +28,8 @@ class Product:
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     posted_at: Optional[datetime] = None
+    upvotes: int = 0
+    downvotes: int = 0
+    shares: int = 0
+    comments: int = 0
     reactions: List[Tuple[str, int]] = field(default_factory=list)

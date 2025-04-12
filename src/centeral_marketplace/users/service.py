@@ -84,25 +84,23 @@ class UserService:
     def verify_telegram_auth(self, data: TelegramLogin) -> bool:
         received_data = data.model_dump()
         data_check_arr = []
-        
-        check_hash = received_data.pop('hash')
+
+        check_hash = received_data.pop("hash")
 
         for key, value in sorted(received_data.items()):
-            if value is not None: 
+            if value is not None:
                 data_check_arr.append(f"{key}={value}")
 
         data_check_string = "\n".join(data_check_arr)
-        
+
         secret_key = hashlib.sha256(self.config.telegram_bot_token.encode()).digest()
-        
+
         computed_hash = hmac.new(
-            secret_key,
-            data_check_string.encode(),
-            hashlib.sha256
+            secret_key, data_check_string.encode(), hashlib.sha256
         ).hexdigest()
 
         return hmac.compare_digest(computed_hash, check_hash)
-    
+
     def login_telegram_user(self, data: TelegramLogin) -> User:
         try:
             if not self.verify_telegram_auth(data):
@@ -116,9 +114,7 @@ class UserService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Telegram Auth Expired",
                 )
-            user = self.user_repository.find_one_by_dict(
-                {"telegram.id": data.id}
-            )
+            user = self.user_repository.find_one_by_dict({"telegram.id": data.id})
             if not user:
                 user = User(
                     name=data.first_name + " " + data.last_name
