@@ -28,7 +28,7 @@ class CommentService:
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
-        criteria: dict = {}
+        criteria: dict = {},
     ) -> PaginatedResponse[Comment]:
         return self.comment_repository.find_all_by_dict(
             pagination=pagination,
@@ -46,7 +46,6 @@ class CommentService:
             )
 
         return comment
-
 
     def create_comment(
         self,

@@ -71,7 +71,9 @@ class ProductService:
 
     def delete_post_comment(self, product_id: str, user_id: str, comment_id: str):
         product = self.find_one(product_id)
-        comment = self.comment_service.delete_comment(user_id=user_id, comment_id=comment_id)
+        comment = self.comment_service.delete_comment(
+            user_id=user_id, comment_id=comment_id
+        )
         product.comments -= 1
         self.product_repository.save(product)
         return comment
@@ -83,5 +85,5 @@ class ProductService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with ID {product_id} not found",
             )
-        
+
         return product

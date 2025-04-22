@@ -12,6 +12,8 @@ class Config(BaseSettings):
     access_token_expires_in: int = 3600 * 24
     jwt_algorithm: str
     telegram_bot_token: str
+    admin_email: str
+    admin_password: str
 
 
 settings = Config()

@@ -20,7 +20,6 @@ class Comment:
     likes: int = 0
     dislikes: int = 0
     parent_id: Optional[str] = None
-    
 
 
 class CommentCreate(CommentBase):

@@ -62,6 +62,24 @@ class UserService:
         )
         return self.user_repository.save(created_user)
 
+    def create_admin(self, user: UserCreate) -> User:
+        existing_user = self.user_repository.find_one_by_dict({"email": user.email})
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="User with the current email already exist",
+            )
+        hashed_password = hash_password(user.password)
+        created_user = User(
+            name=user.name,
+            email=user.email,
+            password_hash=hashed_password,
+            role=Role.ADMIN,
+            is_verified=True,
+        )
+        logger.info(f"Creating admin user: {created_user}")
+        return self.user_repository.save(created_user)
+
     def authenticate_user(self, email: str, password: str) -> str:
         user = self.user_repository.find_one_by_dict({"email": email})
         if not user or not verify_password(password, user.password_hash):
