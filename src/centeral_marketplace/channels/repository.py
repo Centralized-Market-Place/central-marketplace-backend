@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 from injector import inject, singleton
+
+from centeral_marketplace.infrastructure.json import PaginatedResponse
 from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDelegate
 from centeral_marketplace.infrastructure.repository import RepositoryInterface
 from centeral_marketplace.channels.core import Channel
 from config import Config
+from core import PyObjectId
 
 
 @inject
@@ -14,11 +17,8 @@ class ChannelRepository(RepositoryInterface[Channel]):
 
     def __post_init__(self):
         self.delegate = MongoDBJsonRepositoryDelegate(
-            collection_name="channels", cls=Channel, config=self.config
+            collection_name="channels", model=Channel, config=self.config
         )
-
-    def close(self):
-        self.delegate.close()
 
     def save(self, data: Channel):
         return self.delegate.save(data)
@@ -31,12 +31,8 @@ class ChannelRepository(RepositoryInterface[Channel]):
             pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
 
-    def find_one(self, id: int):
-        document = self.delegate.collection.find_one({"id": id})
-        if document:
-            document.pop("_id", None)
-            return self.delegate.converter.decode(document)
-        return None
+    def find_one(self, id: PyObjectId):
+        return self.delegate.find_one(id)
 
     def find_all_by(
         self,
@@ -50,13 +46,9 @@ class ChannelRepository(RepositoryInterface[Channel]):
         )
 
     def find_one_by_dict(self, criteria: dict):
-        document = self.collection.find_one(criteria)
-        if document:
-            document.pop("_id", None)
-            return self.converter.decode(document)
-        return None
+        return self.delegate.find_one_by_dict(criteria)
 
-    def delete_one(self, id: str):
+    def delete_one(self, id: PyObjectId):
         return self.delegate.delete_one(id)
 
     def find_all_by_dict(
@@ -65,7 +57,7 @@ class ChannelRepository(RepositoryInterface[Channel]):
         pagination=None,
         sort_by: str | None = None,
         sort_desc: bool = True,
-    ):
+    ) -> PaginatedResponse[Channel]:
         return self.delegate.find_all_by_dict(
             criteria=criteria,
             pagination=pagination,

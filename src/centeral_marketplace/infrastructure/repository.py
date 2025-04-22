@@ -12,7 +12,8 @@ It should not contain any implementation details or behavior.
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, Iterator
 
-import ulid
+
+from core import PyObjectId
 
 
 class EntityNotFound(Exception):
@@ -20,7 +21,7 @@ class EntityNotFound(Exception):
 
 
 class Entity(ABC):
-    id: ulid.ULID
+    id: PyObjectId
 
 
 class PrivacyEntity(Entity, ABC):
@@ -41,11 +42,11 @@ class RepositoryInterface(ABC, Generic[EntityType]):
         pass
 
     @abstractmethod
-    def find_one(self, id: ulid.ULID) -> EntityType:
+    def find_one(self, id: PyObjectId) -> EntityType:
         pass
 
     @abstractmethod
-    def delete_one(self, id: ulid.ULID):
+    def delete_one(self, id: PyObjectId):
         pass
 
     @abstractmethod
@@ -66,10 +67,6 @@ class RepositoryInterface(ABC, Generic[EntityType]):
 
     @abstractmethod
     def save_all(self, entities: list[EntityType]):
-        pass
-
-    @abstractmethod
-    def close(self):
         pass
 
 

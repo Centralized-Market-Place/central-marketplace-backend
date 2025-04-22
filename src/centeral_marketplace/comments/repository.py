@@ -6,6 +6,7 @@ from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDeleg
 from config import Config
 from injector import inject, singleton
 from centeral_marketplace.comments.core import Comment
+from core import PyObjectId
 
 
 @inject
@@ -16,11 +17,8 @@ class CommentRepository:
 
     def __post_init__(self):
         self.delegate = MongoDBJsonRepositoryDelegate(
-            collection_name="comments", cls=Comment, config=self.config
+            collection_name="comments", model=Comment, config=self.config
         )
-
-    def close(self):
-        self.delegate.close()
 
     def save(self, data: Comment):
         return self.delegate.save(data)
@@ -28,7 +26,7 @@ class CommentRepository:
     def save_all(self, data: list[Comment]):
         return self.delegate.save_all(data)
 
-    def find_one(self, id: str) -> Optional[Comment]:
+    def find_one(self, id: PyObjectId) -> Optional[Comment]:
         return self.delegate.find_one(id)
 
     def find_all(
@@ -52,7 +50,7 @@ class CommentRepository:
     def find_one_by_dict(self, criteria: dict) -> Comment:
         return self.delegate.find_one_by_dict(criteria)
 
-    def delete_one(self, id: str):
+    def delete_one(self, id: PyObjectId):
         return self.delegate.delete_one(id)
 
     def find_all_by_dict(

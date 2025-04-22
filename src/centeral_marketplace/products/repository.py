@@ -5,6 +5,7 @@ from injector import inject, singleton
 from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDelegate
 from centeral_marketplace.infrastructure.repository import RepositoryInterface
 from config import Config
+from core import PyObjectId
 
 
 @inject
@@ -15,11 +16,8 @@ class ProductRepository(RepositoryInterface[Product]):
 
     def __post_init__(self):
         self.delegate = MongoDBJsonRepositoryDelegate(
-            collection_name="products", cls=Product, config=self.config
+            collection_name="products", model=Product, config=self.config
         )
-
-    def close(self):
-        self.delegate.close()
 
     def save(self, data: Product):
         return self.delegate.save(data)
@@ -34,7 +32,7 @@ class ProductRepository(RepositoryInterface[Product]):
             pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
 
-    def find_one(self, id: str):
+    def find_one(self, id: PyObjectId):
         return self.delegate.find_one(id)
 
     def find_all_by(
@@ -51,7 +49,7 @@ class ProductRepository(RepositoryInterface[Product]):
     def find_one_by_dict(self, criteria: dict) -> Product:
         return self.delegate.find_one_by_dict(criteria)
 
-    def delete_one(self, id: str):
+    def delete_one(self, id: PyObjectId):
         return self.delegate.delete_one(id)
 
     def find_all_by_dict(

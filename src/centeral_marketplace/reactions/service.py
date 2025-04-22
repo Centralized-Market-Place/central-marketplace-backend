@@ -7,6 +7,8 @@ from centeral_marketplace.comments.repository import CommentRepository
 from fastapi import HTTPException, status
 from injector import inject, singleton
 
+from core import PyObjectId
+
 
 @inject
 @singleton
@@ -18,8 +20,8 @@ class ReactionService:
 
     def react(
         self,
-        user_id: str,
-        target_id: str,
+        user_id: PyObjectId,
+        target_id: PyObjectId,
         target_type: ReactionTarget,
         reaction_type: ReactionType,
     ):
@@ -47,7 +49,9 @@ class ReactionService:
 
         return reaction
 
-    def get_reaction(self, user_id: str, target_id: str) -> Optional[Reaction]:
+    def get_reaction(
+        self, user_id: PyObjectId, target_id: PyObjectId
+    ) -> Optional[Reaction]:
         return self.reaction_repo.find_one_by_user_and_target(user_id, target_id)
 
     def _adjust_target(self, target_id, target_type, reaction_type, decrement=False):

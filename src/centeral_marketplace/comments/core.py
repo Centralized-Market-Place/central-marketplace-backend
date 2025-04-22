@@ -1,30 +1,29 @@
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
-from bson import ObjectId
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from core import PyObjectId
 
 
-class CommentBase(BaseModel):
+class Comment(BaseModel):
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    user_id: PyObjectId
+    product_id: PyObjectId
     message: str
-
-
-@dataclass
-class Comment:
-    user_id: str
-    product_id: str
-    message: str
-    id: str = field(default_factory=lambda: str(ObjectId()))
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
     likes: int = 0
     dislikes: int = 0
-    parent_id: Optional[str] = None
+    parent_id: Optional[PyObjectId] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {PyObjectId: str}
 
 
-class CommentCreate(CommentBase):
-    pass
+class CommentCreate(BaseModel):
+    message: str
 
 
-class CommentUpdate(CommentBase):
+class CommentUpdate(BaseModel):
     message: Optional[str] = None

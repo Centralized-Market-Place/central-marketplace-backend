@@ -8,6 +8,8 @@ from centeral_marketplace.reactions.service import ReactionService
 from fastapi import HTTPException, status
 from injector import inject, singleton
 
+from core import PyObjectId
+
 
 @singleton
 @inject
@@ -22,8 +24,10 @@ class ProductService:
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
-        criteria: dict = {},
+        criteria: dict = None,
     ) -> PaginatedResponse[Product]:
+        if criteria is None:
+            criteria = {}
         return self.product_repository.find_all_by_dict(
             pagination=pagination,
             sort_by=sort_by,
@@ -33,7 +37,7 @@ class ProductService:
 
     def find_all_comments(
         self,
-        product_id: str,
+        product_id: PyObjectId,
         pagination: Pagination = None,
         sort_desc: bool = True,
     ):
@@ -47,7 +51,7 @@ class ProductService:
         )
 
     def create_post_comment(
-        self, user_id: str, product_id: str, comment_data: CommentCreate
+        self, user_id: PyObjectId, product_id: PyObjectId, comment_data: CommentCreate
     ) -> Comment:
         product = self.find_one(product_id)
         comment = self.comment_service.create_comment(
@@ -59,9 +63,9 @@ class ProductService:
 
     def update_post_comment(
         self,
-        user_id: str,
-        product_id: str,
-        comment_id: str,
+        user_id: PyObjectId,
+        product_id: PyObjectId,
+        comment_id: PyObjectId,
         comment_data: CommentUpdate,
     ) -> Comment:
         self.find_one(product_id)
@@ -69,7 +73,9 @@ class ProductService:
             user_id=user_id, comment_id=comment_id, comment_data=comment_data
         )
 
-    def delete_post_comment(self, product_id: str, user_id: str, comment_id: str):
+    def delete_post_comment(
+        self, product_id: PyObjectId, user_id: PyObjectId, comment_id: PyObjectId
+    ):
         product = self.find_one(product_id)
         comment = self.comment_service.delete_comment(
             user_id=user_id, comment_id=comment_id
@@ -78,7 +84,7 @@ class ProductService:
         self.product_repository.save(product)
         return comment
 
-    def find_one(self, product_id: str) -> Product:
+    def find_one(self, product_id: PyObjectId) -> Product:
         product = self.product_repository.find_one(product_id)
         if not product:
             raise HTTPException(

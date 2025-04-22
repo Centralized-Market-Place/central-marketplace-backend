@@ -1,11 +1,13 @@
+from centeral_marketplace.channels.core import Channel
 from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
     Pagination,
-    RestConverter,
 )
 from centeral_marketplace.channels.service import ChannelService
 from fastapi import APIRouter
 from fastapi_injector import Injected
+
+from core import PyObjectId
 
 channel_router = APIRouter(
     prefix="/channels",
@@ -13,7 +15,7 @@ channel_router = APIRouter(
 )
 
 
-@channel_router.get("/", response_model=PaginatedResponse)
+@channel_router.get("/", response_model=PaginatedResponse[Channel])
 async def get_channels(
     page: int = 1,
     page_size: int = 20,
@@ -21,7 +23,6 @@ async def get_channels(
     sort_desc: bool = True,
     query: str = None,
     channel_service: ChannelService = Injected(ChannelService),
-    converter: RestConverter = Injected(RestConverter),
 ):
     criteria = {}
 
@@ -45,15 +46,14 @@ async def get_channels(
         page=page,
         page_size=page_size,
         total=total,
-        items=converter.unstructure(channels),
+        items=channels,
     )
 
 
-@channel_router.get("/{channel_id}")
+@channel_router.get("/{channel_id}", response_model=Channel)
 async def get_channel(
-    channel_id: int,
+    channel_id: PyObjectId,
     channel_service: ChannelService = Injected(ChannelService),
-    converter: RestConverter = Injected(RestConverter),
 ):
     channel = channel_service.find_one(channel_id)
-    return converter.unstructure(channel)
+    return channel

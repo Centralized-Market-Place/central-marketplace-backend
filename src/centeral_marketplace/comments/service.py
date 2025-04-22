@@ -10,6 +10,7 @@ from centeral_marketplace.reactions.service import ReactionService
 from fastapi import HTTPException, status
 from injector import inject, singleton
 
+from core import PyObjectId
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,8 +29,10 @@ class CommentService:
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
-        criteria: dict = {},
+        criteria: dict = None,
     ) -> PaginatedResponse[Comment]:
+        if criteria is None:
+            criteria = {}
         return self.comment_repository.find_all_by_dict(
             pagination=pagination,
             sort_by=sort_by,
@@ -37,7 +40,7 @@ class CommentService:
             criteria=criteria,
         )
 
-    def find_one(self, comment_id: str) -> Comment:
+    def find_one(self, comment_id: PyObjectId) -> Comment:
         comment = self.comment_repository.find_one(comment_id)
         if not comment:
             raise HTTPException(
@@ -49,10 +52,10 @@ class CommentService:
 
     def create_comment(
         self,
-        user_id: str,
+        user_id: PyObjectId,
         comment_data: CommentCreate,
-        parent_id: Optional[str] = None,
-        product_id: Optional[str] = None,
+        parent_id: Optional[PyObjectId] = None,
+        product_id: Optional[PyObjectId] = None,
     ) -> Comment:
         try:
             if parent_id:
@@ -81,10 +84,10 @@ class CommentService:
 
     def update_comment(
         self,
-        user_id: str,
-        comment_id: str,
+        user_id: PyObjectId,
+        comment_id: PyObjectId,
         comment_data: CommentUpdate,
-        parent_id: Optional[str] = None,
+        parent_id: Optional[PyObjectId] = None,
     ) -> Comment:
         try:
             if parent_id:
@@ -110,7 +113,7 @@ class CommentService:
                 detail="Unable to update comment",
             ) from e
 
-    def delete_comment(self, user_id: str, comment_id: str):
+    def delete_comment(self, user_id: PyObjectId, comment_id: PyObjectId):
         try:
             comment = self.comment_repository.find_one(comment_id)
             if not comment:

@@ -4,6 +4,9 @@ import hashlib
 import hmac
 import logging
 import time
+
+from pydantic import EmailStr
+
 from centeral_marketplace.infrastructure.json import Pagination
 from config import Config
 from fastapi import HTTPException, status
@@ -44,7 +47,7 @@ class UserService:
     def count_all_by_dict(self, criteria: dict) -> int:
         return self.user_repository.count_all_by_dict(criteria)
 
-    def find_user_by_email(self, email: str) -> User:
+    def find_user_by_email(self, email: EmailStr) -> User:
         return self.user_repository.find_one_by_dict({"email": email})
 
     def register_user(self, user: UserCreate) -> User:
@@ -80,7 +83,7 @@ class UserService:
         logger.info(f"Creating admin user: {created_user}")
         return self.user_repository.save(created_user)
 
-    def authenticate_user(self, email: str, password: str) -> str:
+    def authenticate_user(self, email: EmailStr, password: str) -> str:
         user = self.user_repository.find_one_by_dict({"email": email})
         if not user or not verify_password(password, user.password_hash):
             raise HTTPException(
@@ -138,7 +141,6 @@ class UserService:
                     name=data.first_name + " " + data.last_name
                     if data.last_name
                     else data.first_name,
-                    email="",
                     password_hash="",
                     role=Role.USER,
                     telegram=TelegramData(

@@ -60,7 +60,8 @@ def create_app(injector: Injector = None) -> FastAPI:
             )
         )
 
-    except Exception:
+    except Exception as e:
+        print("Error creating admin user:", e)
         pass
 
     logger.info(f"Admin user created with email: {config.admin_email}")
