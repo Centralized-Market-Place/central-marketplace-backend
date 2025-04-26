@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate
 from centeral_marketplace.comments.service import CommentService
 from centeral_marketplace.infrastructure.json import Pagination
@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi_injector import Injected
 
 from core import PyObjectId
-from middleware import get_current_user
+from middleware import get_current_user, get_current_user_optional
 
 
 comment_router = APIRouter(
@@ -19,14 +19,19 @@ comment_router = APIRouter(
 @comment_router.get("/{comment_id}", response_model=Comment)
 async def get_comment(
     comment_id: PyObjectId,
+    current_user: Annotated[Optional[User], Depends(get_current_user_optional)],
     comment_service: CommentService = Injected(CommentService),
 ):
-    return comment_service.find_one(comment_id)
+    return comment_service.find_one(
+        comment_id=comment_id,
+        user_id=(current_user.id if current_user else None),
+    )
 
 
 @comment_router.get("/{comment_id}/replies")
 async def get_comment_replies(
     comment_id: str,
+    current_user: Annotated[Optional[User], Depends(get_current_user_optional)],
     comment_service: CommentService = Injected(CommentService),
     page: int = 1,
     page_size: int = 20,
@@ -34,10 +39,13 @@ async def get_comment_replies(
 ):
     criteria = {"parent_id": comment_id}
     pagination = Pagination(page=page, size=page_size)
-    comments = comment_service.find_all(
-        criteria=criteria, pagination=pagination, sort_desc=sort_desc
+    return comment_service.find_all(
+        criteria=criteria,
+        pagination=pagination,
+        sort_by="created_at",
+        sort_desc=sort_desc,
+        user_id=(current_user.id if current_user else None),
     )
-    return comments
 
 
 @comment_router.post("/{comment_id}/replies", response_model=Comment)

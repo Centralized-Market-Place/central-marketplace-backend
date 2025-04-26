@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from bson import ObjectId
+from centeral_marketplace.reactions.core import ReactionType
 from pydantic import AliasChoices, BaseModel, Field
 from core import PyObjectId
 
@@ -19,6 +20,7 @@ class Comment(BaseModel):
     parent_id: Optional[PyObjectId] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    user_reaction: Optional[ReactionType] = None
 
     class Config:
         populate_by_name = True

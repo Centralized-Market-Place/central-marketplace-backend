@@ -26,28 +26,46 @@ class CommentService:
 
     def find_all(
         self,
+        criteria: dict = None,
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
-        criteria: dict = None,
+        user_id: PyObjectId | None = None,
     ) -> PaginatedResponse[Comment]:
-        if criteria is None:
-            criteria = {}
-        return self.comment_repository.find_all_by_dict(
-            pagination=pagination,
-            sort_by=sort_by,
-            sort_desc=sort_desc,
-            criteria=criteria,
-        )
-
-    def find_one(self, comment_id: PyObjectId) -> Comment:
-        comment = self.comment_repository.find_one(comment_id)
-        if not comment:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"comment with ID {comment_id} Not found",
+        criteria = criteria or {}
+        if user_id:
+            return self.comment_repository.find_all_with_user_reaction(
+                user_id=user_id,
+                criteria=criteria,
+                pagination=pagination,
+                sort_by=sort_by,
+                sort_desc=sort_desc,
+            )
+        else:
+            return self.comment_repository.find_all_by_dict(
+                criteria=criteria,
+                pagination=pagination,
+                sort_by=sort_by,
+                sort_desc=sort_desc,
             )
 
+    def find_one(
+        self,
+        comment_id: PyObjectId,
+        user_id: PyObjectId | None = None,
+    ) -> Comment:
+        if user_id:
+            comment = self.comment_repository.find_one_with_user_reaction(
+                comment_id=comment_id, user_id=user_id
+            )
+        else:
+            comment = self.comment_repository.find_one(comment_id)
+
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Comment with ID {comment_id} not found",
+            )
         return comment
 
     def create_comment(

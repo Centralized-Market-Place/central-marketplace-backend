@@ -64,6 +64,7 @@ async def get_product(
 @product_router.get("/{product_id}/comments", response_model=PaginatedResponse[Comment])
 async def get_product_comments(
     product_id: PyObjectId,
+    current_user: Annotated[User, Depends(get_current_user_optional)],
     product_service: ProductService = Injected(ProductService),
     page: int = 1,
     page_size: int = 20,
@@ -74,6 +75,7 @@ async def get_product_comments(
         product_id=product_id,
         pagination=pagination,
         sort_desc=sort_desc,
+        user_id=current_user.id if current_user else None,
     )
     return comments
 

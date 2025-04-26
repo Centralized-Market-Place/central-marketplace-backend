@@ -51,10 +51,12 @@ class ProductService:
         product_id: PyObjectId,
         pagination: Pagination = None,
         sort_desc: bool = True,
+        user_id: PyObjectId | None = None,
     ):
         self.find_one(product_id)
         criteria = {"product_id": product_id}
         return self.comment_service.find_all(
+            user_id=user_id,
             pagination=pagination,
             sort_by="created_at",
             sort_desc=sort_desc,
