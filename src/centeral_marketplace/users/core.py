@@ -1,7 +1,8 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from bson import ObjectId
+from pydantic import AliasChoices, BaseModel, EmailStr, Field
 from core import PyObjectId
 
 
@@ -35,7 +36,11 @@ class UserLogin(BaseModel):
 
 
 class User(UserBase):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PyObjectId = Field(
+        default_factory=ObjectId,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
     password_hash: str
     image: Optional[str] = None
     role: Role = Role.USER

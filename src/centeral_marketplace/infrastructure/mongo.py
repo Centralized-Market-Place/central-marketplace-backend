@@ -1,5 +1,5 @@
 import logging
-from typing import TypeVar, Generic, Type, Optional, List, Dict
+from typing import Any, TypeVar, Generic, Type, Optional, List, Dict
 from pydantic import BaseModel
 
 from centeral_marketplace.infrastructure.json import (
@@ -34,6 +34,24 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         index_name = self.collection.create_index(fields, unique=unique)
         logger.debug("Compound index '%s' ensured on fields '%s'.", index_name, fields)
 
+    def _to_oid(self, value: Any) -> ObjectId | Any:
+        if value is None or isinstance(value, ObjectId):
+            return value
+        try:
+            return ObjectId(str(value))
+        except Exception:
+            return value
+
+    def _normalize_for_mongo(self, data: dict) -> dict:
+        if data.get("id"):
+            data["_id"] = self._to_oid(data.pop("id"))
+
+        for k, v in data.items():
+            if k.endswith("_id") and k != "_id":
+                data[k] = self._to_oid(data[k])
+
+        return data
+
     def find_all(
         self,
         pagination: Pagination = None,
@@ -60,18 +78,30 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
             page=pagination.page, page_size=pagination.size, total=total, items=items
         )
 
-    def save(self, entity: Entity):
-        """Insert or update an entity."""
-        data = entity.model_dump(by_alias=True, exclude_none=True)
+    def save(self, entity: Entity) -> Entity:
+        doc = self._normalize_for_mongo(
+            entity.model_dump(exclude_none=True, by_alias=False)
+        )
 
-        print(data, "data")
-
-        if "_id" in data and data["_id"]:
-            self.collection.replace_one({"_id": data["_id"]}, data, upsert=True)
+        if "_id" in doc:
+            oid = doc["_id"]
+            self.collection.replace_one({"_id": oid}, doc, upsert=True)
+            entity.id = oid
         else:
-            result = self.collection.insert_one(data)
+            result = self.collection.insert_one(doc)
             entity.id = result.inserted_id
+
         return entity
+
+    def save_all(self, entities: List[Entity]):
+        docs = [
+            self._normalize_for_mongo(e.model_dump(exclude_none=True, by_alias=False))
+            for e in entities
+        ]
+        try:
+            self.collection.insert_many(docs, ordered=False)
+        except DuplicateKeyError as e:
+            raise ValueError(f"Duplicate key error: {e}")
 
     def find_one(self, id: PyObjectId) -> Entity:
         """Find a single entity by ID."""
@@ -82,7 +112,7 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
 
     def delete_one(self, id: PyObjectId):
         """Delete a single entity by ID."""
-        result = self.collection.delete_one({"_id": ObjectId(id)})
+        result = self.collection.delete_one({"_id": id})
         if result.deleted_count == 0:
             raise ValueError(f"Entity with ID {id} not found")
 
@@ -130,18 +160,8 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         )
         return result.deleted_count
 
-    def save_all(self, entities: List[Entity]):
-        """Insert or update multiple entities."""
-
-        docs = [e.model_dump(by_alias=True, exclude_none=True) for e in entities]
-        try:
-            self.collection.insert_many(docs, ordered=False)
-        except DuplicateKeyError as e:
-            raise ValueError(f"Duplicate key error: {e}")
-
     def find_one_by_dict(self, query: dict) -> Optional[Entity]:
         try:
-            print(query, "query")
             document = self.collection.find_one(query)
             return self.model.model_validate(document) if document else None
         except Exception as e:

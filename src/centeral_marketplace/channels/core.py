@@ -1,14 +1,17 @@
-# channels/schemas.py
-
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from bson import ObjectId
+from pydantic import AliasChoices, BaseModel, Field
 
 from core import PyObjectId
 
 
 class Channel(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PyObjectId = Field(
+        default_factory=ObjectId,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
     title: Optional[str] = Field(default="")
     username: Optional[str] = Field(default="")
     description: Optional[str] = Field(default="")

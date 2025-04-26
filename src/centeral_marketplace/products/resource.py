@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi_injector import Injected
 
 from core import PyObjectId
-from middleware import get_current_user
+from middleware import get_current_user, get_current_user_optional
 
 
 product_router = APIRouter(
@@ -22,6 +22,7 @@ product_router = APIRouter(
 
 @product_router.get("/", response_model=PaginatedResponse[Product])
 async def get_products(
+    current_user: Annotated[User, Depends(get_current_user_optional)],
     page: int = 1,
     page_size: int = 20,
     sort_by: str = None,
@@ -36,10 +37,13 @@ async def get_products(
             {"name": {"$regex": query, "$options": "i"}},
             {"description": {"$regex": query, "$options": "i"}},
         ]
-    if channel_id is not None:
+    if channel_id:
         criteria["channel_id"] = channel_id
 
+    user_id = current_user.id if current_user else None
+
     return product_service.find_all(
+        user_id=user_id,
         pagination=Pagination(page=page, size=page_size),
         sort_by=sort_by,
         sort_desc=sort_desc,
@@ -49,10 +53,12 @@ async def get_products(
 
 @product_router.get("/{product_id}", response_model=Product)
 async def get_product(
+    current_user: Annotated[User, Depends(get_current_user_optional)],
     product_id: PyObjectId,
     product_service: ProductService = Injected(ProductService),
 ):
-    return product_service.find_one(product_id)
+    user_id = current_user.id if current_user else None
+    return product_service.find_one(product_id, user_id=user_id)
 
 
 @product_router.get("/{product_id}/comments", response_model=PaginatedResponse[Comment])

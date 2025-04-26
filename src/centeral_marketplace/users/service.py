@@ -92,7 +92,7 @@ class UserService:
             )
         user.last_login = datetime.utcnow()
         self.user_repository.save(user)
-        return create_access_token({"sub": user.id})
+        return create_access_token({"sub": str(user.id)})
 
     def validate_token(self, token: str) -> User:
         try:

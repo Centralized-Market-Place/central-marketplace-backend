@@ -1,11 +1,16 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from bson import ObjectId
+from pydantic import AliasChoices, BaseModel, Field
 from core import PyObjectId
 
 
 class Comment(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PyObjectId = Field(
+        default_factory=ObjectId,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
     user_id: PyObjectId
     product_id: PyObjectId
     message: str

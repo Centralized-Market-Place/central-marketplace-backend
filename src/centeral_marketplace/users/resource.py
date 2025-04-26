@@ -81,7 +81,6 @@ async def telegram_auth(
     telegram_data: TelegramLogin,
     user_service: UserService = Injected(UserService),
 ):
-    print(telegram_data)
     user = user_service.login_telegram_user(telegram_data)
     access_token = create_access_token({"sub": user.id})
     return AuthResponse(token=access_token, user=user)

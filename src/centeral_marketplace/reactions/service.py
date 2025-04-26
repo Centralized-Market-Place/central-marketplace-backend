@@ -44,6 +44,7 @@ class ReactionService:
             target_type=target_type,
             reaction_type=reaction_type,
         )
+
         self.reaction_repo.save(reaction)
         self._adjust_target(target_id, target_type, reaction_type, decrement=False)
 

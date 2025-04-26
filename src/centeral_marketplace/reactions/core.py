@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, Field
+from bson import ObjectId
+from pydantic import AliasChoices, BaseModel, Field
 from core import PyObjectId
 
 
@@ -17,7 +18,11 @@ class ReactionType(str, Enum):
 
 
 class Reaction(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: PyObjectId = Field(
+        default_factory=ObjectId,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
     user_id: PyObjectId
     target_id: PyObjectId
     target_type: ReactionTarget

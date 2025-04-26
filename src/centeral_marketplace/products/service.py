@@ -21,6 +21,7 @@ class ProductService:
 
     def find_all(
         self,
+        user_id: PyObjectId | None = None,
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
@@ -28,12 +29,22 @@ class ProductService:
     ) -> PaginatedResponse[Product]:
         if criteria is None:
             criteria = {}
-        return self.product_repository.find_all_by_dict(
-            pagination=pagination,
-            sort_by=sort_by,
-            sort_desc=sort_desc,
-            criteria=criteria,
-        )
+
+        if user_id:
+            return self.product_repository.find_all_with_user_reaction(
+                user_id=user_id,
+                pagination=pagination,
+                sort_by=sort_by,
+                sort_desc=sort_desc,
+                criteria=criteria,
+            )
+        else:
+            return self.product_repository.find_all_by_dict(
+                pagination=pagination,
+                sort_by=sort_by,
+                sort_desc=sort_desc,
+                criteria=criteria,
+            )
 
     def find_all_comments(
         self,
@@ -84,8 +95,15 @@ class ProductService:
         self.product_repository.save(product)
         return comment
 
-    def find_one(self, product_id: PyObjectId) -> Product:
-        product = self.product_repository.find_one(product_id)
+    def find_one(
+        self, product_id: PyObjectId, user_id: PyObjectId | None = None
+    ) -> Product:
+        if user_id:
+            product = self.product_repository.find_one_with_user_reaction(
+                product_id=product_id, user_id=user_id
+            )
+        else:
+            product = self.product_repository.find_one(product_id)
         if not product:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
