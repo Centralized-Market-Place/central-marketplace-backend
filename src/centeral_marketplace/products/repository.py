@@ -31,7 +31,7 @@ class ProductRepository(RepositoryInterface[Product]):
     def find_all_with_user_reaction(
         self,
         user_id: PyObjectId,
-        pagination: Pagination = None,
+        pagination: Pagination | None = None,
         sort_by: str = None,
         sort_desc: bool = True,
         criteria: dict = None,

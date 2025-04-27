@@ -74,8 +74,10 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
 
         total = self.collection.count_documents(query)
         items = [self.model.model_validate(document) for document in cursor]
+        page = pagination.page if pagination else 1
+        page_size = pagination.size if pagination else 0
         return PaginatedResponse(
-            page=pagination.page, page_size=pagination.size, total=total, items=items
+            page=page, page_size=page_size, total=total, items=items
         )
 
     def save(self, entity: Entity) -> Entity:
@@ -138,8 +140,10 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
 
         total = self.collection.count_documents(criteria)
         items = [self.model.model_validate(document) for document in cursor]
+        page = pagination.page if pagination else 1
+        page_size = pagination.size if pagination else 0
         return PaginatedResponse(
-            page=pagination.page, page_size=pagination.size, total=total, items=items
+            page=page, page_size=page_size, total=total, items=items
         )
 
     def count_all_by_dict(self, criteria: Dict) -> int:

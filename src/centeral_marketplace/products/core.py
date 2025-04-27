@@ -20,7 +20,7 @@ class Product(BaseModel):
         serialization_alias="id",
     )
     channel_id: int
-    message_id: PositiveInt
+    message_id: PositiveInt | None = None
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[PositiveFloat] = None
