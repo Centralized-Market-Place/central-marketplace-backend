@@ -54,7 +54,7 @@ class ProductService:
         user_id: PyObjectId | None = None,
     ):
         self.find_one(product_id)
-        criteria = {"product_id": product_id}
+        criteria = {"product_id": product_id, "parent_id": None}
         return self.comment_service.find_all(
             user_id=user_id,
             pagination=pagination,

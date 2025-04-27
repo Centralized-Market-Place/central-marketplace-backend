@@ -30,7 +30,7 @@ async def get_comment(
 
 @comment_router.get("/{comment_id}/replies")
 async def get_comment_replies(
-    comment_id: str,
+    comment_id: PyObjectId,
     current_user: Annotated[Optional[User], Depends(get_current_user_optional)],
     comment_service: CommentService = Injected(CommentService),
     page: int = 1,
