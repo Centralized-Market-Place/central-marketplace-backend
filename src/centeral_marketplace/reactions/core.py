@@ -1,8 +1,8 @@
-from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, Field
+from core import PyObjectId
 
 
 class ReactionTarget(str, Enum):
@@ -17,17 +17,25 @@ class ReactionType(str, Enum):
     DISLIKE = "dislike"
 
 
-@dataclass
-class Reaction:
-    user_id: str
-    target_id: str
+class Reaction(BaseModel):
+    id: PyObjectId = Field(
+        default_factory=ObjectId,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
+    user_id: PyObjectId
+    target_id: PyObjectId
     target_type: ReactionTarget
     reaction_type: ReactionType
-    id: str = field(default_factory=lambda: str(ObjectId()))
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {PyObjectId: str}
 
 
 class CreateReaction(BaseModel):
-    reaction_type: ReactionType
-    target_id: str
+    target_id: PyObjectId
     target_type: ReactionTarget
+    reaction_type: ReactionType

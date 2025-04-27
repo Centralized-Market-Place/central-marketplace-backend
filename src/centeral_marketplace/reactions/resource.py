@@ -7,6 +7,7 @@ from centeral_marketplace.reactions.core import (
 )
 from centeral_marketplace.reactions.service import ReactionService
 from centeral_marketplace.users.core import User
+from core import PyObjectId
 from middleware import get_current_user
 
 reaction_router = APIRouter(
@@ -28,16 +29,16 @@ async def react_to_target(
         reaction_type=react_data.reaction_type,
     )
 
+
 @reaction_router.get("/{target_id}", response_model=Optional[Reaction])
 async def get_reaction(
-    target_id: str,
+    target_id: PyObjectId,
     current_user: Annotated[User, Depends(get_current_user)],
     reaction_service: ReactionService = Injected(ReactionService),
 ):
-    reaction =  reaction_service.get_reaction(
+    reaction = reaction_service.get_reaction(
         user_id=current_user.id,
         target_id=target_id,
     )
     if reaction is not None:
         return reaction
-

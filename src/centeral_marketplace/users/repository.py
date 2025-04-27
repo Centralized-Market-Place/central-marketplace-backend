@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Iterator
-from centeral_marketplace.infrastructure.json import Pagination
+from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
 from injector import inject, singleton
 from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDelegate
 from centeral_marketplace.infrastructure.repository import RepositoryInterface
 from centeral_marketplace.users.core import User
 from config import Config
+from core import PyObjectId
 
 
 @inject
@@ -16,11 +16,8 @@ class UserRepository(RepositoryInterface[User]):
 
     def __post_init__(self):
         self.delegate = MongoDBJsonRepositoryDelegate(
-            collection_name="users", cls=User, config=self.config
+            collection_name="users", model=User, config=self.config
         )
-
-    def close(self):
-        self.delegate.close()
 
     def save(self, data: User):
         return self.delegate.save(data)
@@ -30,12 +27,12 @@ class UserRepository(RepositoryInterface[User]):
 
     def find_all(
         self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None
-    ) -> Iterator[User]:
+    ) -> PaginatedResponse[User]:
         return self.delegate.find_all(
             pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
 
-    def find_one(self, id: str):
+    def find_one(self, id: PyObjectId):
         return self.delegate.find_one(id)
 
     def find_all_by(
@@ -44,7 +41,7 @@ class UserRepository(RepositoryInterface[User]):
         sort_desc: bool = True,
         pagination: Pagination = None,
         **kwargs,
-    ) -> Iterator[User]:
+    ) -> PaginatedResponse[User]:
         return self.delegate.find_all_by_dict(
             criteria=kwargs, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
@@ -52,7 +49,7 @@ class UserRepository(RepositoryInterface[User]):
     def find_one_by_dict(self, criteria: dict) -> User:
         return self.delegate.find_one_by_dict(criteria)
 
-    def delete_one(self, id: str):
+    def delete_one(self, id: PyObjectId):
         return self.delegate.delete_one(id)
 
     def find_all_by_dict(
@@ -61,7 +58,7 @@ class UserRepository(RepositoryInterface[User]):
         pagination=None,
         sort_by: str | None = None,
         sort_desc: bool = True,
-    ) -> Iterator[User]:
+    ) -> PaginatedResponse[User]:
         return self.delegate.find_all_by_dict(
             criteria=criteria,
             pagination=pagination,

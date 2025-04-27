@@ -1,3 +1,7 @@
+import logging
+from centeral_marketplace.users.core import UserCreate
+from centeral_marketplace.users.service import UserService
+from config import Config
 from fastapi import FastAPI
 from fastapi_injector import attach_injector
 from injector import Injector
@@ -8,6 +12,10 @@ from centeral_marketplace.products.resource import product_router
 from centeral_marketplace.channels.resource import channel_router
 from centeral_marketplace.comments.resource import comment_router
 from centeral_marketplace.reactions.resource import reaction_router
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 
 def create_app(injector: Injector = None) -> FastAPI:
@@ -40,5 +48,22 @@ def create_app(injector: Injector = None) -> FastAPI:
 
     attach_injector(app, injector)
     attach_injector(sub_api, injector)
+
+    user_service = injector.get(UserService)
+    config = injector.get(Config)
+    try:
+        user_service.create_admin(
+            UserCreate(
+                name="Admin",
+                email=config.admin_email,
+                password=config.admin_password,
+            )
+        )
+
+    except Exception as e:
+        print("Error creating admin user:", e)
+        pass
+
+    logger.info(f"Admin user created with email: {config.admin_email}")
 
     return app

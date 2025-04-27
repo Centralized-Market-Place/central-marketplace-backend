@@ -1,71 +1,78 @@
-from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-from pydantic import EmailStr, BaseModel, Field
 from bson import ObjectId
+from pydantic import AliasChoices, BaseModel, EmailStr, Field
+from core import PyObjectId
 
 
-@dataclass
-class Role(Enum):
+class Role(str, Enum):
     ADMIN = "ADMIN"
     USER = "USER"
     SELLER = "SELLER"
 
 
-@dataclass
-class UserBase:
-    name: str
-    email: EmailStr
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=6)
-
-
-@dataclass
-class UserCreate(UserBase):
-    password: str = Field(min_length=6)
-
-
-@dataclass
-class TelegramData:
+class TelegramData(BaseModel):
     telegram_id: int
     first_name: str
     last_name: Optional[str] = None
     username: Optional[str] = None
     photo_url: Optional[str] = None
-    auth_date: datetime = field(default_factory=datetime.utcnow)
+    auth_date: datetime = Field(default_factory=datetime.utcnow)
 
 
-@dataclass
+class UserBase(BaseModel):
+    name: str
+    email: Optional[EmailStr] = None
+
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=6)
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6)
+
+
 class User(UserBase):
-    id: str = field(default_factory=lambda: str(ObjectId()))
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
-    password_hash: str = field(default="")
+    id: PyObjectId = Field(
+        default_factory=ObjectId,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
+    password_hash: str
     image: Optional[str] = None
-    role: Role = field(default_factory=lambda: Role.USER)
-    last_login: Optional[datetime] = None
+    role: Role = Role.USER
     is_verified: bool = False
+    last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {PyObjectId: str}
 
 
-@dataclass
 class UserPublic(UserBase):
-    id: str
-    created_at: datetime
-    updated_at: datetime
+    id: PyObjectId = Field(alias="_id")
     role: Role
     is_verified: bool
     image: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {PyObjectId: str}
 
 
-@dataclass
-class AuthResponse:
+class AuthResponse(BaseModel):
     token: str
     user: User
 

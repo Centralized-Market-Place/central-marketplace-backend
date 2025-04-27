@@ -1,4 +1,8 @@
+import hashlib
+import hmac
+import time
 from centeral_marketplace.users.auth import create_access_token
+from config import Config
 from fastapi.testclient import TestClient
 from hamcrest import assert_that, equal_to
 from tests.core.given import given, when
@@ -167,7 +171,7 @@ def test_admin_should_be_able_to_get_users():
         ]
     ) as context:
         client: TestClient = context.client
-        token = create_access_token({"sub": context.user.id})
+        token = create_access_token({"sub": str(context.user.id)})
 
         with when("i get users"):
             response = client.get(
@@ -177,7 +181,7 @@ def test_admin_should_be_able_to_get_users():
 
             assert_that(response.status_code, equal_to(200))
             data = response.json()
-            assert_that(data["data"]["total"], equal_to(1))
+            assert_that(data["total"], equal_to(1))
 
 
 def test_non_admin_user_should_not_be_able_to_get_users():
@@ -194,7 +198,7 @@ def test_non_admin_user_should_not_be_able_to_get_users():
         ]
     ) as context:
         client: TestClient = context.client
-        token = create_access_token({"sub": context.user.id})
+        token = create_access_token({"sub": str(context.user.id)})
 
         with when("i get users"):
             response = client.get(
@@ -217,14 +221,33 @@ def test_register_with_telegram():
             database_is_clean(),
         ]
     ) as context:
+        auth_date = time.time() - 1000
         data = TelegramLogin(
             username="Sah7b",
             photo_url="https://t.me/i/userpic/320/6H0rE6lelkP-42qgdKIS3RVuCPeHsIkUcCK3VH67Uz0.jpg",
             id=713289859,
             first_name="Sahib.S",
-            auth_date=1741536304,
-            hash="71a0a171a68cc9375dbb856ad35a25128a2bc4d3ad607b175eae3dc7c4ab080a",
+            auth_date=int(auth_date),
+            hash="",
         )
+
+        config: Config = context.injector.get(Config)
+        received_data = data.model_dump()
+        data_check_arr = []
+        received_data.pop("hash")
+
+        for key, value in sorted(received_data.items()):
+            if value is not None:
+                data_check_arr.append(f"{key}={value}")
+
+        data_check_string = "\n".join(data_check_arr)
+
+        secret_key = hashlib.sha256(config.telegram_bot_token.encode()).digest()
+
+        computed_hash = hmac.new(
+            secret_key, data_check_string.encode(), hashlib.sha256
+        ).hexdigest()
+        data.hash = computed_hash
 
         client: TestClient = context.client
 
@@ -235,3 +258,5 @@ def test_register_with_telegram():
             data = response.json()
             assert_that("token" in data)
             assert_that(data["user"]["telegram"]["telegram_id"], equal_to(713289859))
+
+        

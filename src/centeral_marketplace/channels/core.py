@@ -1,15 +1,21 @@
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
+from bson import ObjectId
+from pydantic import AliasChoices, BaseModel, Field
+
+from core import PyObjectId
 
 
-@dataclass
-class Channel:
-    id: int
-    title: Optional[str] = ""
-    username: Optional[str] = ""
-    description: Optional[str] = ""
-    thumbnail_url: Optional[str] = ""
+class Channel(BaseModel):
+    id: PyObjectId = Field(
+        default_factory=ObjectId,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
+    title: Optional[str] = Field(default="")
+    username: Optional[str] = Field(default="")
+    description: Optional[str] = Field(default="")
+    thumbnail_url: Optional[str] = Field(default="")
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     total_products: int = 0
@@ -22,3 +28,6 @@ class Channel:
     has_link: bool = False
     date_created: Optional[datetime] = None
     broadcast: bool = False
+
+    class Config:
+        from_attributes = True

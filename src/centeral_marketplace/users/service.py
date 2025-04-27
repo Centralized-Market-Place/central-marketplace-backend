@@ -4,6 +4,9 @@ import hashlib
 import hmac
 import logging
 import time
+
+from pydantic import EmailStr
+
 from centeral_marketplace.infrastructure.json import Pagination
 from config import Config
 from fastapi import HTTPException, status
@@ -44,7 +47,7 @@ class UserService:
     def count_all_by_dict(self, criteria: dict) -> int:
         return self.user_repository.count_all_by_dict(criteria)
 
-    def find_user_by_email(self, email: str) -> User:
+    def find_user_by_email(self, email: EmailStr) -> User:
         return self.user_repository.find_one_by_dict({"email": email})
 
     def register_user(self, user: UserCreate) -> User:
@@ -62,7 +65,25 @@ class UserService:
         )
         return self.user_repository.save(created_user)
 
-    def authenticate_user(self, email: str, password: str) -> str:
+    def create_admin(self, user: UserCreate) -> User:
+        existing_user = self.user_repository.find_one_by_dict({"email": user.email})
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="User with the current email already exist",
+            )
+        hashed_password = hash_password(user.password)
+        created_user = User(
+            name=user.name,
+            email=user.email,
+            password_hash=hashed_password,
+            role=Role.ADMIN,
+            is_verified=True,
+        )
+        logger.info(f"Creating admin user: {created_user}")
+        return self.user_repository.save(created_user)
+
+    def authenticate_user(self, email: EmailStr, password: str) -> str:
         user = self.user_repository.find_one_by_dict({"email": email})
         if not user or not verify_password(password, user.password_hash):
             raise HTTPException(
@@ -71,7 +92,7 @@ class UserService:
             )
         user.last_login = datetime.utcnow()
         self.user_repository.save(user)
-        return create_access_token({"sub": user.id})
+        return create_access_token({"sub": str(user.id)})
 
     def validate_token(self, token: str) -> User:
         try:
@@ -120,7 +141,6 @@ class UserService:
                     name=data.first_name + " " + data.last_name
                     if data.last_name
                     else data.first_name,
-                    email="",
                     password_hash="",
                     role=Role.USER,
                     telegram=TelegramData(

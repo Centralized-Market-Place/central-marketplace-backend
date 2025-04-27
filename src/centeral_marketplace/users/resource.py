@@ -6,7 +6,6 @@ from fastapi_injector import Injected
 from centeral_marketplace.users.service import UserService
 from centeral_marketplace.infrastructure.json import (
     Pagination,
-    RestConverter,
     PaginatedResponse,
 )
 from centeral_marketplace.users.core import (
@@ -26,7 +25,7 @@ users_router = APIRouter(
 )
 
 
-@users_router.get("/")
+@users_router.get("/", response_model=PaginatedResponse[User])
 async def get_users(
     current_user: Annotated[User, Depends(require_role("ADMIN"))],
     page: int = 1,
@@ -34,64 +33,45 @@ async def get_users(
     sort_by: str = None,
     sort_desc: bool = True,
     user_service: UserService = Injected(UserService),
-    converter: RestConverter = Injected(RestConverter),
 ):
     pagination = Pagination(page=page, size=page_size)
 
-    users = list(
-        user_service.find_all(
+    users = user_service.find_all(
             pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
-    )
-    total = user_service.count_all_by_dict({})
 
-    return {
-        "data": PaginatedResponse(
-            page=page,
-            page_size=page_size,
-            total=total,
-            items=converter.unstructure(users),
-        )
-    }
-
+    return users
 
 @users_router.post("/register", response_model=UserPublic)
 async def register_user(
     user: UserCreate,
     user_service: UserService = Injected(UserService),
-    converter: RestConverter = Injected(RestConverter),
 ):
-    new_user = user_service.register_user(user)
-    return converter.unstructure(new_user)
+    return user_service.register_user(user)
 
 
 @users_router.post("/login", response_model=AuthResponse)
 async def login_user(
     user: UserLogin,
     user_service: UserService = Injected(UserService),
-    converter: RestConverter = Injected(RestConverter),
 ):
     access_token = user_service.authenticate_user(user.email, user.password)
     user = user_service.find_user_by_email(user.email)
-    return AuthResponse(token=access_token, user=converter.unstructure(user))
+    return AuthResponse(token=access_token, user=user)
 
 
 @users_router.get("/me", response_model=UserPublic)
 async def get_me(
     current_user: Annotated[User, Depends(get_current_user)],
-    user_service: UserService = Injected(UserService),
-    converter: RestConverter = Injected(RestConverter),
 ):
-    return converter.unstructure(current_user)
+    return current_user
 
 
 @users_router.post("/telegram", response_model=AuthResponse)
 async def telegram_auth(
     telegram_data: TelegramLogin,
     user_service: UserService = Injected(UserService),
-    converter: RestConverter = Injected(RestConverter),
 ):
-    print(telegram_data)
     user = user_service.login_telegram_user(telegram_data)
-    access_token = create_access_token({"sub": user.id})
-    return AuthResponse(token=access_token, user=converter.unstructure(user))
+    access_token = create_access_token({"sub": str(user.id)})
+    return AuthResponse(token=access_token, user=user)
