@@ -7,11 +7,7 @@ from core import PyObjectId
 
 
 class Channel(BaseModel):
-    id: PyObjectId = Field(
-        default_factory=ObjectId,
-        validation_alias=AliasChoices("_id", "id"),
-        serialization_alias="id",
-    )
+    id: int
     title: Optional[str] = Field(default="")
     username: Optional[str] = Field(default="")
     description: Optional[str] = Field(default="")

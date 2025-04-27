@@ -22,38 +22,31 @@ async def get_channels(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
+    channel_name: str = None,
     channel_service: ChannelService = Injected(ChannelService),
 ):
     criteria = {}
 
     if query:
         criteria["$or"] = [
-            {"name": {"$regex": query, "$options": "i"}},
-            {"description": {"$regex": query, "$options": "i"}},
+            {"title": {"$regex": query, "$options": "i"}},
         ]
 
     total = channel_service.count_all_by_dict(criteria=criteria)
-    channels = list(
-        channel_service.find_all(
-            pagination=Pagination(page=page, size=page_size),
-            sort_by=sort_by,
-            sort_desc=sort_desc,
-            criteria=criteria,
-        )
+    paginated = channel_service.find_all(
+        pagination=Pagination(page=page, size=page_size),
+        sort_by=sort_by,
+        sort_desc=sort_desc,
+        criteria=criteria,
     )
-
-    return PaginatedResponse(
-        page=page,
-        page_size=page_size,
-        total=total,
-        items=channels,
-    )
+    
+    return paginated
 
 
 @channel_router.get("/{channel_id}", response_model=Channel)
 async def get_channel(
-    channel_id: PyObjectId,
+    channel_id: int,
     channel_service: ChannelService = Injected(ChannelService),
 ):
-    channel = channel_service.find_one(channel_id)
+    channel = channel_service.find_channel_by_tg_id(channel_id)
     return channel
