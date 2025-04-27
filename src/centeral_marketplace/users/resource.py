@@ -36,20 +36,11 @@ async def get_users(
 ):
     pagination = Pagination(page=page, size=page_size)
 
-    users = list(
-        user_service.find_all(
+    users = user_service.find_all(
             pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
-    )
-    total = user_service.count_all_by_dict({})
 
-    return PaginatedResponse(
-        page=page,
-        page_size=page_size,
-        total=total,
-        items=users,
-    )
-
+    return users
 
 @users_router.post("/register", response_model=UserPublic)
 async def register_user(
@@ -82,5 +73,5 @@ async def telegram_auth(
     user_service: UserService = Injected(UserService),
 ):
     user = user_service.login_telegram_user(telegram_data)
-    access_token = create_access_token({"sub": user.id})
+    access_token = create_access_token({"sub": str(user.id)})
     return AuthResponse(token=access_token, user=user)
