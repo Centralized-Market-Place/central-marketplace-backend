@@ -37,7 +37,9 @@ class ReactionRepository:
     def delete(self, id: PyObjectId):
         return self.delegate.delete_one(id)
 
-    def delete_by_user_and_target(self, user_id: PyObjectId, target_id: PyObjectId) -> int:
+    def delete_by_user_and_target(
+        self, user_id: PyObjectId, target_id: PyObjectId
+    ) -> int:
         return self.delegate.delete_by_dict(
             {"user_id": user_id, "target_id": target_id}
         )
