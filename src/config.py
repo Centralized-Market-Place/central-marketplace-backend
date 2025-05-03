@@ -1,3 +1,4 @@
+from functools import lru_cache
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
@@ -12,8 +13,15 @@ class Config(BaseSettings):
     access_token_expires_in: int = 3600 * 24
     jwt_algorithm: str
     telegram_bot_token: str
+    telegram_bot_username: str
     admin_email: str
     admin_password: str
+    test_telegram_bot_token: str
+    test_telegram_bot_username: str
 
 
-settings = Config()
+@lru_cache
+def get_config():
+    return Config()
+
+settings = get_config()

@@ -7,7 +7,7 @@ import time
 
 from pydantic import EmailStr
 
-from centeral_marketplace.infrastructure.json import Pagination
+from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
 from config import Config
 from fastapi import HTTPException, status
 from injector import inject, singleton
@@ -39,7 +39,7 @@ class UserService:
 
     def find_all(
         self, pagination: Pagination = None, sort_by: str = None, sort_desc: bool = True
-    ) -> list[User]:
+    ) -> PaginatedResponse[User]:
         return self.user_repository.find_all(
             pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
@@ -135,7 +135,7 @@ class UserService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Telegram Auth Expired",
                 )
-            user = self.user_repository.find_one_by_dict({"telegram.id": data.id})
+            user = self.user_repository.find_one_by_dict({"telegram.telegram_id": data.id})
             if not user:
                 user = User(
                     name=data.first_name + " " + data.last_name

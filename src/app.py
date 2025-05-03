@@ -12,6 +12,7 @@ from centeral_marketplace.products.resource import product_router
 from centeral_marketplace.channels.resource import channel_router
 from centeral_marketplace.comments.resource import comment_router
 from centeral_marketplace.reactions.resource import reaction_router
+from centeral_marketplace.sellers.resource import sellers_router
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -38,6 +39,7 @@ def create_app(injector: Injector = None) -> FastAPI:
     sub_api.include_router(channel_router)
     sub_api.include_router(comment_router)
     sub_api.include_router(reaction_router)
+    sub_api.include_router(sellers_router)
 
     if injector is None:
         injector = create_injector()

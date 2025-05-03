@@ -4,6 +4,7 @@ from typing import Optional
 from bson import ObjectId
 from pydantic import AliasChoices, BaseModel, EmailStr, Field
 from core import PyObjectId
+from centeral_marketplace.sellers.core import SellerInfo
 
 
 class Role(str, Enum):
@@ -47,6 +48,7 @@ class User(UserBase):
     is_verified: bool = False
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
+    seller_info: Optional[SellerInfo] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -63,6 +65,7 @@ class UserPublic(UserBase):
     image: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
+    seller_info: Optional[SellerInfo] = None
     created_at: datetime
     updated_at: datetime
 

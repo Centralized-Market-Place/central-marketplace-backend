@@ -9,12 +9,12 @@ from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
 )
 from centeral_marketplace.users.core import (
-    TelegramLogin,
     User,
     UserCreate,
     UserLogin,
     AuthResponse,
     UserPublic,
+    TelegramLogin,
 )
 from middleware import get_current_user, require_role
 

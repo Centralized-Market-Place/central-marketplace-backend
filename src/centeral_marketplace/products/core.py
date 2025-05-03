@@ -19,7 +19,7 @@ class Product(BaseModel):
         validation_alias=AliasChoices("_id", "id"),
         serialization_alias="id",
     )
-    channel_id: int
+    channel_id: PyObjectId
     message_id: PositiveInt | None = None
     name: Optional[str] = None
     description: Optional[str] = None
