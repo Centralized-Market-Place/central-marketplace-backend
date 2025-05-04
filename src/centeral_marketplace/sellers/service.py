@@ -164,7 +164,6 @@ class SellerService:
         
         updated_application = self.seller_repository.save(application)
         
-        # If approved, update user's role to SELLER and add seller_info
         if review.status == SellerApplicationStatus.APPROVED:
             user = self.user_repository.find_one(application.user_id)
             if user:

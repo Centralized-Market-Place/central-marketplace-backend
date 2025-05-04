@@ -17,7 +17,7 @@ class SellerInfo(BaseModel):
     tin_number: str
     channel_id: str
     channel_name: str
-    government_id: str  # URL to uploaded government ID
+    government_id: str
     has_bot_admin_access: bool = False
     verified_channel_ownership: bool = False
 

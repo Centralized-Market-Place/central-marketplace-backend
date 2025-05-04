@@ -72,7 +72,7 @@ async def get_my_seller_applications(
     """
     Get all seller applications for the current user
     """
-    return seller_service.get_user_seller_applications(str(current_user.id))
+    return seller_service.get_user_seller_applications(current_user.id)
 
 
 @sellers_router.get("/applications/{application_id}", response_model=SellerApplication)
