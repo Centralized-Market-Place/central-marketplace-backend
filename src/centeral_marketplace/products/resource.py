@@ -50,6 +50,25 @@ async def get_products(
         criteria=criteria,
     )
 
+@product_router.get("/bookmarked", response_model=PaginatedResponse[Product])
+async def get_product_bookmarks(
+    current_user: Annotated[User, Depends(get_current_user)],
+    product_service: ProductService = Injected(ProductService),
+    page: int = 1,
+    page_size: int = 20,
+    sort_desc: bool = True,
+    sort_by: str = "created_at",
+    query: str = None,
+):
+    pagination = Pagination(page=page, size=page_size)
+    return product_service.find_bookmarked_products(
+        user_id=current_user.id,
+        pagination=pagination,
+        sort_desc=sort_desc,
+        sort_by=sort_by,
+        query=query,
+    )
+
 
 @product_router.get("/{product_id}", response_model=Product)
 async def get_product(
@@ -59,6 +78,7 @@ async def get_product(
 ):
     user_id = current_user.id if current_user else None
     return product_service.find_one(product_id, user_id=user_id)
+
 
 
 @product_router.get("/{product_id}/comments", response_model=PaginatedResponse[Comment])
@@ -106,7 +126,6 @@ async def update_product_comment(
         comment_id=comment_id,
         comment_data=comment_data,
     )
-
 
 @product_router.delete(
     "/{product_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT

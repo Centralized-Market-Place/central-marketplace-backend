@@ -37,10 +37,11 @@ async def get_users(
     pagination = Pagination(page=page, size=page_size)
 
     users = user_service.find_all(
-            pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
-        )
+        pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+    )
 
     return users
+
 
 @users_router.post("/register", response_model=UserPublic)
 async def register_user(

@@ -160,6 +160,72 @@ class ProductRepository(RepositoryInterface[Product]):
 
     def find_one(self, id: PyObjectId):
         return self.delegate.find_one(id)
+    
+    def find_bookmarked_with_query(
+        self,
+        user_id: PyObjectId,
+        query: str | None = None,
+        pagination: Pagination | None = None,
+        sort_by: str | None = None,
+        sort_desc: bool = True,
+    ) -> PaginatedResponse[Product]:
+        
+        criteria: dict = {}
+        if query:
+            criteria["$or"] = [
+                {"name": {"$regex": query, "$options": "i"}},
+                {"description": {"$regex": query, "$options": "i"}},
+            ]
+
+        page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+        skip = (page - 1) * size
+        order = DESCENDING if sort_desc else ASCENDING
+
+        base_pipeline: list[dict] = [
+            {"$match": criteria},
+            {
+                "$lookup": {
+                    "from": "bookmarks",
+                    "let": {"pid": "$_id"},
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "$expr": {
+                                    "$and": [
+                                        {"$eq": ["$product_id", "$$pid"]},
+                                        {"$eq": ["$user_id", ObjectId(str(user_id))]},
+                                    ]
+                                }
+                            }
+                        },
+                        {"$project": {"_id": 1}}
+                    ],
+                    "as": "userBookmark",
+                }
+            },
+            {"$match": {"userBookmark.0": {"$exists": True}}},
+            {"$project": {"userBookmark": 0}},
+        ]
+
+        count_pipeline = base_pipeline + [{"$count": "count"}]
+        count_res = list(self.delegate.collection.aggregate(count_pipeline))
+        total = count_res[0]["count"] if count_res else 0
+
+        page_pipeline = base_pipeline.copy()
+        if sort_by:
+            page_pipeline.append({"$sort": {sort_by: order}})
+        if pagination:
+            page_pipeline += [{"$skip": skip}, {"$limit": size}]
+
+        cursor = self.delegate.collection.aggregate(page_pipeline)
+        items = [Product.model_validate(doc) for doc in cursor]
+
+        return PaginatedResponse(
+            page=page,
+            page_size=size,
+            total=total,
+            items=items,
+        )
 
     def find_all_by(
         self,
