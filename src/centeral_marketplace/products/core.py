@@ -10,6 +10,7 @@ from pydantic import (
     PositiveInt,
     PositiveFloat,
 )
+from typing import Union
 from core import PyObjectId
 
 
@@ -19,7 +20,11 @@ class Product(BaseModel):
         validation_alias=AliasChoices("_id", "id"),
         serialization_alias="id",
     )
-    channel_id: int
+    channel_id: PyObjectId = Field(
+        default_factory=ObjectId,
+        validation_alias="channel_id",
+        serialization_alias="channel_id",
+    )
     message_id: PositiveInt | None = None
     name: Optional[str] = None
     description: Optional[str] = None
@@ -35,7 +40,7 @@ class Product(BaseModel):
     upvotes: NonNegativeInt = 0
     downvotes: NonNegativeInt = 0
     shares: NonNegativeInt = 0
-    comments: NonNegativeInt = 0
+    comments: int = 0
     user_reaction: Optional[ReactionType] = None
 
     class Config:

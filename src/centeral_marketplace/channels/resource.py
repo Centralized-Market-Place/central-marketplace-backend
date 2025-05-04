@@ -6,7 +6,8 @@ from centeral_marketplace.infrastructure.json import (
 from centeral_marketplace.channels.service import ChannelService
 from fastapi import APIRouter
 from fastapi_injector import Injected
-
+from typing import Union
+from bson import ObjectId
 from core import PyObjectId
 
 channel_router = APIRouter(
@@ -45,8 +46,8 @@ async def get_channels(
 
 @channel_router.get("/{channel_id}", response_model=Channel)
 async def get_channel(
-    channel_id: int,
+    channel_id: str,
     channel_service: ChannelService = Injected(ChannelService),
 ):
-    channel = channel_service.find_channel_by_tg_id(channel_id)
+    channel = channel_service.find_one(channel_id)
     return channel

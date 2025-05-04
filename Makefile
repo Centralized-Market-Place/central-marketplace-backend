@@ -3,16 +3,11 @@
 
 install:
 	poetry install
-
-migrate:
-	poetry run alembic upgrade head
-
 run:
 	poetry run uvicorn src.app:create_app --host 0.0.0.0 --port 8000
 
 dev:
-	poetry run uvicorn src.app:create_app --reload --host 0.0.0.0 --port 8000
-
+	docker compose up app
 build:
 	docker compose build
 

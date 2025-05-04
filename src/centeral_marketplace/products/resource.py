@@ -28,7 +28,7 @@ async def get_products(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
-    channel_id: int = Query(None, alias="channelId"),
+    channel_id: PyObjectId = Query(None, alias="channelId"),
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
