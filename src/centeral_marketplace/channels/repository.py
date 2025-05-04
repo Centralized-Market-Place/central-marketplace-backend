@@ -33,7 +33,9 @@ class ChannelRepository(RepositoryInterface[Channel]):
 
     def find_one(self, id: PyObjectId):
         return self.delegate.find_one(id)
-
+    
+    def find_channel_by_tg_id(self, id: int):
+        return self.delegate.find_channel_by_tg_id(id)
     def find_all_by(
         self,
         sort_by: str = None,

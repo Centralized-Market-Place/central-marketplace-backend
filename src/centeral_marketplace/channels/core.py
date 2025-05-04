@@ -8,10 +8,10 @@ from core import PyObjectId
 
 class Channel(BaseModel):
     id: PyObjectId = Field(
-        default_factory=ObjectId,
-        validation_alias=AliasChoices("_id", "id"),
-        serialization_alias="id",
-    )
+            default_factory=ObjectId,
+            validation_alias=AliasChoices("_id", "id"),
+            serialization_alias="id",
+        )
     title: Optional[str] = Field(default="")
     username: Optional[str] = Field(default="")
     description: Optional[str] = Field(default="")
@@ -28,6 +28,7 @@ class Channel(BaseModel):
     has_link: bool = False
     date_created: Optional[datetime] = None
     broadcast: bool = False
+    telegram_id: int = 0
 
     class Config:
         from_attributes = True

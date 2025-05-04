@@ -34,3 +34,6 @@ class ChannelService:
 
     def find_one(self, channel_id: PyObjectId) -> Channel:
         return self.channel_repository.find_one(channel_id)
+    
+    def find_channel_by_tg_id(self, channel_id: int) -> Channel:
+        return self.channel_repository.find_channel_by_tg_id(channel_id)
