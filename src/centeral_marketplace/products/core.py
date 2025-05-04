@@ -41,6 +41,7 @@ class Product(BaseModel):
     downvotes: NonNegativeInt = 0
     shares: NonNegativeInt = 0
     comments: int = 0
+    is_bookmarked: Optional[bool] = False
     user_reaction: Optional[ReactionType] = None
 
     class Config:

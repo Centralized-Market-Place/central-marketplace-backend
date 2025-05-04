@@ -24,7 +24,7 @@ def database_repo_is_ready():
                 UserRepository,
                 ProductRepository,
                 CommentRepository,
-                ReactionRepository
+                ReactionRepository,
             ]
 
             def get_repo(repo_name):
