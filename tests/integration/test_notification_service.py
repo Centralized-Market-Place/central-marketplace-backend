@@ -1,6 +1,7 @@
 import pytest
 import redis.asyncio as redis
 import os
+import asyncio
 from src.centeral_marketplace.notifications.service import NotificationService
 from src.centeral_marketplace.notifications.repository import NotificationRepository
 from src.centeral_marketplace.notifications.core import Notification
@@ -104,4 +105,36 @@ async def test_mark_nonexistent_notification(notification_service):
 async def test_get_notifications_for_nonexistent_user(notification_service):
     # Get notifications for a user that has none
     notifications = await notification_service.get_user_notifications("nonexistent_user")
-    assert len(notifications) == 0 
+    assert len(notifications) == 0
+
+@pytest.mark.asyncio
+async def test_notification_ttl(notification_service, redis_client):
+    # Create a notification with a short TTL for testing
+    user_id = "test_user"
+    notification = await notification_service.create_notification(
+        user_id,
+        "test_type",
+        {"message": "Test notification with TTL"}
+    )
+    
+    # Verify notification exists
+    notifications = await notification_service.get_user_notifications(user_id)
+    assert len(notifications) == 1
+    
+    # Get the Redis key
+    key = f"notification:{user_id}:{notification.id}"
+    
+    # Verify TTL is set
+    ttl = await redis_client.ttl(key)
+    assert ttl > 0  # TTL should be positive
+    
+    # Verify TTL is approximately 7 days (allowing for some execution time)
+    assert ttl <= 7 * 24 * 60 * 60  # Should not exceed 7 days
+    assert ttl >= 7 * 24 * 60 * 60 - 10  # Should be close to 7 days
+    
+    # Mark as read and verify TTL is reset
+    await notification_service.mark_as_read(notification.id, user_id)
+    new_ttl = await redis_client.ttl(key)
+    assert new_ttl > 0
+    assert new_ttl <= 7 * 24 * 60 * 60
+    assert new_ttl >= 7 * 24 * 60 * 60 - 10 
