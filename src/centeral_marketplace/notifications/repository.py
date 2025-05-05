@@ -4,6 +4,7 @@ import redis.asyncio as redis
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -15,32 +16,51 @@ class NotificationRepository:
         self.redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
         self.notification_ttl = 7 * 24 * 60 * 60  # 7 days in seconds
         self._initialized = False
+        self._connection_lock = asyncio.Lock()
         
     async def initialize(self):
         """Initialize Redis connection if needed."""
-        if not self._initialized:
-            logger.debug("Initializing NotificationRepository")
-            self.redis = redis.from_url(self.redis_url, decode_responses=True)
-            await self.redis.ping()  # Verify connection
-            self._initialized = True
-            logger.debug("NotificationRepository initialized")
+        async with self._connection_lock:
+            if not self._initialized:
+                logger.debug("Initializing NotificationRepository")
+                try:
+                    self.redis = redis.from_url(self.redis_url, decode_responses=True)
+                    await self.redis.ping()  # Verify connection
+                    self._initialized = True
+                    logger.debug("NotificationRepository initialized")
+                except Exception as e:
+                    logger.error(f"Failed to initialize Redis connection: {e}")
+                    if self.redis:
+                        await self.redis.close()
+                        self.redis = None
+                    raise
+    
+    async def ensure_connection(self):
+        """Ensure Redis connection is available."""
+        if not self._initialized or not self.redis:
+            await self.initialize()
+        try:
+            await self.redis.ping()
+        except Exception as e:
+            logger.error(f"Redis connection lost: {e}")
+            self._initialized = False
+            await self.initialize()
     
     async def save(self, notification: Dict[str, Any]) -> bool:
         """Save a notification to Redis."""
-        if not self.redis:
-            await self.initialize()
-            
-        user_id = notification.get("user_id")
-        if not user_id:
-            logger.error("Cannot save notification without user_id")
-            return False
-            
-        notification_id = notification.get("id")
-        if not notification_id:
-            logger.error("Cannot save notification without id")
-            return False
-            
         try:
+            await self.ensure_connection()
+                
+            user_id = notification.get("user_id")
+            if not user_id:
+                logger.error("Cannot save notification without user_id")
+                return False
+                
+            notification_id = notification.get("id")
+            if not notification_id:
+                logger.error("Cannot save notification without id")
+                return False
+                
             # Store the notification with TTL
             key = f"notification:{notification_id}"
             notification_json = json.dumps(notification)
@@ -62,10 +82,9 @@ class NotificationRepository:
     
     async def mark_as_read(self, notification_id: str) -> bool:
         """Mark a notification as read."""
-        if not self.redis:
-            await self.initialize()
-            
         try:
+            await self.ensure_connection()
+                
             key = f"notification:{notification_id}"
             notification_json = await self.redis.get(key)
             if not notification_json:
@@ -97,10 +116,9 @@ class NotificationRepository:
         unread_only: bool = False
     ) -> List[Dict[str, Any]]:
         """Get notifications for a user."""
-        if not self.redis:
-            await self.initialize()
-            
         try:
+            await self.ensure_connection()
+                
             user_key = f"user:{user_id}:notifications"
             notification_ids = await self.redis.smembers(user_key)
             
@@ -142,5 +160,8 @@ class NotificationRepository:
             return []
 
     async def close(self):
+        """Close Redis connection."""
         if self.redis:
-            await self.redis.aclose() 
+            await self.redis.close()
+            self.redis = None
+            self._initialized = False 
