@@ -5,13 +5,7 @@ import os
 import redis.asyncio as redis
 from typing import Generator, AsyncGenerator
 
-@pytest_asyncio.fixture(scope="function")
-async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop, None]:
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    await loop.shutdown_asyncgens()
-    loop.close()
+# Using default event loop fixture from pytest-asyncio
 
 @pytest.fixture(scope="session")
 async def redis_client() -> Generator:
