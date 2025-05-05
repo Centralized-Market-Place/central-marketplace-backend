@@ -13,6 +13,7 @@ from centeral_marketplace.channels.resource import channel_router
 from centeral_marketplace.comments.resource import comment_router
 from centeral_marketplace.reactions.resource import reaction_router
 from centeral_marketplace.bookmarks.resource import bookmark_router
+from centeral_marketplace.notifications.resource import notifications_router
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -40,6 +41,7 @@ def create_app(injector: Injector = None) -> FastAPI:
     sub_api.include_router(comment_router)
     sub_api.include_router(reaction_router)
     sub_api.include_router(bookmark_router)
+    sub_api.include_router(notifications_router)
 
     if injector is None:
         injector = create_injector()
