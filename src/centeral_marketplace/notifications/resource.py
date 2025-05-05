@@ -9,7 +9,7 @@ from centeral_marketplace.users.core import User
 from centeral_marketplace.users.service import UserService
 from centeral_marketplace.users.auth import decode_token
 
-router = APIRouter(
+notifications_router = APIRouter(
     prefix="/api/v1/notifications",
     tags=["notifications"]
 )
@@ -21,7 +21,7 @@ def get_notification_service() -> NotificationService:
     repository = NotificationRepository()
     return NotificationService(repository)
 
-@router.websocket("/ws")
+@notifications_router.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket, 
     user_id: str = None,
@@ -48,7 +48,7 @@ async def websocket_endpoint(
     except Exception:
         manager.disconnect(final_user_id)
 
-@router.get("", response_model=List[Dict[str, Any]])
+@notifications_router.get("", response_model=List[Dict[str, Any]])
 async def get_notifications(
     user_id: str,
     limit: int = Query(20, ge=1, le=100),
@@ -72,7 +72,7 @@ async def get_notifications(
         unread_only=unread_only
     )
 
-@router.post("/{notification_id}/read", response_model=Dict[str, bool])
+@notifications_router.post("/{notification_id}/read", response_model=Dict[str, bool])
 async def mark_notification_as_read(
     notification_id: str,
     service: NotificationService = Depends(get_notification_service)
@@ -91,7 +91,7 @@ async def mark_notification_as_read(
         )
     return {"success": True}
 
-@router.post("", response_model=Dict[str, Any])
+@notifications_router.post("", response_model=Dict[str, Any])
 async def create_notification(
     notification: Dict[str, Any],
     service: NotificationService = Depends(get_notification_service)
