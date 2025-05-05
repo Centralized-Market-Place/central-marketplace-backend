@@ -11,6 +11,7 @@ class NotificationRepository:
     def __init__(self):
         self.redis = None
         self.redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+        self.notification_ttl = 7 * 24 * 60 * 60  # 7 days in seconds
 
     async def initialize(self):
         if not self.redis:
@@ -23,9 +24,9 @@ class NotificationRepository:
         # Publish to channel for real-time delivery
         await self.redis.publish('notifications', notification_data)
         
-        # Store in Redis for persistence
+        # Store in Redis for persistence with TTL
         key = f"notification:{notification.user_id}:{notification.id}"
-        await self.redis.set(key, notification_data)
+        await self.redis.set(key, notification_data, ex=self.notification_ttl)
         return notification
 
     async def mark_as_read(self, notification_id: str, user_id: str) -> Notification:
@@ -36,7 +37,8 @@ class NotificationRepository:
         if notification_data:
             notification = Notification.model_validate_json(notification_data)
             notification.read = True
-            await self.redis.set(key, notification.model_dump_json())
+            # When marking as read, reset the TTL
+            await self.redis.set(key, notification.model_dump_json(), ex=self.notification_ttl)
             return notification
         return None
 
