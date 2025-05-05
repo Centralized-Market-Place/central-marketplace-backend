@@ -43,13 +43,27 @@ class WebSocketManager:
                     if self.redis:
                         await self.redis.close()
                         self.redis = None
+                    if self.pubsub:
+                        await self.pubsub.close()
+                        self.pubsub = None
+                    self._initialized = False
                     raise
+
+    async def ensure_connection(self):
+        """Ensure Redis connection is available."""
+        if not self._initialized or not self.redis:
+            await self.initialize()
+        try:
+            await self.redis.ping()
+        except Exception as e:
+            logger.error(f"Redis connection lost: {e}")
+            self._initialized = False
+            await self.initialize()
 
     async def connect(self, websocket: WebSocket, user_id: str):
         """Accept a new WebSocket connection for a user."""
         logger.debug(f"New WebSocket connection request from user {user_id}")
-        if not self._initialized:
-            await self.initialize()
+        await self.ensure_connection()
             
         await websocket.accept()
         self.active_connections[user_id] = websocket
@@ -74,15 +88,15 @@ class WebSocketManager:
                         logger.debug(f"Sent ping to user {user_id}")
                     except Exception as e:
                         logger.error(f"Error in keep-alive for user {user_id}: {e}")
-                        self.disconnect(user_id)
+                        await self.disconnect(user_id)
                         break
         except asyncio.CancelledError:
             logger.debug(f"Keep-alive task canceled for user {user_id}")
         except Exception as e:
             logger.error(f"Unexpected error in keep-alive task for {user_id}: {e}")
-            self.disconnect(user_id)
+            await self.disconnect(user_id)
 
-    def disconnect(self, user_id: str):
+    async def disconnect(self, user_id: str):
         """Disconnect a user's WebSocket connection."""
         if user_id in self.active_connections:
             logger.debug(f"Disconnecting user {user_id}")
@@ -91,6 +105,11 @@ class WebSocketManager:
             if user_id in self._ping_tasks and not self._ping_tasks[user_id].done():
                 self._ping_tasks[user_id].cancel()
                 del self._ping_tasks[user_id]
+                
+            try:
+                await self.active_connections[user_id].close()
+            except Exception as e:
+                logger.error(f"Error closing WebSocket for user {user_id}: {e}")
                 
             del self.active_connections[user_id]
             logger.debug(f"User {user_id} disconnected, {len(self.active_connections)} connections remaining")
@@ -104,7 +123,7 @@ class WebSocketManager:
                 return True
             except Exception as e:
                 logger.error(f"Error sending message to {user_id}: {e}")
-                self.disconnect(user_id)
+                await self.disconnect(user_id)
                 return False
         return False
     
@@ -121,7 +140,7 @@ class WebSocketManager:
             return True
         except Exception as e:
             logger.error(f"Error sending direct notification to {user_id}: {e}")
-            self.disconnect(user_id)
+            await self.disconnect(user_id)
             return False
 
     async def broadcast(self, message: str):
@@ -139,16 +158,14 @@ class WebSocketManager:
                 disconnected.append(user_id)
         
         for user_id in disconnected:
-            self.disconnect(user_id)
+            await self.disconnect(user_id)
             
         logger.debug(f"Broadcast complete: {sent_count} messages sent, {len(disconnected)} connections closed")
         return sent_count
 
     async def listen_for_notifications(self):
         """Listen for notifications from Redis and forward them to connected users."""
-        if not self._initialized:
-            logger.debug("Initializing before starting notification listener")
-            await self.initialize()
+        await self.ensure_connection()
             
         logger.debug("Starting notification listener loop")
         retry_count = 0
@@ -198,7 +215,8 @@ class WebSocketManager:
                         await self.pubsub.subscribe(self.channel)
                         retry_count = 0
                     except Exception as sub_error:
-                        logger.critical(f"Failed to resubscribe: {sub_error}")
+                        logger.error(f"Error resubscribing to channel: {sub_error}")
+                        await asyncio.sleep(1)  # Wait before retrying
                         
                 await asyncio.sleep(1)  # Longer sleep on errors
 
@@ -232,6 +250,10 @@ class WebSocketManager:
             self.redis = None
             self.pubsub = None
         
+        # Close all WebSocket connections
+        for user_id in list(self.active_connections.keys()):
+            await self.disconnect(user_id)
+            
         # Clear connections
         self.active_connections.clear()
         self._initialized = False

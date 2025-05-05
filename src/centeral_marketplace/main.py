@@ -44,85 +44,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Configure CORS
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # In production, replace with specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Dependency injection
-injector = Injector()
-
-@inject
-def get_notification_repository() -> NotificationRepository:
-    return injector.get(NotificationRepository)
-
-@inject
-def get_notification_service(
-    repository: NotificationRepository = Depends(get_notification_repository)
-) -> NotificationService:
-    return NotificationService(repository)
-
-@app.websocket("/api/v1/notifications/ws")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    user_id: str = None,
-    token: str = None
-):
-    """WebSocket endpoint for real-time notifications"""
-    # Validate authentication
-    if not user_id and not token:
-        logger.warning("WebSocket connection attempt without authentication")
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
-
-    # Ensure manager is initialized (for testing)
-    await initialize_manager()
-
-    try:
-        # Connect to WebSocket manager
-        await manager.connect(websocket, user_id)
-        logger.info(f"WebSocket connection established for user {user_id}")
-        
-        # Keep connection open and handle messages
-        while True:
-            try:
-                # Receive and process messages
-                message = await websocket.receive_text()
-                
-                # Handle ping/pong for connection keepalive
-                if message == "ping":
-                    await websocket.send_text("pong")
-                    logger.debug(f"Received ping from user {user_id}, sent pong")
-                elif message == "pong":
-                    logger.debug(f"Received pong from user {user_id}")
-                else:
-                    # Handle other message types if needed
-                    try:
-                        data = json.loads(message)
-                        logger.debug(f"Received message from user {user_id}: {data}")
-                    except json.JSONDecodeError:
-                        logger.warning(f"Received invalid JSON from user {user_id}: {message}")
-                    
-            except WebSocketDisconnect:
-                logger.info(f"WebSocket disconnected for user {user_id}")
-                manager.disconnect(user_id)
-                break
-            except Exception as e:
-                logger.error(f"Error in WebSocket connection for user {user_id}: {e}")
-                manager.disconnect(user_id)
-                break
-                
-    except Exception as e:
-        logger.error(f"Error setting up WebSocket connection for user {user_id}: {e}")
-        manager.disconnect(user_id)
-        try:
-            await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
-        except Exception:
-            pass  # Already closed
+# Include routers
+from src.centeral_marketplace.notifications.resource import notifications_router
+app.include_router(notifications_router, prefix="/api/v1")
 
 @app.get("/api/v1/health_check")
 async def health_check():
