@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from centeral_marketplace.comments.repository import CommentRepository
 from centeral_marketplace.reactions.repository import ReactionRepository
+from centeral_marketplace.sellers.repository import SellerApplicationRepository
 
 from tests.core.given import LambdaWith
 from centeral_marketplace.products.repository import ProductRepository
@@ -25,6 +26,7 @@ def database_repo_is_ready():
                 ProductRepository,
                 CommentRepository,
                 ReactionRepository,
+                SellerApplicationRepository,
             ]
 
             def get_repo(repo_name):
