@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   app:
     build:
@@ -21,15 +20,6 @@ services:
     volumes:
       - mongo-test-data:/data/db
 
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-
 volumes:
   mongo-data:
   mongo-test-data:
-  redis_data:

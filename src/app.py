@@ -14,46 +14,14 @@ from centeral_marketplace.comments.resource import comment_router
 from centeral_marketplace.reactions.resource import reaction_router
 from centeral_marketplace.sellers.resource import sellers_router
 from centeral_marketplace.bookmarks.resource import bookmark_router
-from centeral_marketplace.notifications.resource import notifications_router
-from centeral_marketplace.notifications.manager import WebSocketManager
-from centeral_marketplace.notifications.repository import NotificationRepository
-from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Lifespan context manager for FastAPI app."""
-    # Initialize WebSocket manager and Redis
-    try:
-        logger.info("Initializing WebSocket manager and Redis")
-        manager = WebSocketManager()
-        await manager.initialize()
-        
-        # Initialize notification repository
-        repository = NotificationRepository()
-        await repository.initialize()
-        
-        logger.info("WebSocket manager and Redis initialized successfully")
-    except Exception as e:
-        logger.error(f"Error initializing WebSocket manager or Redis: {e}")
-        raise
-    
-    yield
-    
-    # Cleanup
-    try:
-        logger.info("Shutting down WebSocket manager and Redis")
-        await manager.close()
-        await repository.close()
-        logger.info("WebSocket manager and Redis closed successfully")
-    except Exception as e:
-        logger.error(f"Error during WebSocket manager or Redis shutdown: {e}")
 
 def create_app(injector: Injector = None) -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI()
     sub_api = FastAPI()
 
     origins = ["http://localhost", "http://localhost:3000", "*"]
@@ -62,9 +30,8 @@ def create_app(injector: Injector = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["*"],
-        expose_headers=["*"]
     )
     app.mount("/api/v1", sub_api)
 
@@ -75,7 +42,6 @@ def create_app(injector: Injector = None) -> FastAPI:
     sub_api.include_router(reaction_router)
     sub_api.include_router(sellers_router)
     sub_api.include_router(bookmark_router)
-    sub_api.include_router(notifications_router)
 
     if injector is None:
         injector = create_injector()
@@ -89,20 +55,19 @@ def create_app(injector: Injector = None) -> FastAPI:
 
     user_service = injector.get(UserService)
     config = injector.get(Config)
-
-    @app.on_event("startup")
-    async def startup_event():
-        # Create admin user
-        try:
-            user_service.create_admin(
-                UserCreate(
-                    name="Admin",
-                    email=config.admin_email,
-                    password=config.admin_password,
-                )
+    try:
+        user_service.create_admin(
+            UserCreate(
+                name="Admin",
+                email=config.admin_email,
+                password=config.admin_password,
             )
-            logger.info(f"Admin user created with email: {config.admin_email}")
-        except Exception as e:
-            logger.error(f"Error creating admin user: {e}")
+        )
+
+    except Exception as e:
+        print("Error creating admin user:", e)
+        pass
+
+    logger.info(f"Admin user created with email: {config.admin_email}")
 
     return app
