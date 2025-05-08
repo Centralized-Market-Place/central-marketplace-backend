@@ -14,6 +14,9 @@ from centeral_marketplace.users.core import (
     UserLogin,
     AuthResponse,
     UserPublic,
+    ProfileResponse,
+    ProfileUpdate,
+    PasswordUpdate,
     TelegramLogin,
 )
 from middleware import get_current_user, require_role
@@ -76,3 +79,43 @@ async def telegram_auth(
     user = user_service.login_telegram_user(telegram_data)
     access_token = create_access_token({"sub": str(user.id)})
     return AuthResponse(token=access_token, user=user)
+
+
+@users_router.get("/profile", response_model=ProfileResponse)
+async def get_profile(
+    current_user: User = Depends(get_current_user),
+    user_service: UserService = Injected(UserService),
+):
+    """Get current user's profile"""
+    return user_service.get_profile(str(current_user.id))
+
+
+@users_router.put("/profile", response_model=ProfileResponse)
+async def update_profile(
+    profile_update: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    user_service: UserService = Injected(UserService)
+) -> ProfileResponse:
+    """Update current user's profile"""
+    return user_service.update_profile(str(current_user.id), profile_update)
+
+
+@users_router.patch("/profile/password")
+async def update_password(
+    password_update: PasswordUpdate,
+    current_user: User = Depends(get_current_user),
+    user_service: UserService = Injected(UserService)
+):
+    """Update current user's password"""
+    user_service.update_password(str(current_user.id), password_update)
+    return {"message": "Password updated successfully"}
+
+
+@users_router.get("/profile/{user_id}", response_model=ProfileResponse)
+async def get_public_profile(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Get public profile by user ID"""
+    return user_service.get_public_profile(user_id)
+

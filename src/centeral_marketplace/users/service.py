@@ -25,6 +25,9 @@ from centeral_marketplace.users.core import (
     TelegramLogin,
     User,
     UserCreate,
+    ProfileResponse,
+    ProfileUpdate,
+    PasswordUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -172,3 +175,150 @@ class UserService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Internal Server Error",
             )
+
+    def get_profile(self, user_id: str) -> ProfileResponse:
+        user = self.user_repository.find_one(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        
+        # Calculate profile completion percentage
+        completion = 0.0
+        if user.name:
+            completion += 20
+        if user.email:
+            completion += 20
+        if user.image:
+            completion += 20
+        if user.bio:
+            completion += 20
+        if user.social_links:
+            completion += 20
+
+        # Create profile response with all fields
+        return ProfileResponse(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            bio=user.bio,
+            image=user.image,
+            role=user.role,
+            is_verified=user.is_verified,
+            last_login=user.last_login,
+            telegram=user.telegram,
+            social_links=user.social_links,
+            settings=user.settings,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            profile_completion=completion
+        )
+
+    def update_profile(self, user_id: str, profile_update: ProfileUpdate) -> ProfileResponse:
+        user = self.user_repository.find_one(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        update_data = profile_update.model_dump(exclude_unset=True)
+        # Prevent updating email via this endpoint
+        update_data.pop("email", None)
+
+        # Update user fields
+        for field, value in update_data.items():
+            setattr(user, field, value)
+        
+        user.updated_at = datetime.utcnow()
+        updated_user = self.user_repository.save(user)
+        
+        # Calculate profile completion
+        completion = 0.0
+        if updated_user.name:
+            completion += 20
+        if updated_user.email:
+            completion += 20
+        if updated_user.image:
+            completion += 20
+        if updated_user.bio:
+            completion += 20
+        if updated_user.social_links:
+            completion += 20
+
+        return ProfileResponse(
+            id=updated_user.id,
+            name=updated_user.name,
+            email=updated_user.email,
+            bio=updated_user.bio,
+            image=updated_user.image,
+            role=updated_user.role,
+            is_verified=updated_user.is_verified,
+            last_login=updated_user.last_login,
+            telegram=updated_user.telegram,
+            social_links=updated_user.social_links,
+            settings=updated_user.settings,
+            created_at=updated_user.created_at,
+            updated_at=updated_user.updated_at,
+            profile_completion=completion
+        )
+
+    def update_password(self, user_id: str, password_update: PasswordUpdate) -> None:
+        user = self.user_repository.find_one(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        if not verify_password(password_update.current_password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect",
+            )
+
+        user.password_hash = hash_password(password_update.new_password)
+        user.updated_at = datetime.utcnow()
+        self.user_repository.save(user)
+
+    def get_public_profile(self, user_id: str) -> ProfileResponse:
+        user = self.user_repository.find_one(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        if not user.settings.is_profile_public:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Profile is private",
+            )
+
+        # Calculate profile completion
+        completion = 0.0
+        if user.name:
+            completion += 20
+        if user.email:
+            completion += 20
+        if user.image:
+            completion += 20
+        if user.bio:
+            completion += 20
+        if user.social_links:
+            completion += 20
+
+        # Filter out private information based on settings
+        profile_data = user.model_dump()
+        if not user.settings.show_email:
+            profile_data.pop("email", None)
+        if not user.settings.show_last_login:
+            profile_data.pop("last_login", None)
+        if not user.settings.show_social_links:
+            profile_data.pop("social_links", None)
+
+        return ProfileResponse(
+            **profile_data,
+            profile_completion=completion
+        )
