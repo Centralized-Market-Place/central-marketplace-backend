@@ -6,20 +6,25 @@ services:
     ports:
       - "8443:8443"
     volumes:
-      - ./src:/code
-      - ./.env:/.env
+      - ./src:/code:delegated
+      - ./.env:/code/.env:ro
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://root:example@mongodb:27017
+      - REDIS_URL=redis://redis:6379/0
+    command: uvicorn main:app --host 0.0.0.0 --port 8443 --reload
 
-    command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8443", "--reload" ]
-
-  test_db:
+  mongodb:
     image: mongo:latest
     ports:
-      - "27018:27017"
+      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
-      - mongo-test-data:/data/db
+      - mongodb_data:/data/db
 
   redis:
     image: redis:latest
@@ -30,6 +35,5 @@ services:
     command: redis-server --appendonly yes
 
 volumes:
-  mongo-data:
-  mongo-test-data:
+  mongodb_data:
   redis_data:
