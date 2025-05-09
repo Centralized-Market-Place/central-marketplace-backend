@@ -7,6 +7,7 @@ from injector import inject, singleton
 import asyncio
 import logging
 from datetime import datetime
+from config import settings
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ class WebSocketManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
         self.redis = None
-        self.redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+        self.redis_url = settings.redis_url
         self.channel = "notifications"
         self.pubsub = None
         self._listener_task = None

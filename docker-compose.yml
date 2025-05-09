@@ -10,10 +10,8 @@ services:
       - ./.env:/code/.env:ro
     depends_on:
       - mongodb
-      - redis
     environment:
       - MONGODB_URI=mongodb://root:example@mongodb:27017
-      - REDIS_URL=redis://redis:6379/0
     command: uvicorn main:app --host 0.0.0.0 --port 8443 --reload
 
   mongodb:
@@ -26,14 +24,5 @@ services:
     volumes:
       - mongodb_data:/data/db
 
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-
 volumes:
   mongodb_data:
-  redis_data:

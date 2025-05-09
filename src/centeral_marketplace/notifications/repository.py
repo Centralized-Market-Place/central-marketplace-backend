@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 import logging
 import asyncio
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ class NotificationRepository:
     
     def __init__(self):
         self.redis = None
-        self.redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+        self.redis_url = settings.redis_url
         self.notification_ttl = 7 * 24 * 60 * 60  # 7 days in seconds
         self._initialized = False
         self._connection_lock = asyncio.Lock()
