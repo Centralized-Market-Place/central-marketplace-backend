@@ -11,10 +11,10 @@ import jwt
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-BASE_URL = "http://127.0.0.1:8443/api/v1"
+BASE_URL = "http://127.0.0.1:8000/api/v1"
 AUTH_URL = f"{BASE_URL}/users/login"
 NOTIFICATIONS_URL = f"{BASE_URL}/notifications"
-WS_URL = "ws://127.0.0.1:8443/api/v1/notifications/ws"
+WS_URL = "ws://127.0.0.1:8000/api/v1/notifications/ws"
 
 # Shared test data
 class TestData:
