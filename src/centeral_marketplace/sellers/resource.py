@@ -31,9 +31,6 @@ async def check_bot_status(
     current_user: Annotated[User, Depends(get_current_user)],
     seller_service: SellerService = Injected(SellerService),
 ):
-    """
-    Check if the bot has been added as admin to the channel
-    """
     return seller_service.verify_bot_admin_status(current_user, channel_id)
 
 
@@ -43,9 +40,6 @@ async def apply_seller(
     current_user: Annotated[User, Depends(get_current_user)],
     seller_service: SellerService = Injected(SellerService),
 ):
-    """
-    Submit an application to become a seller
-    """
     return seller_service.save_seller_application(current_user, application)
 
 

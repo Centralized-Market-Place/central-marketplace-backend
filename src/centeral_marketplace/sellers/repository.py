@@ -20,6 +20,7 @@ class SellerApplicationRepository(RepositoryInterface[SellerApplication]):
             collection_name="seller_applications", model=SellerApplication, config=self.config
         )
         self.delegate.ensure_index("user_id", unique=False)
+        self.delegate.ensure_compound_index([("user_id", 1), ("seller_info.channel_id", 1)], unique=True)
 
     def save(self, data: SellerApplication):
         return self.delegate.save(data)

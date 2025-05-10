@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi_injector import Injected
 from middleware import get_current_user
 
-from src.centeral_marketplace.files.core import SignedUrlRequest, SignedUrlResponse, FileType
-from src.centeral_marketplace.files.service import FileService
+from centeral_marketplace.files.core import SignedUrlRequest, SignedUrlResponse, FileType
+from centeral_marketplace.files.service import FileService
 
 files_router = APIRouter(prefix="/files", tags=["files"])
 
