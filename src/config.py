@@ -18,6 +18,9 @@ class Config(BaseSettings):
     admin_password: str
     test_telegram_bot_token: str
     test_telegram_bot_username: str
+    claudinary_cloud_name: str
+    claudinary_api_key: str
+    claudinary_api_secret: str
 
 
 @lru_cache
