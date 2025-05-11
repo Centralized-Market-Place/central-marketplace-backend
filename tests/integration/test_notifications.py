@@ -144,8 +144,8 @@ def test_user_cannot_mark_other_users_notification_as_read():
         there_is_a_user(name="User2", email="user2@example.com", password="password")
     ]) as context:
         client: TestClient = context.client
-        notification = context.notification  # This belongs to User1
-        user2: User = context.user  # Now context.user is User2
+        notification = context.notification
+        user2: User = context.user 
         token = create_access_token({"sub": str(user2.id)})
         
         with when("User2 tries to mark User1's notification as read"):
