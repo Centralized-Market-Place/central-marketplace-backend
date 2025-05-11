@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 import logging
+from centeral_marketplace.channels.service import ChannelService
 from fastapi import HTTPException, status
 from injector import inject, singleton
 from pymongo.errors import DuplicateKeyError
@@ -33,6 +34,7 @@ class SellerService:
     seller_repository: SellerApplicationRepository
     user_repository: UserRepository
     telegram_service: TelegramService
+    channel_service: ChannelService
     config: Config
 
     def verify_bot_admin_status(self, user: User, channel_id: str) -> TelegramBotStatusResponse:
@@ -167,6 +169,10 @@ class SellerService:
         updated_application = self.seller_repository.save(application)
         
         if review.status == SellerApplicationStatus.APPROVED:
+            channel = self.telegram_service.get_channel_info(application.seller_info.channel_id)
+            if channel:
+                channel.verified = True
+                self.channel_service.save(channel)
             user = self.user_repository.find_one(application.user_id)
             if user:
                 user.role = Role.SELLER

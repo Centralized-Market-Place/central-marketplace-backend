@@ -20,7 +20,6 @@ async def get_channels(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
-    channel_name: str = None,
     channel_service: ChannelService = Injected(ChannelService),
 ):
     criteria = {}
@@ -28,6 +27,8 @@ async def get_channels(
     if query:
         criteria["$or"] = [
             {"title": {"$regex": query, "$options": "i"}},
+            {"username": {"$regex": query, "$options": "i"}},
+            {"description": {"$regex": query, "$options": "i"}},
         ]
 
     paginated = channel_service.find_all(

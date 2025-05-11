@@ -1,4 +1,6 @@
 from typing import Annotated, Optional
+from centeral_marketplace.channels.core import Channel
+from centeral_marketplace.channels.service import ChannelService
 from core import PyObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi_injector import Injected
@@ -61,9 +63,6 @@ async def get_my_seller_applications(
     current_user: Annotated[User, Depends(get_current_user)],
     seller_service: SellerService = Injected(SellerService),
 ):
-    """
-    Get all seller applications for the current user
-    """
     return seller_service.get_user_seller_applications(current_user.id)
 
 
@@ -73,9 +72,6 @@ async def get_seller_application(
     current_user: Annotated[User, Depends(get_current_user)],
     seller_service: SellerService = Injected(SellerService),
 ):
-    """
-    Get a seller application by ID
-    """
     application = seller_service.get_seller_application(application_id)
     
     if current_user.role != "ADMIN" and str(application.user_id) != str(current_user.id):
@@ -93,15 +89,18 @@ async def review_seller_application(
     review: SellerApplicationReview,
     current_user: Annotated[User, Depends(require_role("ADMIN"))],
     seller_service: SellerService = Injected(SellerService),
-):
-    """
-    Admin endpoint to review (approve or reject) a seller application
-    """
-    
+):  
     if application_id != review.application_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Application ID in path must match the one in the request body"
         )
-        
+    
     return seller_service.review_seller_application(current_user, review) 
+
+@sellers_router.get("/channels/me", response_model=list[Channel])
+def get_my_channels(
+    current_user: Annotated[User, Depends(get_current_user)],
+    channel_service: ChannelService = Injected(ChannelService),
+):
+    return channel_service.get_my_channels(current_user.id)

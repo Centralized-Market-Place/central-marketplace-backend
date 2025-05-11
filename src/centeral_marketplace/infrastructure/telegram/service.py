@@ -53,7 +53,7 @@ class TelegramService:
         self.base_url = f"https://api.telegram.org/bot{config.telegram_bot_token}"
 
     def get_chat_administrators(self, chat_id: str) -> ChatAdminResponse:
-        if not chat_id.isdigit() and not chat_id.startswith("@"):
+        if not chat_id.startswith("@"):
             chat_id = "@" + chat_id
 
         url = f"{self.base_url}/getChatAdministrators"
@@ -118,7 +118,7 @@ class TelegramService:
         
     def get_channel_info(self, chat_id: str) -> Channel:
 
-        if not chat_id.isdigit() and not chat_id.startswith("@"):
+        if not chat_id.startswith("@"):
             chat_id = "@" + chat_id
 
         url = f"{self.base_url}/getChat"
@@ -150,7 +150,7 @@ class TelegramService:
                 
                 channel = Channel(
                     title=result.get("title", ""),
-                    username=result.get("username", ""),
+                    username=chat_id,
                     description=result.get("description", ""),
                     thumbnail_url="",
                     participants=member_count,
@@ -160,7 +160,7 @@ class TelegramService:
                     has_geo=result.get("has_protected_content", False),
                     has_link=result.get("invite_link") is not None,
                     broadcast=result.get("type") == "channel",
-                    telegram_id=chat_id
+                    telegram_id=result.get("id") if result.get("id") else 0
                 )
                 
                 if result.get("photo"):

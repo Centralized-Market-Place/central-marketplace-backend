@@ -20,6 +20,7 @@ class ChannelRepository(RepositoryInterface[Channel]):
             collection_name="channels", model=Channel, config=self.config
         )
         self.delegate.ensure_index("telegram_id")
+        self.delegate.ensure_index("username")
 
     def save(self, data: Channel):
         return self.delegate.save(data)
@@ -35,8 +36,6 @@ class ChannelRepository(RepositoryInterface[Channel]):
     def find_one(self, id: PyObjectId):
         return self.delegate.find_one(id)
     
-    def find_channel_by_tg_id(self, id: int):
-        return self.delegate.find_channel_by_tg_id(id)
     def find_all_by(
         self,
         sort_by: str = None,

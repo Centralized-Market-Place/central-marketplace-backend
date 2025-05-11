@@ -111,12 +111,6 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         if not document:
             raise ValueError(f"Entity with ID {id} not found")
         return self.model.model_validate(document)
-    
-    def find_channel_by_tg_id(self, id: int) -> Entity:
-        document = self.collection.find_one({"telegram_id": id})
-        if not document:
-            raise ValueError(f"Entity with ID {id} not found")
-        return self.model.model_validate(document)
 
     def delete_one(self, id: PyObjectId):
         """Delete a single entity by ID."""
