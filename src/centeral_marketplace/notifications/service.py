@@ -1,121 +1,143 @@
-import uuid
-from datetime import datetime, timezone
-from typing import Dict, List, Any, Optional
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, Any, Optional
+
 import logging
+from fastapi import HTTPException, status
+from injector import inject, singleton
+
+from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
+from centeral_marketplace.notifications.core import Notification, NotificationType
+from centeral_marketplace.notifications.repository import NotificationRepository
+from core import PyObjectId
 
 logger = logging.getLogger(__name__)
 
+@inject
+@singleton
+@dataclass
 class NotificationService:
-    """Service for creating and managing notifications."""
+    repository: NotificationRepository
     
-    def __init__(self, repository):
-        self.repository = repository
-        self._initialized = False
-        
-    async def ensure_initialized(self):
-        """Ensure the repository is initialized."""
-        if not self._initialized:
-            await self.repository.initialize()
-            self._initialized = True
-        
-    async def create_notification(
+    def create_notification(
         self, 
-        user_id: str, 
-        notification_type: str, 
-        data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Create a new notification for a user.
-        
-        Args:
-            user_id: ID of the user to notify
-            notification_type: Type of notification (e.g., 'comment', 'like')
-            data: Dict containing notification data
-            
-        Returns:
-            The created notification
-        """
+        user_id: PyObjectId, 
+        content: str,
+        notification_type: NotificationType, 
+        metadata: Dict[str, Any] = None
+    ) -> Notification:
         try:
-            await self.ensure_initialized()
-            
-            notification_id = str(uuid.uuid4())
-            now = datetime.now(timezone.utc).isoformat()
-            
-            notification = {
-                "id": notification_id,
-                "user_id": user_id,
-                "notification_type": notification_type,
-                "data": data,
-                "created_at": now,
-                "read": False,
-                "read_at": None
-            }
-            
-            success = await self.repository.save(notification)
-            if not success:
-                logger.error(f"Failed to save notification for user {user_id}")
-                return None
-                
-            logger.info(f"Created notification {notification_id} for user {user_id}")
-            return notification
+            notification = Notification(
+                user_id=user_id,
+                content=content,
+                notification_type=notification_type,
+                metadata=metadata or {},
+            )
+            saved_notification = self.repository.save(notification)
+            logger.info(f"Created notification {saved_notification.id} for user {user_id}")
+            return saved_notification
         except Exception as e:
             logger.error(f"Error creating notification: {e}")
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create notification"
+            )
         
-    async def mark_as_read(self, notification_id: str) -> bool:
-        """
-        Mark a notification as read.
+    def mark_as_read(self, notification_id: PyObjectId, user_id: PyObjectId) -> Notification:
+        notification = self.get_notification(notification_id, user_id)
         
-        Args:
-            notification_id: ID of the notification to mark as read
-            
-        Returns:
-            True if successful, False otherwise
-        """
+        if notification.read:
+            return notification
+
+        notification.read = True
+        notification.read_at = datetime.utcnow()
+
         try:
-            await self.ensure_initialized()
-            
-            success = await self.repository.mark_as_read(notification_id)
-            if success:
-                logger.info(f"Marked notification {notification_id} as read")
-            else:
-                logger.warning(f"Failed to mark notification {notification_id} as read")
-            return success
+            updated = self.repository.save(notification)
+            logger.info(f"Marked notification {notification_id} as read")
+            return updated
         except Exception as e:
             logger.error(f"Error marking notification as read: {e}")
-            return False
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to mark notification as read"
+            )
         
-    async def get_user_notifications(
+    def get_user_notifications(
         self, 
-        user_id: str, 
-        limit: int = 20, 
-        offset: int = 0,
-        unread_only: bool = False
-    ) -> List[Dict[str, Any]]:
-        """
-        Get notifications for a user.
+        user_id: PyObjectId, 
+        pagination: Optional[Pagination] = None,
+        read_filter: Optional[bool] = None
+    ) -> PaginatedResponse[Notification]:
         
-        Args:
-            user_id: ID of the user
-            limit: Maximum number of notifications to return
-            offset: Offset for pagination
-            unread_only: If True, only return unread notifications
+        criteria = {"user_id": user_id}
+        if read_filter is not None:
+            criteria["read"] = read_filter
             
-        Returns:
-            List of notification objects
-        """
         try:
-            await self.ensure_initialized()
-            
-            notifications = await self.repository.get_user_notifications(
-                user_id, 
-                limit=limit, 
-                offset=offset,
-                unread_only=unread_only
+            result = self.repository.find_all_by_dict(
+                criteria=criteria,
+                pagination=pagination,
+                sort_by="created_at",
+                sort_desc=True
             )
             
-            logger.info(f"Retrieved {len(notifications)} notifications for user {user_id}")
-            return notifications
+            logger.info(f"Retrieved {len(result.items)} notifications for user {user_id}")
+            return result
         except Exception as e:
             logger.error(f"Error getting user notifications: {e}")
-            return [] 
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to retrieve notifications"
+            )
+    
+    def get_notification(self, notification_id: PyObjectId, user_id: PyObjectId) -> Notification:
+        try:
+            notification = self.repository.find_one(notification_id)
+            if str(notification.user_id) != str(user_id):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Not authorized to access this notification"
+                )
+            return notification
+        except ValueError:
+            logger.error(f"Notification with ID {notification_id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Notification with ID {notification_id} not found"
+            )
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            logger.error(f"Error getting notification {notification_id}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to retrieve notification"
+            )
+        
+            
+    def delete_notification(self, notification_id: PyObjectId, user_id: PyObjectId) -> None:
+       
+        self.get_notification(notification_id, user_id)
+            
+        try:
+            self.repository.delete_one(notification_id)
+            logger.info(f"Deleted notification {notification_id}")
+        except Exception as e:
+            logger.error(f"Error deleting notification {notification_id}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete notification"
+            )
+    
+    def delete_all_for_user(self, user_id: PyObjectId) -> int:
+        try:
+            count = self.repository.delete_by_dict({"user_id": user_id})
+            logger.info(f"Deleted {count} notifications for user {user_id}")
+            return count
+        except Exception as e:
+            logger.error(f"Error deleting notifications for user {user_id}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete notifications"
+            ) 

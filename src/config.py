@@ -17,12 +17,13 @@ class Config(BaseSettings):
     admin_email: str
     admin_password: str
     redis_url: str
+    test_telegram_bot_token: str
+    test_telegram_bot_username: str
 
     class Config:
         env_file = ".env"
         case_sensitive = False
-    test_telegram_bot_token: str
-    test_telegram_bot_username: str
+    
 
 
 @lru_cache

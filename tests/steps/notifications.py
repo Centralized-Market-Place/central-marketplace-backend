@@ -1,52 +1,64 @@
+from centeral_marketplace.notifications.core import Notification, NotificationType
 from centeral_marketplace.notifications.repository import NotificationRepository
-from centeral_marketplace.notifications.service import NotificationService
-from centeral_marketplace.notifications.core import Notification
-from centeral_marketplace.users.core import User
-from tests.core.notifications import create_test_notification
-from injector import Module, provider, singleton, Binder
+from core import PyObjectId
+from datetime import UTC, datetime
 
-# Test step functions for notifications
-def notification_repository_is_ready():
+
+def there_is_a_notification(
+    user_id: PyObjectId = None,
+    content: str = "Test notification",
+    notification_type: NotificationType = NotificationType.SYSTEM,
+    read: bool = False,
+    metadata: dict = None,
+):
     def step(context):
-        context.notification_repository = NotificationRepository()
+        notification_repo: NotificationRepository = context.injector.get(NotificationRepository)
         
-    return step
-
-def notification_service_is_ready():
-    def step(context):
-        if not hasattr(context, 'notification_repository'):
-            context.notification_repository = NotificationRepository()
-            
-        context.notification_service = NotificationService(
-            notification_repository=context.notification_repository
+        actual_user_id = user_id or context.user.id
+        
+        notification = Notification(
+            user_id=actual_user_id,
+            content=content,
+            notification_type=notification_type,
+            read=read,
+            metadata=metadata or {},
+            read_at=datetime.now(UTC) if read else None
         )
         
-    return step
-
-def there_is_a_notification(user_id, notification_type="test", data=None):
-    async def step(context):
-        if not hasattr(context, 'notification_repository'):
-            context.notification_repository = NotificationRepository()
-            await context.notification_repository.initialize()
-            
-        notification = await create_test_notification(user_id, notification_type, data)
-        saved_notification = await context.notification_repository.save(notification)
+        saved_notification = notification_repo.save(notification) 
         context.notification = saved_notification
-        return saved_notification
-        
+
+
     return step
 
-# Module for testing
-class TestNotificationsModule(Module):
-    def configure(self, binder: Binder) -> None:
-        binder.bind(NotificationRepository, to=NotificationRepository, scope=singleton)
-        
-    @provider
-    @singleton
-    def provide_notification_service(
-        self, 
-        notification_repository: NotificationRepository
-    ) -> NotificationService:
-        return NotificationService(
-            notification_repository=notification_repository
-        ) 
+
+def there_are_multiple_notifications(
+    count: int = 5, 
+    user_id: PyObjectId = None, 
+    notification_type: NotificationType = NotificationType.SYSTEM
+):
+    def step(context):
+        notification_repo: NotificationRepository = context.injector.get(NotificationRepository)
+        actual_user_id = user_id or context.user.id
+
+        notifications = []
+        for i in range(count):
+            is_read = i % 2 == 0
+            
+            notification = Notification(
+                user_id=actual_user_id,
+                content=f"Test notification {i+1}",
+                notification_type=notification_type,
+                read=is_read,
+                metadata={"index": i},
+                read_at=datetime.now(UTC) if is_read else None
+            )
+            
+            saved_notification = notification_repo.save(notification)
+            notifications.append(saved_notification)
+
+        context.notifications = notifications
+        context.read_notifications_count = sum(1 for n in notifications if n.read)
+        context.unread_notifications_count = sum(1 for n in notifications if not n.read)
+    
+    return step

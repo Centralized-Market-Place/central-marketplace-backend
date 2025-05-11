@@ -7,6 +7,7 @@ from centeral_marketplace.sellers.repository import SellerApplicationRepository
 from tests.core.given import LambdaWith
 from centeral_marketplace.products.repository import ProductRepository
 from centeral_marketplace.users.repository import UserRepository
+from centeral_marketplace.notifications.repository import NotificationRepository
 
 
 @dataclass()
@@ -27,6 +28,7 @@ def database_repo_is_ready():
                 CommentRepository,
                 ReactionRepository,
                 SellerApplicationRepository,
+                NotificationRepository,
             ]
 
             def get_repo(repo_name):

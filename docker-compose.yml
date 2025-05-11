@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   app:
     build:
@@ -6,23 +5,21 @@ services:
     ports:
       - "8443:8443"
     volumes:
-      - ./src:/code:delegated
-      - ./.env:/code/.env:ro
-    depends_on:
-      - mongodb
-    environment:
-      - MONGODB_URI=mongodb://root:example@mongodb:27017
-    command: uvicorn main:app --host 0.0.0.0 --port 8443 --reload
+      - ./src:/code
+      - ./.env:/.env
 
-  mongodb:
+    command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8443", "--reload" ]
+
+  test_db:
     image: mongo:latest
     ports:
-      - "27017:27017"
+      - "27018:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
-      - mongodb_data:/data/db
+      - mongo-test-data:/data/db
 
 volumes:
-  mongodb_data:
+  mongo-data:
+  mongo-test-data:
