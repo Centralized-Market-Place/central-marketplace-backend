@@ -15,6 +15,8 @@ from centeral_marketplace.reactions.resource import reaction_router
 from centeral_marketplace.sellers.resource import sellers_router
 from centeral_marketplace.bookmarks.resource import bookmark_router
 from centeral_marketplace.files.resource import files_router
+from centeral_marketplace.notifications.resource import notifications_router
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -31,8 +33,9 @@ def create_app(injector: Injector = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
+        expose_headers=["*"]
     )
     app.mount("/api/v1", sub_api)
 
@@ -44,6 +47,7 @@ def create_app(injector: Injector = None) -> FastAPI:
     sub_api.include_router(sellers_router)
     sub_api.include_router(bookmark_router)
     sub_api.include_router(files_router)
+    sub_api.include_router(notifications_router)
 
     if injector is None:
         injector = create_injector()
@@ -57,19 +61,19 @@ def create_app(injector: Injector = None) -> FastAPI:
 
     user_service = injector.get(UserService)
     config = injector.get(Config)
-    try:
-        user_service.create_admin(
-            UserCreate(
-                name="Admin",
-                email=config.admin_email,
-                password=config.admin_password,
+
+    @app.on_event("startup")
+    async def startup_event():
+        try:
+            user_service.create_admin(
+                UserCreate(
+                    name="Admin",
+                    email=config.admin_email,
+                    password=config.admin_password,
+                )
             )
-        )
-
-    except Exception as e:
-        print("Error creating admin user:", e)
-        pass
-
-    logger.info(f"Admin user created with email: {config.admin_email}")
+            logger.info(f"Admin user created with email: {config.admin_email}")
+        except Exception as e:
+            logger.error(f"Error creating admin user: {e}")
 
     return app

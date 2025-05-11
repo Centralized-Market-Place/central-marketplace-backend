@@ -48,11 +48,7 @@ class RepositoryInterface(ABC, Generic[EntityType]):
     @abstractmethod
     def delete_one(self, id: PyObjectId):
         pass
-
-    @abstractmethod
-    def find_all_by(self, **kwargs) -> Iterator[EntityType]:
-        pass
-
+    
     @abstractmethod
     def find_all_by_dict(self, criteria: dict) -> Iterator[EntityType]:
         pass
