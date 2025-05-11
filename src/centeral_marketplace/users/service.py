@@ -5,6 +5,8 @@ import hmac
 import logging
 import time
 
+from centeral_marketplace.notifications.core import NotificationType
+from centeral_marketplace.notifications.service import NotificationService
 from pydantic import EmailStr
 
 from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
@@ -35,6 +37,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UserService:
     user_repository: UserRepository
+    notification_service: NotificationService
     config: Config
 
     def find_all(
@@ -63,6 +66,13 @@ class UserService:
             email=user.email,
             password_hash=hashed_password,
         )
+       
+        self.notification_service.create_notification(
+            user_id=created_user.id,
+            content=f"Welcome to the platform {created_user.name}",
+            notification_type=NotificationType.SYSTEM,
+        )
+
         return self.user_repository.save(created_user)
 
     def create_admin(self, user: UserCreate) -> User:
