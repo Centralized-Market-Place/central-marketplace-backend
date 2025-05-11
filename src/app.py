@@ -15,45 +15,15 @@ from centeral_marketplace.reactions.resource import reaction_router
 from centeral_marketplace.sellers.resource import sellers_router
 from centeral_marketplace.bookmarks.resource import bookmark_router
 from centeral_marketplace.notifications.resource import notifications_router
-from centeral_marketplace.notifications.manager import WebSocketManager
-from centeral_marketplace.notifications.repository import NotificationRepository
-from contextlib import asynccontextmanager
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Lifespan context manager for FastAPI app."""
-    # Initialize WebSocket manager and Redis
-    try:
-        logger.info("Initializing WebSocket manager and Redis")
-        manager = WebSocketManager()
-        await manager.initialize()
-        
-        # Initialize notification repository
-        repository = NotificationRepository()
-        await repository.initialize()
-        
-        logger.info("WebSocket manager and Redis initialized successfully")
-    except Exception as e:
-        logger.error(f"Error initializing WebSocket manager or Redis: {e}")
-        raise
-    
-    yield
-    
-    # Cleanup
-    try:
-        logger.info("Shutting down WebSocket manager and Redis")
-        await manager.close()
-        await repository.close()
-        logger.info("WebSocket manager and Redis closed successfully")
-    except Exception as e:
-        logger.error(f"Error during WebSocket manager or Redis shutdown: {e}")
 
 def create_app(injector: Injector = None) -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI()
     sub_api = FastAPI()
 
     origins = ["http://localhost", "http://localhost:3000", "*"]
@@ -92,7 +62,6 @@ def create_app(injector: Injector = None) -> FastAPI:
 
     @app.on_event("startup")
     async def startup_event():
-        # Create admin user
         try:
             user_service.create_admin(
                 UserCreate(
