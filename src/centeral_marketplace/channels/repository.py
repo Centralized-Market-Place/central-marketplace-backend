@@ -19,6 +19,7 @@ class ChannelRepository(RepositoryInterface[Channel]):
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="channels", model=Channel, config=self.config
         )
+        self.delegate.ensure_index("telegram_id")
 
     def save(self, data: Channel):
         return self.delegate.save(data)

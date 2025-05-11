@@ -36,15 +36,13 @@ class SellerService:
     config: Config
 
     def verify_bot_admin_status(self, user: User, channel_id: str) -> TelegramBotStatusResponse:
-        """
-        Verify if the user's channel has added our bot with admin privileges
-        """
         if not user.telegram:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User is not logged in with Telegram",
             )
-            
+        
+
         has_bot_admin_access = self.telegram_service.is_bot_admin(channel_id)
         verified_channel_ownership = self.telegram_service.verify_channel_ownership(
             user.telegram.telegram_id, channel_id
@@ -121,15 +119,17 @@ class SellerService:
     def get_all_seller_applications(
         self, 
         pagination: Pagination = None, 
-        status: SellerApplicationStatus = None
+        status: SellerApplicationStatus = None,
+        search: str = None
     ) -> PaginatedResponse[SellerApplication]:
-        """
-        Get all seller applications with optional status filter
-        """
         criteria = {}
         if status:
             criteria["status"] = status
-            
+        if search:
+            criteria["$or"] = [
+                {"seller_info.business_name": {"$regex": search, "$options": "i"}},
+                {"seller_info.channel_name": {"$regex": search, "$options": "i"}}
+            ]
         return self.seller_repository.find_all_by_dict(
             criteria=criteria,
             pagination=pagination,
@@ -138,15 +138,9 @@ class SellerService:
         )
         
     def get_user_seller_applications(self, user_id: PyObjectId) -> list[SellerApplication]:
-        """
-        Get all seller applications for a user
-        """
         return self.seller_repository.find_by_user_id(user_id)
         
     def get_seller_application(self, application_id: PyObjectId) -> SellerApplication:
-        """
-        Get a seller application by ID
-        """
         application = self.seller_repository.find_one(application_id)
         if not application:
             raise HTTPException(
@@ -158,9 +152,6 @@ class SellerService:
     def review_seller_application(
         self, admin: User, review: SellerApplicationReview
     ) -> SellerApplication:
-        """
-        Review a seller application (approve or reject)
-        """
         if admin.role != Role.ADMIN:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -180,6 +171,8 @@ class SellerService:
             if user:
                 user.role = Role.SELLER
                 user.updated_at = datetime.now(UTC)
+                user.seller_infos.append(application.seller_info)
                 self.user_repository.save(user)
+
                 
         return updated_application 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from bson import ObjectId
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 from core import PyObjectId
 
@@ -12,6 +12,7 @@ class Channel(BaseModel):
             validation_alias=AliasChoices("_id", "id"),
             serialization_alias="id",
         )
+    telegram_id: str
     title: Optional[str] = Field(default="")
     username: Optional[str] = Field(default="")
     description: Optional[str] = Field(default="")
@@ -28,7 +29,15 @@ class Channel(BaseModel):
     has_link: bool = False
     date_created: Optional[datetime] = None
     broadcast: bool = False
-    telegram_id: int = 0
 
+     
+    
+    @field_validator('telegram_id')
+    @classmethod
+    def convert_telegram_id_to_str(cls, v):
+        if isinstance(v, int):
+            return str(v)
+        return v
+    
     class Config:
         from_attributes = True

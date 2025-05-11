@@ -6,9 +6,6 @@ from centeral_marketplace.infrastructure.json import (
 from centeral_marketplace.channels.service import ChannelService
 from fastapi import APIRouter
 from fastapi_injector import Injected
-from typing import Union
-from bson import ObjectId
-from core import PyObjectId
 
 channel_router = APIRouter(
     prefix="/channels",
@@ -33,7 +30,6 @@ async def get_channels(
             {"title": {"$regex": query, "$options": "i"}},
         ]
 
-    total = channel_service.count_all_by_dict(criteria=criteria)
     paginated = channel_service.find_all(
         pagination=Pagination(page=page, size=page_size),
         sort_by=sort_by,

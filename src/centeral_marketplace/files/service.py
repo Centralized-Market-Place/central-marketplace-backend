@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 import time
 import cloudinary
+import cloudinary.uploader
 from injector import inject, singleton
+from typing import Optional
+import httpx
 from config import Config
 from centeral_marketplace.files.core import FileType, SignedUrlResponse
 
@@ -45,3 +48,22 @@ class FileService:
         if file_type == FileType.PDF:
             return "raw"
         return "image"
+        
+    def upload_from_url(self, url: str, folder: str = "channels") -> Optional[str]:
+        try:
+            # Download the file content
+            with httpx.Client() as client:
+                response = client.get(url)
+                response.raise_for_status()
+                
+                # Upload to Cloudinary
+                result = cloudinary.uploader.upload(
+                    response.content,
+                    folder=folder,
+                    resource_type="auto"
+                )
+                
+                return result.get("secure_url")
+        except Exception as e:
+            print(f"Error uploading file from URL: {e}")
+            return None

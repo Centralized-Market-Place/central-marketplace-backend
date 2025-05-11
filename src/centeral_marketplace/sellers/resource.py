@@ -49,13 +49,11 @@ async def get_all_seller_applications(
     page: int = 1, 
     page_size: int = 10,
     status: Optional[SellerApplicationStatus] = Query(None, description="Filter by application status"),
+    search: Optional[str] = Query(None, description="Search by channel name or business name"),
     seller_service: SellerService = Injected(SellerService),
 ):
-    """
-    Admin endpoint to get all seller applications with optional status filter
-    """
     pagination = Pagination(page=page, size=page_size)
-    return seller_service.get_all_seller_applications(pagination=pagination, status=status)
+    return seller_service.get_all_seller_applications(pagination=pagination, status=status, search=search)
 
 
 @sellers_router.get("/applications/me", response_model=list[SellerApplication])

@@ -3,7 +3,7 @@ import hmac
 import time
 import pytest
 from fastapi.testclient import TestClient
-from hamcrest import assert_that, equal_to, not_none, is_
+from hamcrest import assert_that, equal_to, not_none, is_, contains_string
 
 from centeral_marketplace.infrastructure.telegram.service import TelegramService
 from centeral_marketplace.users.core import Role, User
@@ -70,6 +70,51 @@ def test_telegram_service_get_bot_info():
             with then("The response should contain valid bot info"):
                 assert_that(response.get("ok"), equal_to(True))
                 assert_that(response.get("result", {}).get("username"), equal_to(config.telegram_bot_username))
+
+
+@pytest.mark.ci
+def test_telegram_service_get_channel_info():
+    with given([
+        prepare_injector(),
+    ]) as context:
+        telegram_service: TelegramService = context.injector.get(TelegramService)
+        
+        with when("I request channel information"):
+            channel = telegram_service.get_channel_info("@centeral_marketplace")
+            
+            with then("The channel information should be retrieved successfully"):
+                assert_that(channel, not_none())
+                assert_that(channel.title, not_none())
+                assert_that(channel.username, not_none())
+                assert_that(channel.telegram_id, not_none())
+                
+                assert_that(channel.username.lower(), equal_to("centeral_marketplace"))
+                assert_that(channel.broadcast, equal_to(True))
+
+
+@pytest.mark.ci
+def test_telegram_service_get_channel_info_with_photo():
+    with given([
+        prepare_injector(),
+    ]) as context:
+        telegram_service = context.injector.get(TelegramService)
+        
+        with when("I request channel information for a channel with photo"):
+            channel = telegram_service.get_channel_info("@centeral_marketplace")
+            
+            with then("The channel information should include photo URL"):
+                assert_that(channel, not_none())
+                
+                if channel.thumbnail_url:
+                    assert_that(channel.thumbnail_url, contains_string("cloudinary.com"))
+                    
+                    with when("I try to access the photo URL"):
+                        import httpx
+                        with httpx.Client() as client:
+                            response = client.head(channel.thumbnail_url)
+                            with then("The photo URL should be accessible"):
+                                assert_that(response.status_code, equal_to(200))
+
 
 
 @pytest.mark.ci
