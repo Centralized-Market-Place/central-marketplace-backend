@@ -14,6 +14,7 @@ from centeral_marketplace.comments.resource import comment_router
 from centeral_marketplace.reactions.resource import reaction_router
 from centeral_marketplace.sellers.resource import sellers_router
 from centeral_marketplace.bookmarks.resource import bookmark_router
+from centeral_marketplace.files.resource import files_router
 from centeral_marketplace.notifications.resource import notifications_router
 
 
@@ -45,6 +46,7 @@ def create_app(injector: Injector = None) -> FastAPI:
     sub_api.include_router(reaction_router)
     sub_api.include_router(sellers_router)
     sub_api.include_router(bookmark_router)
+    sub_api.include_router(files_router)
     sub_api.include_router(notifications_router)
 
     if injector is None:

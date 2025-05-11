@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 import logging
 from fastapi import HTTPException, status
 from injector import inject, singleton
+from pymongo.errors import DuplicateKeyError
 
 from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
 from centeral_marketplace.infrastructure.telegram.service import TelegramService
@@ -54,12 +55,16 @@ class SellerService:
             verified_channel_ownership=verified_channel_ownership
         )
             
+    def is_verified_channel_admin(self, user: User, channel_id: str) -> bool:
+        if not user.telegram:
+            return False
+            
+        bot_status = self.verify_bot_admin_status(user, channel_id)
+        return bot_status.has_bot_admin_access and bot_status.verified_channel_ownership
+            
     def save_seller_application(
         self, user: User, application_data: SellerApplicationCreate
     ) -> SellerApplication:
-        """
-        Create a new seller application
-        """
         if not user.telegram:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -105,7 +110,13 @@ class SellerService:
             status=SellerApplicationStatus.PENDING,
         )
         
-        return self.seller_repository.save(application)
+        try:
+            return self.seller_repository.save(application)
+        except DuplicateKeyError:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An application for this channel already exists"
+            )
         
     def get_all_seller_applications(
         self, 
@@ -160,7 +171,7 @@ class SellerService:
         
         application.status = review.status
         application.admin_review_notes = review.admin_review_notes
-        application.updated_at = datetime.utcnow()
+        application.updated_at = datetime.now(UTC)
         
         updated_application = self.seller_repository.save(application)
         
@@ -168,8 +179,7 @@ class SellerService:
             user = self.user_repository.find_one(application.user_id)
             if user:
                 user.role = Role.SELLER
-                user.seller_info = application.seller_info
-                user.updated_at = datetime.utcnow()
+                user.updated_at = datetime.now(UTC)
                 self.user_repository.save(user)
                 
         return updated_application 
