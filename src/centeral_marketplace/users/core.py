@@ -141,7 +141,7 @@ class User(UserBase):
     role: Role = Role.USER
     is_verified: bool = False
     
-    seller_info: Optional[SellerInfo] = None
+    seller_info: Optional[list[SellerInfo]] = []
     
     telegram: Optional[TelegramData] = None
     
@@ -196,7 +196,7 @@ class UserPublic(UserBase):
     profile_picture: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
-    seller_info: Optional[SellerInfo] = None
+    seller_info: Optional[list[SellerInfo]] = []
     created_at: datetime
     updated_at: datetime
 

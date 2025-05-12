@@ -179,7 +179,7 @@ class SellerService:
             user = self.user_repository.find_one(application.user_id)
             if user:
                 user.role = Role.SELLER
-                user.seller_info = application.seller_info
+                user.seller_info.append(application.seller_info)
                 user.updated_at = datetime.now(UTC)
                 self.user_repository.save(user)
                 
