@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional, Dict
 from centeral_marketplace.users.auth import create_access_token
 from fastapi import APIRouter, Depends
 from fastapi_injector import Injected
@@ -15,6 +15,11 @@ from centeral_marketplace.users.core import (
     AuthResponse,
     UserPublic,
     TelegramLogin,
+    PersonalInfo,
+    ContactInfo,
+    LocationInfo,
+    CommunicationPreferences,
+    PrivacySettings,
 )
 from middleware import get_current_user, require_role
 
@@ -76,3 +81,62 @@ async def telegram_auth(
     user = user_service.login_telegram_user(telegram_data)
     access_token = create_access_token({"sub": str(user.id)})
     return AuthResponse(token=access_token, user=user)
+
+
+@users_router.put("/profile/personal-info", response_model=User)
+async def update_personal_info(
+    personal_info: PersonalInfo,
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: UserService = Injected(UserService),
+):
+    """Update user's personal information"""
+    return user_service.update_personal_info(current_user.id, personal_info)
+
+
+@users_router.put("/profile/contact-info", response_model=User)
+async def update_contact_info(
+    contact_info: ContactInfo,
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: UserService = Injected(UserService),
+):
+    """Update user's contact information"""
+    return user_service.update_contact_info(current_user.id, contact_info)
+
+
+@users_router.put("/profile/location-info", response_model=User)
+async def update_location_info(
+    location_info: LocationInfo,
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: UserService = Injected(UserService),
+):
+    """Update user's location information"""
+    return user_service.update_location_info(current_user.id, location_info)
+
+
+@users_router.put("/profile/communication-preferences", response_model=User)
+async def update_communication_preferences(
+    preferences: CommunicationPreferences,
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: UserService = Injected(UserService),
+):
+    """Update user's communication preferences"""
+    return user_service.update_communication_preferences(current_user.id, preferences)
+
+
+@users_router.put("/profile/privacy-settings", response_model=User)
+async def update_privacy_settings(
+    settings: PrivacySettings,
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: UserService = Injected(UserService),
+):
+    """Update user's privacy settings"""
+    return user_service.update_privacy_settings(current_user.id, settings)
+
+
+@users_router.get("/profile/completion", response_model=Dict)
+async def get_profile_completion(
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: UserService = Injected(UserService),
+):
+    """Get user's profile completion status"""
+    return user_service.get_profile_completion(current_user.id)
