@@ -31,14 +31,16 @@ def test_users_should_be_able_to_register():
                 json={
                     "email": "test@gmail.com",
                     "password": "password",
-                    "name": "test",
+                    "first_name": "John",
+                    "last_name": "Doe",
                 },
             )
 
             assert_that(response.status_code, equal_to(200))
             data = response.json()
             assert_that(data["email"], equal_to("test@gmail.com"))
-            assert_that(data["name"], equal_to("test"))
+            assert_that(data["first_name"], equal_to("John"))
+            assert_that(data["last_name"], equal_to("Doe"))
             assert_that("password" not in data)
 
 
@@ -50,7 +52,7 @@ def test_users_with_same_email_should_not_be_able_to_register():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="John", last_name="Doe", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -61,7 +63,8 @@ def test_users_with_same_email_should_not_be_able_to_register():
                 json={
                     "email": "test@gmail.com",
                     "password": "password",
-                    "name": "test",
+                    "first_name": "John",
+                    "last_name": "Doe",
                 },
             )
 
@@ -80,7 +83,7 @@ def test_users_should_be_able_to_login():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -108,7 +111,7 @@ def test_users_should_not_be_able_to_login_with_wrong_password():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -135,7 +138,7 @@ def test_users_should_not_be_able_to_login_with_wrong_email():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -163,7 +166,8 @@ def test_admin_should_be_able_to_get_users():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="test",
+                first_name="Test",
+                last_name="User",
                 email="test@gmail.com",
                 password="password",
                 role=Role.ADMIN,
@@ -193,7 +197,11 @@ def test_non_admin_user_should_not_be_able_to_get_users():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="test", email="test@gmail.com", password="password", role=Role.USER
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+                role=Role.USER
             ),
         ]
     ) as context:
@@ -268,7 +276,7 @@ def test_user_should_be_able_to_update_personal_info():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="John", last_name="Doe", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -279,17 +287,18 @@ def test_user_should_be_able_to_update_personal_info():
                 url="api/v1/users/profile/personal-info",
                 headers={"Authorization": f"Bearer {token}"},
                 json={
-                    "first_name": "John",
-                    "last_name": "Doe",
                     "date_of_birth": "1990-01-01",
                     "gender": "male",
+                    "nationality": "USA",
+                    "profile_picture": "https://example.com/photo.jpg",
+                    "bio": "Test bio",
                 },
             )
 
             assert_that(response.status_code, equal_to(200))
             data = response.json()
-            assert_that(data["personal_info"]["first_name"], equal_to("John"))
-            assert_that(data["personal_info"]["last_name"], equal_to("Doe"))
+            assert_that(data["personal_info"]["gender"], equal_to("male"))
+            assert_that(data["personal_info"]["nationality"], equal_to("USA"))
 
 
 def test_user_should_be_able_to_update_contact_info():
@@ -300,7 +309,7 @@ def test_user_should_be_able_to_update_contact_info():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -330,7 +339,7 @@ def test_user_should_be_able_to_update_location_info():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -362,7 +371,7 @@ def test_user_should_be_able_to_update_communication_preferences():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -393,7 +402,7 @@ def test_user_should_be_able_to_update_privacy_settings():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client
@@ -424,7 +433,7 @@ def test_user_should_be_able_to_get_profile_completion():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(name="test", email="test@gmail.com", password="password"),
+            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
         ]
     ) as context:
         client: TestClient = context.client

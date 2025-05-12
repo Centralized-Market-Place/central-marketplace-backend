@@ -23,9 +23,10 @@ def test_get_signed_upload_url_for_png():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="Test User", 
-                email="test@gmail.com", 
-                password="password", 
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
                 role=Role.USER
             ),
         ]
@@ -68,9 +69,10 @@ def test_get_signed_upload_url_for_pdf():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="Test User", 
-                email="test@gmail.com", 
-                password="password", 
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
                 role=Role.USER
             ),
         ]
@@ -134,9 +136,10 @@ def test_get_signed_upload_url_invalid_file_type():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="Test User", 
-                email="test@gmail.com", 
-                password="password", 
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
                 role=Role.USER
             ),
         ]

@@ -4,7 +4,8 @@ from centeral_marketplace.users.auth import hash_password
 
 
 def there_is_a_user(
-    name: str,
+    first_name: str,
+    last_name: str,
     email: str,
     password: str,
     role: Role = Role.USER,
@@ -14,7 +15,8 @@ def there_is_a_user(
         user_repo: UserRepository = context.injector.get(UserRepository)
         password_hash = hash_password(password)
         user = User(
-            name=name,
+            first_name=first_name,
+            last_name=last_name,
             email=email,
             password_hash=password_hash,
             role=role,

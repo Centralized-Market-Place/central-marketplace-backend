@@ -18,7 +18,7 @@ def test_user_can_list_notifications():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="Test User", email="user@example.com", password="password"),
+        there_is_a_user(first_name="Test", last_name="User", email="user@example.com", password="password"),
         there_are_multiple_notifications(count=10)
     ]) as context:
         client: TestClient = context.client
@@ -54,7 +54,7 @@ def test_user_can_filter_notifications_by_read_status():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="Test User", email="user@example.com", password="password"),
+        there_is_a_user(first_name="Test", last_name="User", email="user@example.com", password="password"),
         there_are_multiple_notifications(count=10)
     ]) as context:
         client: TestClient = context.client
@@ -99,7 +99,7 @@ def test_user_can_mark_notification_as_read():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="Test User", email="user@example.com", password="password"),
+        there_is_a_user(first_name="Test", last_name="User", email="user@example.com", password="password"),
         there_is_a_notification(read=False)
     ]) as context:
         client: TestClient = context.client
@@ -139,9 +139,9 @@ def test_user_cannot_mark_other_users_notification_as_read():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="User1", email="user1@example.com", password="password"),
+        there_is_a_user(first_name="User1", last_name="Test", email="user1@example.com", password="password"),
         there_is_a_notification(read=False),
-        there_is_a_user(name="User2", email="user2@example.com", password="password")
+        there_is_a_user(first_name="User2", last_name="Test", email="user2@example.com", password="password")
     ]) as context:
         client: TestClient = context.client
         notification = context.notification
@@ -167,7 +167,7 @@ def test_user_can_delete_notification():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="Test User", email="user@example.com", password="password"),
+        there_is_a_user(first_name="Test", last_name="User", email="user@example.com", password="password"),
         there_is_a_notification()
     ]) as context:
         client: TestClient = context.client
@@ -201,9 +201,9 @@ def test_user_cannot_delete_other_users_notification():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="User1", email="user1@example.com", password="password"),
+        there_is_a_user(first_name="User1", last_name="Test", email="user1@example.com", password="password"),
         there_is_a_notification(),
-        there_is_a_user(name="User2", email="user2@example.com", password="password")
+        there_is_a_user(first_name="User2", last_name="Test", email="user2@example.com", password="password")
     ]) as context:
         client: TestClient = context.client
         notification = context.notification  # This belongs to User1
@@ -227,7 +227,7 @@ def test_user_can_delete_all_notifications():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="Test User", email="user@example.com", password="password"),
+        there_is_a_user(first_name="Test", last_name="User", email="user@example.com", password="password"),
         there_are_multiple_notifications(count=10)
     ]) as context:
         client: TestClient = context.client
@@ -272,7 +272,7 @@ def test_pagination_works_for_notifications():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="Test User", email="user@example.com", password="password"),
+        there_is_a_user(first_name="Test", last_name="User", email="user@example.com", password="password"),
         there_are_multiple_notifications(count=25)  # Create more than default page size
     ]) as context:
         client: TestClient = context.client
@@ -322,7 +322,7 @@ def test_authentication_required_for_notification_endpoints():
         create_test_client(),
         database_repo_is_ready(),
         database_is_clean(),
-        there_is_a_user(name="Test User", email="user@example.com", password="password"),
+        there_is_a_user(first_name="Test", last_name="User", email="user@example.com", password="password"),
         there_is_a_notification()
     ]) as context:
         client: TestClient = context.client

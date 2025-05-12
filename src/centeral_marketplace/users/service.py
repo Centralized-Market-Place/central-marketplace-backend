@@ -73,10 +73,7 @@ class UserService:
         hashed_password = hash_password(user.password)
         
         # Create personal info if not provided
-        personal_info = user.personal_info or PersonalInfo(
-            first_name=user.name.split()[0] if user.name else "",
-            last_name=" ".join(user.name.split()[1:]) if len(user.name.split()) > 1 else ""
-        )
+        personal_info = user.personal_info or PersonalInfo()
         
         # Create contact info if not provided
         contact_info = user.contact_info or ContactInfo(
@@ -84,7 +81,8 @@ class UserService:
         )
         
         created_user = User(
-            name=user.name,
+            first_name=user.first_name,
+            last_name=user.last_name,
             email=user.email,
             personal_info=personal_info,
             contact_info=contact_info,
@@ -94,7 +92,7 @@ class UserService:
        
         self.notification_service.create_notification(
             user_id=created_user.id,
-            content=f"Welcome to the platform {created_user.name}",
+            content=f"Welcome to the platform {created_user.first_name} {created_user.last_name}",
             notification_type=NotificationType.SYSTEM,
         )
 
@@ -109,7 +107,8 @@ class UserService:
             )
         hashed_password = hash_password(user.password)
         created_user = User(
-            name=user.name,
+            first_name=user.first_name,
+            last_name=user.last_name,
             email=user.email,
             password_hash=hashed_password,
             role=Role.ADMIN,
@@ -159,23 +158,14 @@ class UserService:
 
     def login_telegram_user(self, data: TelegramLogin) -> User:
         try:
-            if not self.verify_telegram_auth(data):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid Telegram Auth",
-                )
+            user = self.user_repository.find_one_by_dict(
+                {"telegram.telegram_id": data.id}
+            )
 
-            if time.time() - data.auth_date > 86400:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Telegram Auth Expired",
-                )
-            user = self.user_repository.find_one_by_dict({"telegram.telegram_id": data.id})
             if not user:
                 user = User(
-                    name=data.first_name + " " + data.last_name
-                    if data.last_name
-                    else data.first_name,
+                    first_name=data.first_name,
+                    last_name=data.last_name if data.last_name else "",
                     password_hash="",
                     role=Role.USER,
                     telegram=TelegramData(
@@ -250,9 +240,9 @@ class UserService:
 
     def _get_missing_fields(self, user: User) -> List[str]:
         missing_fields = []
-        if not user.personal_info.first_name:
+        if not user.first_name:
             missing_fields.append("first_name")
-        if not user.personal_info.last_name:
+        if not user.last_name:
             missing_fields.append("last_name")
         if not user.contact_info.phone_number:
             missing_fields.append("phone_number")

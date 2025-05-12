@@ -23,8 +23,6 @@ class TelegramData(BaseModel):
 
 
 class PersonalInfo(BaseModel):
-    first_name: str
-    last_name: str
     date_of_birth: Optional[datetime] = None
     gender: Optional[str] = None
     nationality: Optional[str] = None
@@ -95,7 +93,8 @@ class VerificationStatus(BaseModel):
 
 
 class UserBase(BaseModel):
-    name: str
+    first_name: str
+    last_name: str
     email: Optional[EmailStr] = None
 
 
@@ -122,19 +121,14 @@ class User(UserBase):
         serialization_alias="id",
     )
    
-    personal_info: PersonalInfo = Field(default_factory=lambda: PersonalInfo(
-        first_name="",
-        last_name=""
-    ))
+    personal_info: PersonalInfo = Field(default_factory=PersonalInfo)
     contact_info: ContactInfo = Field(default_factory=lambda: ContactInfo(
         email=""
     ))
     location_info: LocationInfo = Field(default_factory=LocationInfo)
     
-    
     communication_preferences: CommunicationPreferences = Field(default_factory=CommunicationPreferences)
     privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
-    
     
     verification_status: VerificationStatus = Field(default_factory=VerificationStatus)
     password_hash: str
@@ -158,8 +152,8 @@ class User(UserBase):
     def is_profile_complete(self) -> bool:
         """Check if the profile has all required information"""
         required_fields = [
-            self.personal_info.first_name,
-            self.personal_info.last_name,
+            self.first_name,
+            self.last_name,
             self.contact_info.phone_number,
             self.location_info.country,
             self.location_info.city
@@ -168,10 +162,10 @@ class User(UserBase):
 
     def get_completion_percentage(self) -> float:
         """Calculate profile completion percentage"""
-        total_fields = 15  
+        total_fields = 13  # Reduced by 2 since first_name and last_name are now in base
         completed_fields = sum(1 for field in [
-            self.personal_info.first_name,
-            self.personal_info.last_name,
+            self.first_name,
+            self.last_name,
             self.personal_info.date_of_birth,
             self.personal_info.gender,
             self.personal_info.profile_picture,
