@@ -82,9 +82,10 @@ def test_seller_apply_endpoint_with_bot_admin_permission():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="Sahib.S", 
-                email="sahib.s@gmail.com", 
-                password="password", 
+                first_name="Sahib",
+                last_name="S",
+                email="sahib.s@gmail.com",
+                password="password",
                 role=Role.USER,
                 telegram={"telegram_id": 713289859, "first_name": "Sahib.S", "username": "Sah7b"}
             ),
@@ -125,9 +126,10 @@ def test_seller_application_review():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="admin", 
-                email="admin@gmail.com", 
-                password="password", 
+                first_name="Admin",
+                last_name="User",
+                email="admin@gmail.com",
+                password="password",
                 role=Role.ADMIN
             ),
         ]
@@ -228,8 +230,6 @@ def test_seller_application_review():
                 assert_that(seller_info["channel_name"], equal_to("Central Marketplace Test Channel"))
                 assert_that(seller_info["government_id"], equal_to("https://example.com/id.jpg"))
 
-               
-
 
 @pytest.mark.ci
 def test_check_bot_status_endpoint():
@@ -241,9 +241,10 @@ def test_check_bot_status_endpoint():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="Sahib.S", 
-                email="sahib.s@gmail.com", 
-                password="password", 
+                first_name="Sahib",
+                last_name="S",
+                email="sahib.s@gmail.com",
+                password="password",
                 role=Role.USER,
                 telegram={"telegram_id": 713289859, "first_name": "Sahib.S", "username": "Sah7b"}
             ),
