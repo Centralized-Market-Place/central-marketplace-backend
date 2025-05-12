@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict
 from bson import ObjectId
+from centeral_marketplace.sellers.core import SellerInfo
 from pydantic import AliasChoices, BaseModel, EmailStr, Field
 from core import PyObjectId
 
@@ -140,6 +141,7 @@ class User(UserBase):
     role: Role = Role.USER
     is_verified: bool = False
     
+    seller_info: Optional[SellerInfo] = None
     
     telegram: Optional[TelegramData] = None
     
@@ -194,6 +196,7 @@ class UserPublic(UserBase):
     profile_picture: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
+    seller_info: Optional[SellerInfo] = None
     created_at: datetime
     updated_at: datetime
 
