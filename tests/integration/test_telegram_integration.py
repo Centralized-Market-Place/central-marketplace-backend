@@ -3,7 +3,7 @@ import hmac
 import time
 import pytest
 from fastapi.testclient import TestClient
-from hamcrest import assert_that, equal_to, not_none, is_, contains_string
+from hamcrest import assert_that, equal_to, not_none, is_, contains_string, has_length
 
 from centeral_marketplace.infrastructure.telegram.service import TelegramService
 from centeral_marketplace.users.core import Role, User
@@ -125,9 +125,10 @@ def test_seller_apply_endpoint_with_bot_admin_permission():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="Sahib.S", 
-                email="sahib.s@gmail.com", 
-                password="password", 
+                first_name="Sahib",
+                last_name="S",
+                email="sahib.s@gmail.com",
+                password="password",
                 role=Role.USER,
                 telegram={"telegram_id": 713289859, "first_name": "Sahib.S", "username": "Sah7b"}
             ),
@@ -168,9 +169,10 @@ def test_seller_application_review():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="admin", 
-                email="admin@gmail.com", 
-                password="password", 
+                first_name="Admin",
+                last_name="User",
+                email="admin@gmail.com",
+                password="password",
                 role=Role.ADMIN
             ),
         ]
@@ -276,9 +278,10 @@ def test_check_bot_status_endpoint():
             database_repo_is_ready(),
             database_is_clean(),
             there_is_a_user(
-                name="Sahib.S", 
-                email="sahib.s@gmail.com", 
-                password="password", 
+                first_name="Sahib",
+                last_name="S",
+                email="sahib.s@gmail.com",
+                password="password",
                 role=Role.USER,
                 telegram={"telegram_id": 713289859, "first_name": "Sahib.S", "username": "Sah7b"}
             ),

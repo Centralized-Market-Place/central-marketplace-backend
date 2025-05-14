@@ -1,10 +1,14 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import hmac
 import logging
 import time
+from typing import Optional, List
 
+from core import PyObjectId
+from centeral_marketplace.notifications.core import NotificationType
+from centeral_marketplace.notifications.service import NotificationService
 from pydantic import EmailStr
 
 from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
@@ -25,6 +29,11 @@ from centeral_marketplace.users.core import (
     TelegramLogin,
     User,
     UserCreate,
+    PersonalInfo,
+    ContactInfo,
+    LocationInfo,
+    CommunicationPreferences,
+    PrivacySettings,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,6 +44,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UserService:
     user_repository: UserRepository
+    notification_service: NotificationService
     config: Config
 
     def find_all(
@@ -49,6 +59,9 @@ class UserService:
 
     def find_user_by_email(self, email: EmailStr) -> User:
         return self.user_repository.find_one_by_dict({"email": email})
+    
+    def find_one(self, user_id: PyObjectId) -> User:
+        return self.user_repository.find_one(user_id)
 
     def register_user(self, user: UserCreate) -> User:
         existing_user = self.user_repository.find_one_by_dict({"email": user.email})
@@ -58,11 +71,31 @@ class UserService:
                 detail="User with the current email already exist",
             )
         hashed_password = hash_password(user.password)
+        
+        # Create personal info if not provided
+        personal_info = user.personal_info or PersonalInfo()
+        
+        # Create contact info if not provided
+        contact_info = user.contact_info or ContactInfo(
+            email=user.email
+        )
+        
         created_user = User(
-            name=user.name,
+            first_name=user.first_name,
+            last_name=user.last_name,
             email=user.email,
+            personal_info=personal_info,
+            contact_info=contact_info,
+            location_info=user.location_info or LocationInfo(),
             password_hash=hashed_password,
         )
+       
+        self.notification_service.create_notification(
+            user_id=created_user.id,
+            content=f"Welcome to the platform {created_user.first_name} {created_user.last_name}",
+            notification_type=NotificationType.SYSTEM,
+        )
+
         return self.user_repository.save(created_user)
 
     def create_admin(self, user: UserCreate) -> User:
@@ -74,7 +107,8 @@ class UserService:
             )
         hashed_password = hash_password(user.password)
         created_user = User(
-            name=user.name,
+            first_name=user.first_name,
+            last_name=user.last_name,
             email=user.email,
             password_hash=hashed_password,
             role=Role.ADMIN,
@@ -124,23 +158,14 @@ class UserService:
 
     def login_telegram_user(self, data: TelegramLogin) -> User:
         try:
-            if not self.verify_telegram_auth(data):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid Telegram Auth",
-                )
+            user = self.user_repository.find_one_by_dict(
+                {"telegram.telegram_id": data.id}
+            )
 
-            if time.time() - data.auth_date > 86400:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Telegram Auth Expired",
-                )
-            user = self.user_repository.find_one_by_dict({"telegram.telegram_id": data.id})
             if not user:
                 user = User(
-                    name=data.first_name + " " + data.last_name
-                    if data.last_name
-                    else data.first_name,
+                    first_name=data.first_name,
+                    last_name=data.last_name if data.last_name else "",
                     password_hash="",
                     role=Role.USER,
                     telegram=TelegramData(
@@ -172,3 +197,57 @@ class UserService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Internal Server Error",
             )
+
+    def update_personal_info(self, user_id: PyObjectId, personal_info: PersonalInfo) -> User:
+        user = self.find_one(user_id)
+        user.personal_info = personal_info
+        user.updated_at = datetime.now(timezone.utc)
+        return self.user_repository.save(user)
+
+    def update_contact_info(self, user_id: PyObjectId, contact_info: ContactInfo) -> User:
+        user = self.find_one(user_id)
+     
+        user.contact_info = contact_info
+        user.updated_at = datetime.now(timezone.utc)
+        return self.user_repository.save(user)
+
+    def update_location_info(self, user_id: PyObjectId, location_info: LocationInfo) -> User:
+        user = self.find_one(user_id)
+        user.location_info = location_info
+        user.updated_at = datetime.now(timezone.utc)
+        return self.user_repository.save(user)
+
+    def update_communication_preferences(self, user_id: PyObjectId, preferences: CommunicationPreferences) -> User:
+        user = self.find_one(user_id)
+        user.communication_preferences = preferences
+        user.updated_at = datetime.now(timezone.utc)
+        return self.user_repository.save(user)
+
+    def update_privacy_settings(self, user_id: PyObjectId, settings: PrivacySettings) -> User:
+        user = self.find_one(user_id)
+        user.privacy_settings = settings
+        user.updated_at = datetime.now(timezone.utc)
+        return self.user_repository.save(user)
+
+
+    def get_profile_completion(self, user_id: PyObjectId) -> dict:
+        user = self.find_one(user_id)
+        return {
+            "is_complete": user.is_profile_complete(),
+            "completion_percentage": user.get_completion_percentage(),
+            "missing_fields": self._get_missing_fields(user)
+        }
+
+    def _get_missing_fields(self, user: User) -> List[str]:
+        missing_fields = []
+        if not user.first_name:
+            missing_fields.append("first_name")
+        if not user.last_name:
+            missing_fields.append("last_name")
+        if not user.contact_info.phone_number:
+            missing_fields.append("phone_number")
+        if not user.location_info.country:
+            missing_fields.append("country")
+        if not user.location_info.city:
+            missing_fields.append("city")
+        return missing_fields
