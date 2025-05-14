@@ -198,37 +198,18 @@ class UserService:
                 detail="Internal Server Error",
             )
 
-    def update_personal_info(self, user_id: PyObjectId, personal_info: PersonalInfo) -> User:
-        user = self.find_one(user_id)
-        user.personal_info = personal_info
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
-    def update_contact_info(self, user_id: PyObjectId, contact_info: ContactInfo) -> User:
-        user = self.find_one(user_id)
-     
-        user.contact_info = contact_info
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
-    def update_location_info(self, user_id: PyObjectId, location_info: LocationInfo) -> User:
-        user = self.find_one(user_id)
-        user.location_info = location_info
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
-    def update_communication_preferences(self, user_id: PyObjectId, preferences: CommunicationPreferences) -> User:
-        user = self.find_one(user_id)
-        user.communication_preferences = preferences
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
-    def update_privacy_settings(self, user_id: PyObjectId, settings: PrivacySettings) -> User:
-        user = self.find_one(user_id)
-        user.privacy_settings = settings
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
+    def update_user_info(self, user_id: PyObjectId, user: User) -> User:
+        existing_user = self.find_one(user_id)
+        existing_user.first_name = user.first_name
+        existing_user.last_name = user.last_name
+        
+        existing_user.personal_info = user.personal_info
+        existing_user.contact_info = user.contact_info
+        existing_user.location_info = user.location_info
+        existing_user.communication_preferences = user.communication_preferences
+        existing_user.privacy_settings = user.privacy_settings
+        existing_user.updated_at = datetime.now(timezone.utc)
+        return self.user_repository.save(existing_user)
 
     def get_profile_completion(self, user_id: PyObjectId) -> dict:
         user = self.find_one(user_id)

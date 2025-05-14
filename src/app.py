@@ -33,7 +33,7 @@ def create_app(injector: Injector = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         allow_headers=["*"],
         expose_headers=["*"]
     )
@@ -67,7 +67,8 @@ def create_app(injector: Injector = None) -> FastAPI:
         try:
             user_service.create_admin(
                 UserCreate(
-                    name="Admin",
+                    first_name="Admin",
+                    last_name="User",
                     email=config.admin_email,
                     password=config.admin_password,
                 )
