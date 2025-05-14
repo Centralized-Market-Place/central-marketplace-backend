@@ -4,7 +4,7 @@
 install:
 	poetry install
 run:
-	poetry run uvicorn src.app:create_app --host 0.0.0.0 --port 8000
+	poetry run uvicorn src.app:create_app --host 0.0.0.0 --port 8443 --reload
 
 dev:
 	docker compose up app
