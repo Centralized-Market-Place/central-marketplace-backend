@@ -1,7 +1,6 @@
-from datetime import datetime
 from enum import Enum
-from bson import ObjectId
-from pydantic import AliasChoices, BaseModel, Field
+from centeral_marketplace.infrastructure.json import MongoBaseModel
+from pydantic import BaseModel
 from core import PyObjectId
 
 
@@ -17,17 +16,11 @@ class ReactionType(str, Enum):
     DISLIKE = "dislike"
 
 
-class Reaction(BaseModel):
-    id: PyObjectId = Field(
-        default_factory=ObjectId,
-        validation_alias=AliasChoices("_id", "id"),
-        serialization_alias="id",
-    )
+class Reaction(MongoBaseModel):
     user_id: PyObjectId
     target_id: PyObjectId
     target_type: ReactionTarget
     reaction_type: ReactionType
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
         populate_by_name = True

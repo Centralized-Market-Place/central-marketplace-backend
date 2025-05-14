@@ -3,7 +3,7 @@ import hmac
 import time
 import pytest
 from fastapi.testclient import TestClient
-from hamcrest import assert_that, equal_to, not_none, is_, contains_string
+from hamcrest import assert_that, equal_to, has_length, not_none, is_, contains_string
 
 from centeral_marketplace.infrastructure.telegram.service import TelegramService
 from centeral_marketplace.users.core import Role, User
@@ -291,6 +291,7 @@ def test_seller_application_review():
 
                 user_data = user_response.json()
                 assert_that(user_data["role"], equal_to("SELLER"))
+                assert_that(user_data["seller_infos"], has_length(1))
                 assert_that(
                     user_data["seller_infos"][0]["business_name"],
                     equal_to("Test Business"),

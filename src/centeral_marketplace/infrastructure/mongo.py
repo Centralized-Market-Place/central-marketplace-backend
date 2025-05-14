@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 import logging
 from typing import Any, TypeVar, Generic, Type, Optional, List, Dict
 from pydantic import BaseModel
@@ -15,6 +16,8 @@ from config import Config
 from core import PyObjectId
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 Entity = TypeVar("Entity", bound=BaseModel)
 
 
@@ -81,6 +84,12 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         )
 
     def save(self, entity: Entity) -> Entity:
+        now = datetime.now(UTC)
+        entity.updated_at = now
+
+        if not getattr(entity, "id", None):
+            entity.created_at = now
+            
         doc = self._normalize_for_mongo(
             entity.model_dump(exclude_none=True, by_alias=False)
         )

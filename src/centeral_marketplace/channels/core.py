@@ -1,24 +1,15 @@
 from datetime import datetime
 from typing import Optional
-from bson import ObjectId
-from pydantic import AliasChoices, BaseModel, Field
-
-from core import PyObjectId
+from centeral_marketplace.infrastructure.json import MongoBaseModel
+from pydantic import Field
 
 
-class Channel(BaseModel):
-    id: PyObjectId = Field(
-        default_factory=ObjectId,
-        validation_alias=AliasChoices("_id", "id"),
-        serialization_alias="id",
-    )
+class Channel(MongoBaseModel):
     telegram_id: int
     title: Optional[str] = Field(default="")
     username: Optional[str] = Field(default="")
     description: Optional[str] = Field(default="")
     thumbnail_url: Optional[str] = Field(default="")
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
     total_products: int = 0
     participants: int = 0
     trust_score: int = 0
