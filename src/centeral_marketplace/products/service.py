@@ -104,13 +104,16 @@ class ProductService:
         product.comments -= 1
         self.product_repository.save(product)
         return comment
-    
-    def build_product(
-            self, product: Product, user_id: PyObjectId | None = None
-    ):
+
+    def build_product(self, product: Product, user_id: PyObjectId | None = None):
         if user_id:
-            product.is_bookmarked = self.bookmark_repository.find_one_by_user_and_product(user_id=user_id, product_id=product.id) is not None
-        
+            product.is_bookmarked = (
+                self.bookmark_repository.find_one_by_user_and_product(
+                    user_id=user_id, product_id=product.id
+                )
+                is not None
+            )
+
         return product
 
     def find_one(
@@ -128,9 +131,9 @@ class ProductService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with ID {product_id} not found",
             )
-        
+
         return self.build_product(product, user_id=user_id)
-    
+
     def find_bookmarked_products(
         self,
         user_id: PyObjectId,
@@ -139,8 +142,6 @@ class ProductService:
         sort_desc: bool = True,
         query: str = None,
     ) -> PaginatedResponse[Product]:
-
-        
         paginated_products = self.product_repository.find_bookmarked_with_query(
             user_id=user_id,
             pagination=pagination,
@@ -153,5 +154,3 @@ class ProductService:
             for product in paginated_products.items
         ]
         return paginated_products
-    
-    

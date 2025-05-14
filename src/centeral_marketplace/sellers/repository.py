@@ -17,10 +17,14 @@ class SellerApplicationRepository(RepositoryInterface[SellerApplication]):
 
     def __post_init__(self):
         self.delegate = MongoDBJsonRepositoryDelegate(
-            collection_name="seller_applications", model=SellerApplication, config=self.config
+            collection_name="seller_applications",
+            model=SellerApplication,
+            config=self.config,
         )
         self.delegate.ensure_index("user_id", unique=False)
-        self.delegate.ensure_compound_index([("user_id", 1), ("seller_info.channel_id", 1)], unique=True)
+        self.delegate.ensure_compound_index(
+            [("user_id", 1), ("seller_info.channel_id", 1)], unique=True
+        )
 
     def save(self, data: SellerApplication):
         return self.delegate.save(data)
@@ -76,4 +80,4 @@ class SellerApplicationRepository(RepositoryInterface[SellerApplication]):
         return self.delegate.delete_all()
 
     def find_by_user_id(self, user_id: PyObjectId) -> List[SellerApplication]:
-        return self.find_all_by_dict({"user_id": user_id}).items 
+        return self.find_all_by_dict({"user_id": user_id}).items

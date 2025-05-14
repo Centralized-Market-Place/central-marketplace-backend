@@ -25,12 +25,14 @@ class Product(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[PositiveFloat] = None
-    @validator('price', pre=True)
+
+    @validator("price", pre=True)
     def parse_price(cls, v):
         if isinstance(v, str):
             # Remove commas and convert to float
-            return float(v.replace(',', ''))
+            return float(v.replace(",", ""))
         return v
+
     images: List[str] = []
     views: NonNegativeInt = 0
     forwards: NonNegativeInt = 0

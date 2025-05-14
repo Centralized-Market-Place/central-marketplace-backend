@@ -3,8 +3,7 @@ from datetime import datetime, timezone
 import hashlib
 import hmac
 import logging
-import time
-from typing import Optional, List
+from typing import List
 
 from core import PyObjectId
 from centeral_marketplace.notifications.core import NotificationType
@@ -59,7 +58,7 @@ class UserService:
 
     def find_user_by_email(self, email: EmailStr) -> User:
         return self.user_repository.find_one_by_dict({"email": email})
-    
+
     def find_one(self, user_id: PyObjectId) -> User:
         return self.user_repository.find_one(user_id)
 
@@ -71,15 +70,13 @@ class UserService:
                 detail="User with the current email already exist",
             )
         hashed_password = hash_password(user.password)
-        
+
         # Create personal info if not provided
         personal_info = user.personal_info or PersonalInfo()
-        
+
         # Create contact info if not provided
-        contact_info = user.contact_info or ContactInfo(
-            email=user.email
-        )
-        
+        contact_info = user.contact_info or ContactInfo(email=user.email)
+
         created_user = User(
             first_name=user.first_name,
             last_name=user.last_name,
@@ -89,7 +86,7 @@ class UserService:
             location_info=user.location_info or LocationInfo(),
             password_hash=hashed_password,
         )
-       
+
         self.notification_service.create_notification(
             user_id=created_user.id,
             content=f"Welcome to the platform {created_user.first_name} {created_user.last_name}",
@@ -198,44 +195,53 @@ class UserService:
                 detail="Internal Server Error",
             )
 
-    def update_personal_info(self, user_id: PyObjectId, personal_info: PersonalInfo) -> User:
+    def update_personal_info(
+        self, user_id: PyObjectId, personal_info: PersonalInfo
+    ) -> User:
         user = self.find_one(user_id)
         user.personal_info = personal_info
         user.updated_at = datetime.now(timezone.utc)
         return self.user_repository.save(user)
 
-    def update_contact_info(self, user_id: PyObjectId, contact_info: ContactInfo) -> User:
+    def update_contact_info(
+        self, user_id: PyObjectId, contact_info: ContactInfo
+    ) -> User:
         user = self.find_one(user_id)
-     
+
         user.contact_info = contact_info
         user.updated_at = datetime.now(timezone.utc)
         return self.user_repository.save(user)
 
-    def update_location_info(self, user_id: PyObjectId, location_info: LocationInfo) -> User:
+    def update_location_info(
+        self, user_id: PyObjectId, location_info: LocationInfo
+    ) -> User:
         user = self.find_one(user_id)
         user.location_info = location_info
         user.updated_at = datetime.now(timezone.utc)
         return self.user_repository.save(user)
 
-    def update_communication_preferences(self, user_id: PyObjectId, preferences: CommunicationPreferences) -> User:
+    def update_communication_preferences(
+        self, user_id: PyObjectId, preferences: CommunicationPreferences
+    ) -> User:
         user = self.find_one(user_id)
         user.communication_preferences = preferences
         user.updated_at = datetime.now(timezone.utc)
         return self.user_repository.save(user)
 
-    def update_privacy_settings(self, user_id: PyObjectId, settings: PrivacySettings) -> User:
+    def update_privacy_settings(
+        self, user_id: PyObjectId, settings: PrivacySettings
+    ) -> User:
         user = self.find_one(user_id)
         user.privacy_settings = settings
         user.updated_at = datetime.now(timezone.utc)
         return self.user_repository.save(user)
-
 
     def get_profile_completion(self, user_id: PyObjectId) -> dict:
         user = self.find_one(user_id)
         return {
             "is_complete": user.is_profile_complete(),
             "completion_percentage": user.get_completion_percentage(),
-            "missing_fields": self._get_missing_fields(user)
+            "missing_fields": self._get_missing_fields(user),
         }
 
     def _get_missing_fields(self, user: User) -> List[str]:

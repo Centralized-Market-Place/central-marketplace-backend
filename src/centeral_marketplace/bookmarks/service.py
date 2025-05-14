@@ -19,9 +19,7 @@ class BookmarkService:
     product_repository: ProductRepository
     product_service: ProductService
 
-    def add_bookmark(
-        self, user_id: PyObjectId, product_id: PyObjectId
-    ) -> Bookmark:
+    def add_bookmark(self, user_id: PyObjectId, product_id: PyObjectId) -> Bookmark:
         self.product_service.find_one(product_id)
         existing = self.bookmark_repository.find_one_by_user_and_product(
             user_id, product_id
@@ -45,9 +43,7 @@ class BookmarkService:
             )
         self.bookmark_repository.delete_one(existing.id)
 
-    def get_bookmark(
-        self, user_id: PyObjectId, product_id: PyObjectId
-    ) -> Bookmark:
+    def get_bookmark(self, user_id: PyObjectId, product_id: PyObjectId) -> Bookmark:
         bookmark = self.bookmark_repository.find_one_by_user_and_product(
             user_id, product_id
         )
@@ -67,7 +63,7 @@ class BookmarkService:
         return self.bookmark_repository.find_all_by_user(
             user_id, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
         )
-    
+
     def find_bookmarked_products(
         self,
         user_id: PyObjectId,
@@ -78,4 +74,6 @@ class BookmarkService:
         bookmarks = self.find_bookmarks(user_id, pagination, sort_by, sort_desc)
         product_ids = [bookmark.product_id for bookmark in bookmarks.items]
         products = self.product_repository.find_all_by_ids(product_ids)
-        return PaginatedResponse(items=products, total=len(products), page=1, size=len(products))
+        return PaginatedResponse(
+            items=products, total=len(products), page=1, size=len(products)
+        )

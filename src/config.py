@@ -26,11 +26,11 @@ class Config(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
-    
 
 
 @lru_cache
 def get_config():
     return Config()
+
 
 settings = get_config()

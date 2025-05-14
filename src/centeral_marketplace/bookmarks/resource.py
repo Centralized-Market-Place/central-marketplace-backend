@@ -26,9 +26,7 @@ async def add_bookmark(
     return bookmark_service.add_bookmark(current_user.id, product_id)
 
 
-@bookmark_router.delete(
-    "/{product_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@bookmark_router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_bookmark(
     product_id: PyObjectId,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -37,9 +35,7 @@ async def remove_bookmark(
     bookmark_service.remove_bookmark(current_user.id, product_id)
 
 
-@bookmark_router.get(
-    "/{product_id}", response_model=Bookmark
-)
+@bookmark_router.get("/{product_id}", response_model=Bookmark)
 async def get_bookmark(
     product_id: PyObjectId,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -48,9 +44,7 @@ async def get_bookmark(
     return bookmark_service.get_bookmark(current_user.id, product_id)
 
 
-@bookmark_router.get(
-    "/", response_model=PaginatedResponse[Bookmark]
-)
+@bookmark_router.get("/", response_model=PaginatedResponse[Bookmark])
 async def find_bookmarks(
     current_user: Annotated[User, Depends(get_current_user)],
     page: int = 1,

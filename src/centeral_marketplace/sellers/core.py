@@ -57,4 +57,4 @@ class SellerApplicationReview(BaseModel):
 
 class TelegramBotStatusResponse(BaseModel):
     has_bot_admin_access: bool
-    verified_channel_ownership: bool 
+    verified_channel_ownership: bool

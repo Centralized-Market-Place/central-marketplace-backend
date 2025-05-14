@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Dict
+from typing import Annotated, Dict
 from centeral_marketplace.users.auth import create_access_token
 from fastapi import APIRouter, Depends
 from fastapi_injector import Injected

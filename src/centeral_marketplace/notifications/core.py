@@ -16,7 +16,6 @@ class NotificationType(str, Enum):
     SYSTEM = "system"
 
 
-
 class Notification(BaseModel):
     id: PyObjectId = Field(
         default_factory=ObjectId,
@@ -35,4 +34,4 @@ class Notification(BaseModel):
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
-        json_encoders = {PyObjectId: str} 
+        json_encoders = {PyObjectId: str}

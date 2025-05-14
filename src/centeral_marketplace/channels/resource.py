@@ -37,7 +37,7 @@ async def get_channels(
         sort_desc=sort_desc,
         criteria=criteria,
     )
-    
+
     return paginated
 
 

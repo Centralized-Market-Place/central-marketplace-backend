@@ -35,7 +35,7 @@ def create_app(injector: Injector = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
-        expose_headers=["*"]
+        expose_headers=["*"],
     )
     app.mount("/api/v1", sub_api)
 

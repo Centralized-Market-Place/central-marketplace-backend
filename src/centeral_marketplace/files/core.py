@@ -20,4 +20,4 @@ class SignedUrlResponse(BaseModel):
     cloud_name: str
     api_key: str
     folder: str
-    resource_type: str 
+    resource_type: str
