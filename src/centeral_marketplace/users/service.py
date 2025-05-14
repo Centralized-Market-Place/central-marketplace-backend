@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import hashlib
 import hmac
 import logging
@@ -28,11 +28,8 @@ from centeral_marketplace.users.core import (
     TelegramLogin,
     User,
     UserCreate,
-    PersonalInfo,
+    UserProfileUpdate,
     ContactInfo,
-    LocationInfo,
-    CommunicationPreferences,
-    PrivacySettings,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,7 +57,13 @@ class UserService:
         return self.user_repository.find_one_by_dict({"email": email})
 
     def find_one(self, user_id: PyObjectId) -> User:
-        return self.user_repository.find_one(user_id)
+        user = self.user_repository.find_one(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} not found",
+            )
+        return user
 
     def register_user(self, user: UserCreate) -> User:
         existing_user = self.user_repository.find_one_by_dict({"email": user.email})
@@ -70,21 +73,16 @@ class UserService:
                 detail="User with the current email already exist",
             )
         hashed_password = hash_password(user.password)
+        contact_info = ContactInfo(email=user.email)
 
-        # Create personal info if not provided
-        personal_info = user.personal_info or PersonalInfo()
-
-        # Create contact info if not provided
-        contact_info = user.contact_info or ContactInfo(email=user.email)
-
+        now = datetime.now(UTC)
         created_user = User(
             first_name=user.first_name,
             last_name=user.last_name,
             email=user.email,
-            personal_info=personal_info,
             contact_info=contact_info,
-            location_info=user.location_info or LocationInfo(),
             password_hash=hashed_password,
+            created_at=now,
         )
 
         self.notification_service.create_notification(
@@ -103,6 +101,7 @@ class UserService:
                 detail="User with the current email already exist",
             )
         hashed_password = hash_password(user.password)
+        now = datetime.now(UTC)
         created_user = User(
             first_name=user.first_name,
             last_name=user.last_name,
@@ -110,6 +109,7 @@ class UserService:
             password_hash=hashed_password,
             role=Role.ADMIN,
             is_verified=True,
+            created_at=now,
         )
         logger.info(f"Creating admin user: {created_user}")
         return self.user_repository.save(created_user)
@@ -160,11 +160,13 @@ class UserService:
             )
 
             if not user:
+                now = datetime.now(UTC)
                 user = User(
                     first_name=data.first_name,
                     last_name=data.last_name if data.last_name else "",
                     password_hash="",
                     role=Role.USER,
+                    created_at=now,
                     telegram=TelegramData(
                         telegram_id=data.id,
                         first_name=data.first_name,
@@ -195,45 +197,13 @@ class UserService:
                 detail="Internal Server Error",
             )
 
-    def update_personal_info(
-        self, user_id: PyObjectId, personal_info: PersonalInfo
-    ) -> User:
+    def update_profile(self, user_id: PyObjectId, profile_data: UserProfileUpdate) -> User:
         user = self.find_one(user_id)
-        user.personal_info = personal_info
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
-    def update_contact_info(
-        self, user_id: PyObjectId, contact_info: ContactInfo
-    ) -> User:
-        user = self.find_one(user_id)
-
-        user.contact_info = contact_info
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
-    def update_location_info(
-        self, user_id: PyObjectId, location_info: LocationInfo
-    ) -> User:
-        user = self.find_one(user_id)
-        user.location_info = location_info
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
-    def update_communication_preferences(
-        self, user_id: PyObjectId, preferences: CommunicationPreferences
-    ) -> User:
-        user = self.find_one(user_id)
-        user.communication_preferences = preferences
-        user.updated_at = datetime.now(timezone.utc)
-        return self.user_repository.save(user)
-
-    def update_privacy_settings(
-        self, user_id: PyObjectId, settings: PrivacySettings
-    ) -> User:
-        user = self.find_one(user_id)
-        user.privacy_settings = settings
-        user.updated_at = datetime.now(timezone.utc)
+    
+        
+        for key, value in profile_data.model_dump(exclude_unset=True).items():
+            setattr(user, key, value)
+            
         return self.user_repository.save(user)
 
     def get_profile_completion(self, user_id: PyObjectId) -> dict:

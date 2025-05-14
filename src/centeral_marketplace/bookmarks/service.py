@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime, UTC
 from centeral_marketplace.products.core import Product
 from centeral_marketplace.products.service import ProductService
 from fastapi import HTTPException, status
@@ -30,7 +31,12 @@ class BookmarkService:
                 detail="Already bookmarked",
             )
 
-        bookmark = Bookmark(user_id=user_id, product_id=product_id)
+        now = datetime.now(UTC)
+        bookmark = Bookmark(
+            user_id=user_id, 
+            product_id=product_id,
+            created_at=now
+        )
         return self.bookmark_repository.save(bookmark)
 
     def remove_bookmark(self, user_id: PyObjectId, product_id: PyObjectId) -> None:

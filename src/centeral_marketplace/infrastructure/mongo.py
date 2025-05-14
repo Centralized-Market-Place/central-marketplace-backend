@@ -87,9 +87,6 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         now = datetime.now(UTC)
         entity.updated_at = now
 
-        if not getattr(entity, "id", None):
-            entity.created_at = now
-            
         doc = self._normalize_for_mongo(
             entity.model_dump(exclude_none=True, by_alias=False)
         )

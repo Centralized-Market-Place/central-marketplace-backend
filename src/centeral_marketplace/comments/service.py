@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import logging
 import traceback
 from typing import Optional
+from datetime import datetime, UTC
 
 from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate
 from centeral_marketplace.comments.repository import CommentRepository
@@ -76,12 +77,14 @@ class CommentService:
         product_id: Optional[PyObjectId] = None,
     ) -> Comment:
         try:
+            now = datetime.now(UTC)
             if parent_id:
                 parent_comment = self.find_one(parent_id)
                 comment = Comment(
                     user_id=user_id,
                     product_id=parent_comment.product_id,
                     parent_id=parent_id,
+                    created_at=now,
                     **comment_data.model_dump(),
                 )
             else:
@@ -89,6 +92,7 @@ class CommentService:
                     user_id=user_id,
                     product_id=product_id,
                     parent_id=parent_id,
+                    created_at=now,
                     **comment_data.model_dump(),
                 )
             return self.comment_repository.save(comment)

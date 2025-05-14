@@ -1,9 +1,9 @@
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
-from bson import ObjectId
+from centeral_marketplace.infrastructure.json import MongoBaseModel
 from centeral_marketplace.sellers.core import SellerInfo
-from pydantic import AliasChoices, BaseModel, EmailStr, Field
+from pydantic import  BaseModel, EmailStr, Field
 from core import PyObjectId
 
 
@@ -29,19 +29,13 @@ class PersonalInfo(BaseModel):
     profile_picture: Optional[str] = None
     bio: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
+
 
 
 class ContactInfo(BaseModel):
     phone_number: Optional[str] = None
     alternative_email: Optional[EmailStr] = None
     preferred_contact_method: str = "email"
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class LocationInfo(BaseModel):
@@ -51,9 +45,6 @@ class LocationInfo(BaseModel):
     postal_code: Optional[str] = None
     timezone: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class CommunicationPreferences(BaseModel):
@@ -63,10 +54,6 @@ class CommunicationPreferences(BaseModel):
     marketing_emails: bool = False
     notification_frequency: str = "daily"
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-
 
 class PrivacySettings(BaseModel):
     profile_visibility: str = "public"
@@ -75,9 +62,6 @@ class PrivacySettings(BaseModel):
     show_location: bool = True
     show_activity: bool = True
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class VerificationStatus(BaseModel):
@@ -86,10 +70,6 @@ class VerificationStatus(BaseModel):
     identity_verified: bool = False
     verification_method: Optional[str] = None
     verification_date: Optional[datetime] = None
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class UserBase(BaseModel):
@@ -100,13 +80,6 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
-    personal_info: Optional[PersonalInfo] = None
-    contact_info: Optional[ContactInfo] = None
-    location_info: Optional[LocationInfo] = None
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class UserLogin(BaseModel):
@@ -114,13 +87,7 @@ class UserLogin(BaseModel):
     password: str = Field(..., min_length=6)
 
 
-class User(UserBase):
-    id: PyObjectId = Field(
-        default_factory=ObjectId,
-        validation_alias=AliasChoices("_id", "id"),
-        serialization_alias="id",
-    )
-
+class User(UserBase, MongoBaseModel):
     personal_info: PersonalInfo = Field(default_factory=PersonalInfo)
     contact_info: ContactInfo = Field(default_factory=lambda: ContactInfo(email=""))
     location_info: LocationInfo = Field(default_factory=LocationInfo)
@@ -138,8 +105,6 @@ class User(UserBase):
     seller_infos: List[SellerInfo] = []
     last_login: Optional[datetime] = None
     last_active: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
         populate_by_name = True
@@ -159,7 +124,7 @@ class User(UserBase):
 
     def get_completion_percentage(self) -> float:
         """Calculate profile completion percentage"""
-        total_fields = 13  # Reduced by 2 since first_name and last_name are now in base
+        total_fields = 13
         completed_fields = sum(
             1
             for field in [
@@ -185,7 +150,7 @@ class User(UserBase):
 
 
 class UserPublic(UserBase):
-    id: PyObjectId = Field(alias="_id")
+    id: PyObjectId
     role: Role
     is_verified: bool
     profile_picture: Optional[str] = None
@@ -204,6 +169,27 @@ class UserPublic(UserBase):
 class AuthResponse(BaseModel):
     token: str
     user: User
+
+
+class UpdateUser(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    personal_info: Optional[PersonalInfo] = None
+    contact_info: Optional[ContactInfo] = None
+    location_info: Optional[LocationInfo] = None
+    communication_preferences: Optional[CommunicationPreferences] = None
+    privacy_settings: Optional[PrivacySettings] = None
+
+
+class UserProfileUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    personal_info: Optional[PersonalInfo] = None
+    contact_info: Optional[ContactInfo] = None
+    location_info: Optional[LocationInfo] = None
+    communication_preferences: Optional[CommunicationPreferences] = None
+    privacy_settings: Optional[PrivacySettings] = None
 
 
 class TelegramLogin(BaseModel):

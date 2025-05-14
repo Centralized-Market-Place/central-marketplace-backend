@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, Any, Optional
 
 import logging
@@ -28,11 +28,13 @@ class NotificationService:
         metadata: Dict[str, Any] = None,
     ) -> Notification:
         try:
+            now = datetime.now(UTC)
             notification = Notification(
                 user_id=user_id,
                 content=content,
                 notification_type=notification_type,
                 metadata=metadata or {},
+                created_at=now,
             )
             saved_notification = self.repository.save(notification)
             logger.info(

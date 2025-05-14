@@ -105,10 +105,12 @@ class SellerService:
             verified_channel_ownership=bot_status.verified_channel_ownership,
         )
 
+        now = datetime.now(UTC)
         application = SellerApplication(
             user_id=user.id,
             seller_info=seller_info,
             status=SellerApplicationStatus.PENDING,
+            created_at=now,
         )
 
         try:
