@@ -1,8 +1,7 @@
-from datetime import datetime
 from enum import Enum
 from typing import Optional
-from bson import ObjectId
-from pydantic import AliasChoices, BaseModel, Field
+from centeral_marketplace.infrastructure.json import MongoBaseModel
+from pydantic import BaseModel
 from core import PyObjectId
 
 
@@ -22,18 +21,11 @@ class SellerInfo(BaseModel):
     verified_channel_ownership: bool = False
 
 
-class SellerApplication(BaseModel):
-    id: PyObjectId = Field(
-        default_factory=ObjectId,
-        validation_alias=AliasChoices("_id", "id"),
-        serialization_alias="id",
-    )
+class SellerApplication(MongoBaseModel):
     user_id: PyObjectId
     seller_info: SellerInfo
     status: SellerApplicationStatus = SellerApplicationStatus.PENDING
     admin_review_notes: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
         populate_by_name = True
@@ -57,4 +49,4 @@ class SellerApplicationReview(BaseModel):
 
 class TelegramBotStatusResponse(BaseModel):
     has_bot_admin_access: bool
-    verified_channel_ownership: bool 
+    verified_channel_ownership: bool

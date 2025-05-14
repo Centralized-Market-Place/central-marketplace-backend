@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Dict
+from typing import Annotated, Dict
 from centeral_marketplace.users.auth import create_access_token
 from fastapi import APIRouter, Depends
 from fastapi_injector import Injected
@@ -15,6 +15,7 @@ from centeral_marketplace.users.core import (
     AuthResponse,
     UserPublic,
     TelegramLogin,
+    UserProfileUpdate,
 )
 from middleware import get_current_user, require_role
 
@@ -78,16 +79,16 @@ async def telegram_auth(
     return AuthResponse(token=access_token, user=user)
 
 
-@users_router.patch("/profile/update-user-info", response_model=User)
-async def update_user_info(
-    user: User,
+@users_router.patch("/profile", response_model=User)
+async def update_profile(
+    profile_data: UserProfileUpdate,
     current_user: Annotated[User, Depends(get_current_user)],
     user_service: UserService = Injected(UserService),
 ):
+    return user_service.update_profile(current_user.id, profile_data)
 
-    return user_service.update_user_info(current_user.id, user)
 
-@users_router.get("/profile/completion", response_model=dict)
+@users_router.get("/profile/completion", response_model=Dict)
 async def get_profile_completion(
     current_user: Annotated[User, Depends(get_current_user)],
     user_service: UserService = Injected(UserService),

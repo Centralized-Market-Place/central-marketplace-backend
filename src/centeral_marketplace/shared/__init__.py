@@ -1,1 +1,1 @@
-"""Shared interfaces and utilities for the central marketplace.""" 
+"""Shared interfaces and utilities for the central marketplace."""

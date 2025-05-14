@@ -52,7 +52,12 @@ def test_users_with_same_email_should_not_be_able_to_register():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="John", last_name="Doe", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="John",
+                last_name="Doe",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
@@ -83,7 +88,12 @@ def test_users_should_be_able_to_login():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
@@ -111,7 +121,12 @@ def test_users_should_not_be_able_to_login_with_wrong_password():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
@@ -138,7 +153,12 @@ def test_users_should_not_be_able_to_login_with_wrong_email():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
@@ -201,7 +221,7 @@ def test_non_admin_user_should_not_be_able_to_get_users():
                 last_name="User",
                 email="test@gmail.com",
                 password="password",
-                role=Role.USER
+                role=Role.USER,
             ),
         ]
     ) as context:
@@ -276,29 +296,42 @@ def test_user_should_be_able_to_update_personal_info():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="John", last_name="Doe", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="John",
+                last_name="Doe",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
         token = create_access_token({"sub": str(context.user.id)})
 
         with when("i update personal info"):
-            response = client.put(
-                url="api/v1/users/profile/personal-info",
+            response = client.patch(
+                url="api/v1/users/profile",
                 headers={"Authorization": f"Bearer {token}"},
                 json={
-                    "date_of_birth": "1990-01-01",
-                    "gender": "male",
-                    "nationality": "USA",
-                    "profile_picture": "https://example.com/photo.jpg",
-                    "bio": "Test bio",
+                    "first_name": "test",
+                    "last_name": "last name",
+                    "personal_info": {
+                        "date_of_birth": "1990-01-01",
+                        "gender": "male",
+                        "nationality": "USA",
+                        "profile_picture": "https://example.com/photo.jpg",
+                        "bio": "Test bio",
+                    }
                 },
             )
 
             assert_that(response.status_code, equal_to(200))
             data = response.json()
-            assert_that(data["personal_info"]["gender"], equal_to("male"))
-            assert_that(data["personal_info"]["nationality"], equal_to("USA"))
+            assert_that(data["first_name"], equal_to("test"))
+            assert_that(data["last_name"], equal_to("last name"))
+            assert_that(data['personal_info']["gender"], equal_to("male"))
+            assert_that(data['personal_info']["nationality"], equal_to("USA"))
+            assert_that(data['personal_info']["profile_picture"], equal_to("https://example.com/photo.jpg"))
+            assert_that(data['personal_info']["bio"], equal_to("Test bio"))
 
 
 def test_user_should_be_able_to_update_contact_info():
@@ -309,26 +342,35 @@ def test_user_should_be_able_to_update_contact_info():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
         token = create_access_token({"sub": str(context.user.id)})
 
         with when("i update contact info"):
-            response = client.put(
-                url="api/v1/users/profile/contact-info",
+            response = client.patch(
+                url="api/v1/users/profile",
                 headers={"Authorization": f"Bearer {token}"},
                 json={
-                    "phone_number": "+1234567890",
-                    "alternative_email": "alt@example.com",
+                    "contact_info": {
+                        "phone_number": "+1234567890",
+                        "alternative_email": "alt@example.com",
+                    }
                 },
             )
 
             assert_that(response.status_code, equal_to(200))
             data = response.json()
             assert_that(data["contact_info"]["phone_number"], equal_to("+1234567890"))
-            assert_that(data["contact_info"]["alternative_email"], equal_to("alt@example.com"))
+            assert_that(
+                data["contact_info"]["alternative_email"], equal_to("alt@example.com")
+            )
 
 
 def test_user_should_be_able_to_update_location_info():
@@ -339,21 +381,28 @@ def test_user_should_be_able_to_update_location_info():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
         token = create_access_token({"sub": str(context.user.id)})
 
         with when("i update location info"):
-            response = client.put(
-                url="api/v1/users/profile/location-info",
+            response = client.patch(
+                url="api/v1/users/profile",
                 headers={"Authorization": f"Bearer {token}"},
                 json={
-                    "country": "USA",
-                    "city": "New York",
-                    "address": "123 Main St",
-                    "postal_code": "10001",
+                    "location_info": {
+                        "country": "USA",
+                        "city": "New York",
+                        "address": "123 Main St",
+                        "postal_code": "10001",
+                    }
                 },
             )
 
@@ -371,27 +420,38 @@ def test_user_should_be_able_to_update_communication_preferences():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
         token = create_access_token({"sub": str(context.user.id)})
 
         with when("i update communication preferences"):
-            response = client.put(
-                url="api/v1/users/profile/communication-preferences",
+            response = client.patch(
+                url="api/v1/users/profile",
                 headers={"Authorization": f"Bearer {token}"},
                 json={
-                    "email_notifications": True,
-                    "sms_notifications": False,
-                    "marketing_emails": True,
+                    "communication_preferences": {
+                        "email_notifications": True,
+                        "sms_notifications": False,
+                        "marketing_emails": True,
+                    }
                 },
             )
 
             assert_that(response.status_code, equal_to(200))
             data = response.json()
-            assert_that(data["communication_preferences"]["email_notifications"], equal_to(True))
-            assert_that(data["communication_preferences"]["sms_notifications"], equal_to(False))
+            assert_that(
+                data["communication_preferences"]["email_notifications"], equal_to(True)
+            )
+            assert_that(
+                data["communication_preferences"]["sms_notifications"], equal_to(False)
+            )
 
 
 def test_user_should_be_able_to_update_privacy_settings():
@@ -402,26 +462,35 @@ def test_user_should_be_able_to_update_privacy_settings():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
         token = create_access_token({"sub": str(context.user.id)})
 
         with when("i update privacy settings"):
-            response = client.put(
-                url="api/v1/users/profile/privacy-settings",
+            response = client.patch(
+                url="api/v1/users/profile",
                 headers={"Authorization": f"Bearer {token}"},
                 json={
-                    "profile_visibility": "public",
-                    "show_email": False,
-                    "show_phone": False,
+                    "privacy_settings": {
+                        "profile_visibility": "public",
+                        "show_email": False,
+                        "show_phone": False,
+                    }
                 },
             )
 
             assert_that(response.status_code, equal_to(200))
             data = response.json()
-            assert_that(data["privacy_settings"]["profile_visibility"], equal_to("public"))
+            assert_that(
+                data["privacy_settings"]["profile_visibility"], equal_to("public")
+            )
             assert_that(data["privacy_settings"]["show_email"], equal_to(False))
 
 
@@ -433,7 +502,12 @@ def test_user_should_be_able_to_get_profile_completion():
             create_test_client(),
             database_repo_is_ready(),
             database_is_clean(),
-            there_is_a_user(first_name="Test", last_name="User", email="test@gmail.com", password="password"),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
         ]
     ) as context:
         client: TestClient = context.client
@@ -449,3 +523,52 @@ def test_user_should_be_able_to_get_profile_completion():
             data = response.json()
             assert_that("completion_percentage" in data)
             assert_that("missing_fields" in data)
+
+
+def test_user_should_be_able_to_update_multiple_profile_sections():
+    with given(
+        [
+            prepare_injector(),
+            prepare_api_server(),
+            create_test_client(),
+            database_repo_is_ready(),
+            database_is_clean(),
+            there_is_a_user(
+                first_name="Test",
+                last_name="User",
+                email="test@gmail.com",
+                password="password",
+            ),
+        ]
+    ) as context:
+        client: TestClient = context.client
+        token = create_access_token({"sub": str(context.user.id)})
+
+        with when("i update multiple profile sections"):
+            response = client.patch(
+                url="api/v1/users/profile",
+                headers={"Authorization": f"Bearer {token}"},
+                json={
+                    "personal_info": {
+                        "gender": "male",
+                        "bio": "Updated bio",
+                    },
+                    "location_info": {
+                        "country": "Canada",
+                        "city": "Toronto",
+                    },
+                    "privacy_settings": {
+                        "show_email": True,
+                    }
+                },
+            )
+
+            assert_that(response.status_code, equal_to(200))
+            data = response.json()
+            assert_that(data["personal_info"]["gender"], equal_to("male"))
+            assert_that(data["personal_info"]["bio"], equal_to("Updated bio"))
+            assert_that(data["location_info"]["country"], equal_to("Canada"))
+            assert_that(data["location_info"]["city"], equal_to("Toronto"))
+            assert_that(data["privacy_settings"]["show_email"], equal_to(True))
+
+

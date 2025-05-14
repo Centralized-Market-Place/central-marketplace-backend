@@ -160,7 +160,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
     def find_one(self, id: PyObjectId):
         return self.delegate.find_one(id)
-    
+
     def find_bookmarked_with_query(
         self,
         user_id: PyObjectId,
@@ -169,7 +169,6 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_by: str | None = None,
         sort_desc: bool = True,
     ) -> PaginatedResponse[Product]:
-        
         criteria: dict = {}
         if query:
             criteria["$or"] = [
@@ -198,7 +197,7 @@ class ProductRepository(RepositoryInterface[Product]):
                                 }
                             }
                         },
-                        {"$project": {"_id": 1}}
+                        {"$project": {"_id": 1}},
                     ],
                     "as": "userBookmark",
                 }

@@ -36,7 +36,7 @@ class ReactionRepository:
 
     def delete(self, id: PyObjectId):
         return self.delegate.delete_one(id)
-    
+
     def delete_all(self):
         return self.delegate.delete_all()
 

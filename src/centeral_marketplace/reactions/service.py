@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+from datetime import datetime, UTC
 from centeral_marketplace.reactions.core import Reaction, ReactionTarget, ReactionType
 from centeral_marketplace.reactions.repository import ReactionRepository
 from centeral_marketplace.products.repository import ProductRepository
@@ -38,11 +39,13 @@ class ReactionService:
             )
             self.reaction_repo.delete(existing.id)
 
+        now = datetime.now(UTC)
         reaction = Reaction(
             user_id=user_id,
             target_id=target_id,
             target_type=target_type,
             reaction_type=reaction_type,
+            created_at=now
         )
 
         self.reaction_repo.save(reaction)

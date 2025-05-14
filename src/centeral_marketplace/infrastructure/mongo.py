@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 import logging
 from typing import Any, TypeVar, Generic, Type, Optional, List, Dict
 from pydantic import BaseModel
@@ -15,6 +16,8 @@ from config import Config
 from core import PyObjectId
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 Entity = TypeVar("Entity", bound=BaseModel)
 
 
@@ -81,6 +84,9 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         )
 
     def save(self, entity: Entity) -> Entity:
+        now = datetime.now(UTC)
+        entity.updated_at = now
+
         doc = self._normalize_for_mongo(
             entity.model_dump(exclude_none=True, by_alias=False)
         )
@@ -108,12 +114,6 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
     def find_one(self, id: PyObjectId) -> Entity:
         """Find a single entity by ID."""
         document = self.collection.find_one({"_id": ObjectId(id)})
-        if not document:
-            raise ValueError(f"Entity with ID {id} not found")
-        return self.model.model_validate(document)
-    
-    def find_channel_by_tg_id(self, id: int) -> Entity:
-        document = self.collection.find_one({"telegram_id": id})
         if not document:
             raise ValueError(f"Entity with ID {id} not found")
         return self.model.model_validate(document)

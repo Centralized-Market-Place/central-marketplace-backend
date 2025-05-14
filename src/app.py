@@ -35,7 +35,7 @@ def create_app(injector: Injector = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         allow_headers=["*"],
-        expose_headers=["*"]
+        expose_headers=["*"],
     )
     app.mount("/api/v1", sub_api)
 
@@ -67,8 +67,8 @@ def create_app(injector: Injector = None) -> FastAPI:
         try:
             user_service.create_admin(
                 UserCreate(
-                    first_name="Admin",
-                    last_name="User",
+                    first_name="Central Marketplace",
+                    last_name="Admin",
                     email=config.admin_email,
                     password=config.admin_password,
                 )
