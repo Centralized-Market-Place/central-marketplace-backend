@@ -24,8 +24,7 @@ def test_telegram_service_is_bot_admin():
     with given([
         prepare_injector(),
     ]) as context:
-        config: Config = context.injector.get(Config)
-        telegram_service = TelegramService(config)
+        telegram_service: TelegramService = context.injector.get(TelegramService)
         
         with when("I check if the bot is an admin in the channel"):
             result = telegram_service.is_bot_admin("@centeral_marketplace")
@@ -39,15 +38,14 @@ def test_telegram_service_get_chat_administrators():
         prepare_injector(),
     ]) as context:
         config: Config = context.injector.get(Config)
-        telegram_service = TelegramService(config)
+        telegram_service: TelegramService = context.injector.get(TelegramService)
         
         with when("I get the list of administrators from the test channel"):
-            response = telegram_service.get_chat_administrators("@centeral_marketplace")
+            response = telegram_service.get_chat_administrators("centeral_marketplace")
             with then("The request should be successful and contain administrators"):
                 assert_that(response.ok, equal_to(True))
                 assert_that(len(response.result) > 0, equal_to(True))
                 
-                # Check if our bot is in the admin list
                 bot_found = False
                 for admin in response.result:
                     if admin.get("user", {}).get("username") == config.telegram_bot_username:
@@ -63,7 +61,7 @@ def test_telegram_service_get_bot_info():
         prepare_injector(),
     ]) as context:
         config: Config = context.injector.get(Config)
-        telegram_service = TelegramService(config)
+        telegram_service: TelegramService = context.injector.get(TelegramService)
         
         with when("I request the bot's information"):
             response = telegram_service.get_bot_info()
@@ -80,7 +78,7 @@ def test_telegram_service_get_channel_info():
         telegram_service: TelegramService = context.injector.get(TelegramService)
         
         with when("I request channel information"):
-            channel = telegram_service.get_channel_info("@centeral_marketplace")
+            channel = telegram_service.get_channel_info("centeral_marketplace")
             
             with then("The channel information should be retrieved successfully"):
                 assert_that(channel, not_none())
@@ -97,7 +95,7 @@ def test_telegram_service_get_channel_info_with_photo():
     with given([
         prepare_injector(),
     ]) as context:
-        telegram_service = context.injector.get(TelegramService)
+        telegram_service: TelegramService = context.injector.get(TelegramService)
         
         with when("I request channel information for a channel with photo"):
             channel = telegram_service.get_channel_info("@centeral_marketplace")
@@ -265,7 +263,7 @@ def test_seller_application_review():
                 
                 user_data = user_response.json()
                 assert_that(user_data["role"], equal_to("SELLER"))
-                assert_that(user_data["seller_info"]["business_name"], equal_to("Test Business"))
+                assert_that(user_data["seller_infos"][0]["business_name"], equal_to("Test Business"))
 
 
 @pytest.mark.ci

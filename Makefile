@@ -17,6 +17,11 @@ up:
 down:
 	docker compose down
 
+test:
+	docker compose up test_db -d 
+	poetry run pytest tests/
+	docker compose down test_db
+
 dmu:
 	docker compose down
 	docker compose build

@@ -9,6 +9,8 @@ from centeral_marketplace.channels.core import Channel
 from centeral_marketplace.files.service import FileService
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 
 class ChatAdminResponse(BaseModel):
@@ -117,15 +119,15 @@ class TelegramService:
         return False
         
     def get_channel_info(self, chat_id: str) -> Channel:
-
+        telegram_id = chat_id   
         if not chat_id.startswith("@"):
-            chat_id = "@" + chat_id
+            telegram_id = "@" + chat_id
 
         url = f"{self.base_url}/getChat"
         
         try:
             with httpx.Client() as client:
-                response = client.get(url, params={"chat_id": chat_id})
+                response = client.get(url, params={"chat_id": telegram_id})
                 response.raise_for_status()
                 chat_data = TelegramChannelResponse.model_validate(response.json())
                 
@@ -139,7 +141,7 @@ class TelegramService:
                 try:
                     member_count_response = client.get(
                         f"{self.base_url}/getChatMemberCount", 
-                        params={"chat_id": chat_id}
+                        params={"chat_id": telegram_id}
                     )
                     if member_count_response.status_code == 200:
                         member_count_data = member_count_response.json()

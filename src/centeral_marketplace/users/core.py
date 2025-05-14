@@ -65,7 +65,7 @@ class UserPublic(UserBase):
     image: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
-    seller_info: List[SellerInfo] = []
+    seller_infos: List[SellerInfo] = []
     created_at: datetime
     updated_at: datetime
 
