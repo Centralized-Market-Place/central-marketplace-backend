@@ -11,6 +11,7 @@ class Role(str, Enum):
     ADMIN = "ADMIN"
     USER = "USER"
     SELLER = "SELLER"
+    SUPER_ADMIN = "SUPER_ADMIN"
 
 
 class TelegramData(BaseModel):
@@ -159,6 +160,7 @@ class UserPublic(UserBase):
     seller_infos: List[SellerInfo] = []
     created_at: datetime
     updated_at: datetime
+    last_active: Optional[datetime] = None
 
     class Config:
         populate_by_name = True

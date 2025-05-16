@@ -22,6 +22,7 @@ class CommentRepository:
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="comments", model=Comment, config=self.config
         )
+        
 
     def save(self, data: Comment):
         return self.delegate.save(data)

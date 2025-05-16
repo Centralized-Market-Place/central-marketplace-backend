@@ -107,7 +107,7 @@ class UserService:
             last_name=user.last_name,
             email=user.email,
             password_hash=hashed_password,
-            role=Role.ADMIN,
+            role=Role.SUPER_ADMIN,
             is_verified=True,
             created_at=now,
         )
