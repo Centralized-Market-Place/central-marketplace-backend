@@ -52,12 +52,10 @@ class FileService:
 
     def upload_from_url(self, url: str, folder: str = "channels") -> Optional[str]:
         try:
-            # Download the file content
             with httpx.Client() as client:
                 response = client.get(url)
                 response.raise_for_status()
 
-                # Upload to Cloudinary
                 result = cloudinary.uploader.upload(
                     response.content, folder=folder, resource_type="auto"
                 )

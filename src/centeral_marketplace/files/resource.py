@@ -32,7 +32,4 @@ async def get_signed_upload_url(
 
 @files_router.get("/allowed-file-types", response_model=list[str])
 async def get_allowed_file_types():
-    """
-    Return a list of allowed file types
-    """
     return [file_type.value for file_type in FileType]

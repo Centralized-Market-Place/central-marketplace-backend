@@ -140,3 +140,13 @@ async def delete_product_comment(
     product_service.delete_post_comment(
         user_id=current_user.id, product_id=product_id, comment_id=comment_id
     )
+
+@product_router.post("/{product_id}/share", response_model=Product)
+async def increment_product_share_count(
+    product_id: PyObjectId,
+    current_user: Annotated[User, Depends(get_current_user)],
+    product_service: ProductService = Injected(ProductService),
+):
+    return product_service.increment_share_count(
+        product_id=product_id, user_id=current_user.id
+    )

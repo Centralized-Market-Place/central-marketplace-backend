@@ -154,3 +154,9 @@ class ProductService:
             for product in paginated_products.items
         ]
         return paginated_products
+        
+    def increment_share_count(self, product_id: PyObjectId, user_id: PyObjectId) -> Product:
+        product = self.find_one(product_id, user_id=user_id)
+        product.shares += 1
+        self.product_repository.save(product)
+        return product
