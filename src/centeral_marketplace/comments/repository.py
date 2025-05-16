@@ -8,7 +8,7 @@ from centeral_marketplace.infrastructure.json import PaginatedResponse, Paginati
 from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDelegate
 from config import Config
 from injector import inject, singleton
-from centeral_marketplace.comments.core import Comment
+from centeral_marketplace.comments.core import Comment, CommentPublic
 from core import PyObjectId
 
 
@@ -30,14 +30,80 @@ class CommentRepository:
     def save_all(self, data: list[Comment]):
         return self.delegate.save_all(data)
 
-    def find_one(self, id: PyObjectId) -> Optional[Comment]:
-        return self.delegate.find_one(id)
+    def find_one(self, id: PyObjectId) -> Optional[CommentPublic]:
+        pipeline = [
+            {"$match": {"_id": ObjectId(str(id))}},
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user",
+                }
+            },
+            {
+                "$addFields": {
+                    "user": {
+                        "$arrayElemAt": ["$user", 0]
+                    }
+                }
+            },
+        ]
+        
+        docs = list(self.delegate.collection.aggregate(pipeline))
+        if not docs:
+            return None
+        return CommentPublic.model_validate(docs[0])
 
     def find_all(
         self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None
-    ) -> PaginatedResponse[Comment]:
-        return self.delegate.find_all(
-            pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+    ) -> PaginatedResponse[CommentPublic]:
+        pipeline = []
+        
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            pipeline.append({"$skip": skip})
+            pipeline.append({"$limit": size})
+
+        # Add lookup for user information
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user",
+                }
+            }
+        )
+        
+        pipeline.append(
+            {
+                "$addFields": {
+                    "user": {
+                        "$arrayElemAt": ["$user", 0]
+                    }
+                }
+            }
+        )
+        
+        cursor = self.delegate.collection.aggregate(pipeline)
+        items = [CommentPublic.model_validate(doc) for doc in cursor]
+        
+        total = self.delegate.collection.count_documents({})
+        
+        page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+        
+        return PaginatedResponse(
+            page=page,
+            page_size=size,
+            total=total,
+            items=items,
         )
 
     def find_all_by(
@@ -46,30 +112,83 @@ class CommentRepository:
         sort_desc: bool = True,
         pagination: Pagination = None,
         **kwargs,
-    ) -> PaginatedResponse[Comment]:
-        return self.delegate.find_all_by_dict(
-            criteria=kwargs, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+    ) -> PaginatedResponse[CommentPublic]:
+        pipeline = [{"$match": kwargs}]
+        
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            pipeline.append({"$skip": skip})
+            pipeline.append({"$limit": size})
+
+        # Add lookup for user information
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user",
+                }
+            }
+        )
+        
+        pipeline.append(
+            {
+                "$addFields": {
+                    "user": {
+                        "$arrayElemAt": ["$user", 0]
+                    }
+                }
+            }
+        )
+        
+        cursor = self.delegate.collection.aggregate(pipeline)
+        items = [CommentPublic.model_validate(doc) for doc in cursor]
+        
+        total = self.delegate.collection.count_documents(kwargs)
+        
+        page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+        
+        return PaginatedResponse(
+            page=page,
+            page_size=size,
+            total=total,
+            items=items,
         )
 
-    def find_one_by_dict(self, criteria: dict) -> Comment:
-        return self.delegate.find_one_by_dict(criteria)
+    def find_one_by_dict(self, criteria: dict) -> CommentPublic:
+        pipeline = [
+            {"$match": criteria},
+            # Add lookup for user information
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user",
+                }
+            },
+            {
+                "$addFields": {
+                    "user": {
+                        "$arrayElemAt": ["$user", 0]
+                    }
+                }
+            },
+        ]
+        
+        docs = list(self.delegate.collection.aggregate(pipeline))
+        if not docs:
+            return None
+        return CommentPublic.model_validate(docs[0])
 
     def delete_one(self, id: PyObjectId):
         return self.delegate.delete_one(id)
-
-    def find_all_by_dict(
-        self,
-        criteria: dict,
-        sort_by: str = None,
-        sort_desc: bool = True,
-        pagination: Pagination = None,
-    ) -> PaginatedResponse[Comment]:
-        return self.delegate.find_all_by_dict(
-            criteria=criteria,
-            pagination=pagination,
-            sort_by=sort_by,
-            sort_desc=sort_desc,
-        )
 
     def find_all_with_user_reaction(
         self,
@@ -78,7 +197,7 @@ class CommentRepository:
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
-    ) -> PaginatedResponse[Comment]:
+    ) -> PaginatedResponse[CommentPublic]:
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
         skip = (page - 1) * size
         order = DESCENDING if sort_desc else ASCENDING
@@ -92,6 +211,21 @@ class CommentRepository:
             pipeline += [{"$skip": skip}, {"$limit": size}]
 
         pipeline += [
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user",
+                }
+            },
+            {
+                "$addFields": {
+                    "user": {
+                        "$arrayElemAt": ["$user", 0]
+                    }
+                }
+            },
             {
                 "$lookup": {
                     "from": "reactions",
@@ -129,7 +263,7 @@ class CommentRepository:
         ]
 
         cursor = self.delegate.collection.aggregate(pipeline)
-        items = [Comment.model_validate(doc) for doc in cursor]
+        items = [CommentPublic.model_validate(doc) for doc in cursor]
         total = self.delegate.collection.count_documents(criteria)
         return PaginatedResponse(page=page, page_size=size, total=total, items=items)
 
@@ -137,9 +271,25 @@ class CommentRepository:
         self,
         comment_id: PyObjectId,
         user_id: PyObjectId,
-    ) -> Comment | None:
+    ) -> CommentPublic | None:
         pipeline = [
             {"$match": {"_id": ObjectId(str(comment_id))}},
+            # Add lookup for user information
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user",
+                }
+            },
+            {
+                "$addFields": {
+                    "user": {
+                        "$arrayElemAt": ["$user", 0]
+                    }
+                }
+            },
             {
                 "$lookup": {
                     "from": "reactions",
@@ -177,7 +327,62 @@ class CommentRepository:
         ]
 
         docs = list(self.delegate.collection.aggregate(pipeline))
-        return Comment.model_validate(docs[0]) if docs else None
+        return CommentPublic.model_validate(docs[0]) if docs else None
+
+    def find_all_by_dict(
+        self,
+        criteria: dict,
+        sort_by: str = None,
+        sort_desc: bool = True,
+        pagination: Pagination = None,
+    ) -> PaginatedResponse[CommentPublic]:
+        pipeline = [{"$match": criteria}]
+        
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            pipeline.append({"$skip": skip})
+            pipeline.append({"$limit": size})
+
+        # Add lookup for user information
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user",
+                }
+            }
+        )
+        
+        pipeline.append(
+            {
+                "$addFields": {
+                    "user": {
+                        "$arrayElemAt": ["$user", 0]
+                    }
+                }
+            }
+        )
+        
+        cursor = self.delegate.collection.aggregate(pipeline)
+        items = [CommentPublic.model_validate(doc) for doc in cursor]
+        
+        total = self.delegate.collection.count_documents(criteria)
+        
+        page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+        
+        return PaginatedResponse(
+            page=page,
+            page_size=size,
+            total=total,
+            items=items,
+        )
 
     def count_all_by_dict(self, criteria: dict) -> int:
         return self.delegate.count_all_by_dict(criteria)

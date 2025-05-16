@@ -1,10 +1,10 @@
 from typing import Annotated
-from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate
+from centeral_marketplace.comments.core import  CommentCreate, CommentPublic, CommentUpdate
 from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
     Pagination,
 )
-from centeral_marketplace.products.core import Product
+from centeral_marketplace.products.core import Product, ProductPublic
 from centeral_marketplace.products.service import ProductService
 from centeral_marketplace.users.core import User
 from fastapi import APIRouter, Depends, Query, status
@@ -20,7 +20,7 @@ product_router = APIRouter(
 )
 
 
-@product_router.get("/", response_model=PaginatedResponse[Product])
+@product_router.get("/", response_model=PaginatedResponse[ProductPublic])
 async def get_products(
     current_user: Annotated[User, Depends(get_current_user_optional)],
     page: int = 1,
@@ -51,7 +51,7 @@ async def get_products(
     )
 
 
-@product_router.get("/bookmarked", response_model=PaginatedResponse[Product])
+@product_router.get("/bookmarked", response_model=PaginatedResponse[ProductPublic])
 async def get_product_bookmarks(
     current_user: Annotated[User, Depends(get_current_user)],
     product_service: ProductService = Injected(ProductService),
@@ -71,7 +71,7 @@ async def get_product_bookmarks(
     )
 
 
-@product_router.get("/{product_id}", response_model=Product)
+@product_router.get("/{product_id}", response_model=ProductPublic)
 async def get_product(
     current_user: Annotated[User, Depends(get_current_user_optional)],
     product_id: PyObjectId,
@@ -81,7 +81,7 @@ async def get_product(
     return product_service.find_one(product_id, user_id=user_id)
 
 
-@product_router.get("/{product_id}/comments", response_model=PaginatedResponse[Comment])
+@product_router.get("/{product_id}/comments", response_model=PaginatedResponse[CommentPublic])
 async def get_product_comments(
     product_id: PyObjectId,
     current_user: Annotated[User, Depends(get_current_user_optional)],
@@ -100,7 +100,7 @@ async def get_product_comments(
     return comments
 
 
-@product_router.post("/{product_id}/comments", response_model=Comment)
+@product_router.post("/{product_id}/comments", response_model=CommentPublic)
 async def post_product_comment(
     product_id: PyObjectId,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -112,7 +112,7 @@ async def post_product_comment(
     )
 
 
-@product_router.post("/{product_id}/comments/{comment_id}", response_model=Comment)
+@product_router.post("/{product_id}/comments/{comment_id}", response_model=CommentPublic)
 async def update_product_comment(
     product_id: PyObjectId,
     comment_id: PyObjectId,

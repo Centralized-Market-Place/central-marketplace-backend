@@ -148,16 +148,13 @@ class User(UserBase, MongoBaseModel):
         return (completed_fields / total_fields) * 100
 
 
-class UserPublic(UserBase):
-    id: PyObjectId
+class UserPublic(UserBase, MongoBaseModel):
     role: Role
     is_verified: bool
     profile_picture_url: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
     seller_infos: List[SellerInfo] = []
-    created_at: datetime
-    updated_at: datetime
     last_active: Optional[datetime] = None
     personal_info: Optional[PersonalInfo] = None
     contact_info: Optional[ContactInfo] = None
