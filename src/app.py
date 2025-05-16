@@ -23,7 +23,7 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
-def create_app(injector: Injector = None) -> FastAPI:
+def create_app(injector: Injector | None = None) -> FastAPI:
     app = FastAPI()
     sub_api = FastAPI()
 
