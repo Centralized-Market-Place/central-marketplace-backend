@@ -159,4 +159,4 @@ class ProductService:
         product = self.product_repository.find_one(product_id)
         product.shares += 1
         self.product_repository.save(product)
-        return self.find_one(product_id, user_id=user_id)
+        return product

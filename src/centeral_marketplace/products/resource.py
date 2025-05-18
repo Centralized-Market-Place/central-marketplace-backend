@@ -4,7 +4,7 @@ from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
     Pagination,
 )
-from centeral_marketplace.products.core import Product, ProductPublic
+from centeral_marketplace.products.core import ProductPublic
 from centeral_marketplace.products.service import ProductService
 from centeral_marketplace.users.core import User
 from fastapi import APIRouter, Depends, Query, status
@@ -141,7 +141,7 @@ async def delete_product_comment(
         user_id=current_user.id, product_id=product_id, comment_id=comment_id
     )
 
-@product_router.post("/{product_id}/share", response_model=Product)
+@product_router.post("/{product_id}/share", response_model=ProductPublic)
 async def increment_product_share_count(
     product_id: PyObjectId,
     current_user: Annotated[User, Depends(get_current_user)],
