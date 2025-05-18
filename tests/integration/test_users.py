@@ -320,7 +320,7 @@ def test_user_should_be_able_to_update_personal_info():
                         "nationality": "USA",
                         "profile_picture": "https://example.com/photo.jpg",
                         "bio": "Test bio",
-                    }
+                    },
                 },
             )
 
@@ -328,10 +328,13 @@ def test_user_should_be_able_to_update_personal_info():
             data = response.json()
             assert_that(data["first_name"], equal_to("test"))
             assert_that(data["last_name"], equal_to("last name"))
-            assert_that(data['personal_info']["gender"], equal_to("male"))
-            assert_that(data['personal_info']["nationality"], equal_to("USA"))
-            assert_that(data['personal_info']["profile_picture"], equal_to("https://example.com/photo.jpg"))
-            assert_that(data['personal_info']["bio"], equal_to("Test bio"))
+            assert_that(data["personal_info"]["gender"], equal_to("male"))
+            assert_that(data["personal_info"]["nationality"], equal_to("USA"))
+            assert_that(
+                data["personal_info"]["profile_picture"],
+                equal_to("https://example.com/photo.jpg"),
+            )
+            assert_that(data["personal_info"]["bio"], equal_to("Test bio"))
 
 
 def test_user_should_be_able_to_update_contact_info():
@@ -559,7 +562,7 @@ def test_user_should_be_able_to_update_multiple_profile_sections():
                     },
                     "privacy_settings": {
                         "show_email": True,
-                    }
+                    },
                 },
             )
 
@@ -570,5 +573,3 @@ def test_user_should_be_able_to_update_multiple_profile_sections():
             assert_that(data["location_info"]["country"], equal_to("Canada"))
             assert_that(data["location_info"]["city"], equal_to("Toronto"))
             assert_that(data["privacy_settings"]["show_email"], equal_to(True))
-
-

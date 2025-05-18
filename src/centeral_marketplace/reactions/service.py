@@ -45,7 +45,7 @@ class ReactionService:
             target_id=target_id,
             target_type=target_type,
             reaction_type=reaction_type,
-            created_at=now
+            created_at=now,
         )
 
         self.reaction_repo.save(reaction)

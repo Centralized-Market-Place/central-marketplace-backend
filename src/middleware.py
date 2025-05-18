@@ -30,9 +30,9 @@ async def get_current_user_optional(
         return None
 
 
-def require_role(required_role: str):
+def require_role(required_roles: list[str]):
     def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role.value != required_role:
+        if current_user.role.value not in required_roles:
             raise HTTPException(status_code=403, detail="Forbidden")
         return current_user
 

@@ -28,7 +28,7 @@ users_router = APIRouter(
 
 @users_router.get("/", response_model=PaginatedResponse[User])
 async def get_users(
-    current_user: Annotated[User, Depends(require_role("ADMIN"))],
+    current_user: Annotated[User, Depends(require_role(["SUPER_ADMIN"]))],
     page: int = 1,
     page_size: int = 10,
     sort_by: str = None,

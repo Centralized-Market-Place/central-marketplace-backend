@@ -1,5 +1,9 @@
 from typing import Annotated
-from centeral_marketplace.comments.core import  CommentCreate, CommentPublic, CommentUpdate
+from centeral_marketplace.comments.core import (
+    CommentCreate,
+    CommentPublic,
+    CommentUpdate,
+)
 from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
     Pagination,
@@ -81,7 +85,9 @@ async def get_product(
     return product_service.find_one(product_id, user_id=user_id)
 
 
-@product_router.get("/{product_id}/comments", response_model=PaginatedResponse[CommentPublic])
+@product_router.get(
+    "/{product_id}/comments", response_model=PaginatedResponse[CommentPublic]
+)
 async def get_product_comments(
     product_id: PyObjectId,
     current_user: Annotated[User, Depends(get_current_user_optional)],
@@ -112,7 +118,9 @@ async def post_product_comment(
     )
 
 
-@product_router.post("/{product_id}/comments/{comment_id}", response_model=CommentPublic)
+@product_router.post(
+    "/{product_id}/comments/{comment_id}", response_model=CommentPublic
+)
 async def update_product_comment(
     product_id: PyObjectId,
     comment_id: PyObjectId,
@@ -140,6 +148,7 @@ async def delete_product_comment(
     product_service.delete_post_comment(
         user_id=current_user.id, product_id=product_id, comment_id=comment_id
     )
+
 
 @product_router.post("/{product_id}/share", response_model=ProductPublic)
 async def increment_product_share_count(

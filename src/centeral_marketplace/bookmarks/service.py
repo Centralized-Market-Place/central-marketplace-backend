@@ -32,11 +32,7 @@ class BookmarkService:
             )
 
         now = datetime.now(UTC)
-        bookmark = Bookmark(
-            user_id=user_id, 
-            product_id=product_id,
-            created_at=now
-        )
+        bookmark = Bookmark(user_id=user_id, product_id=product_id, created_at=now)
         return self.bookmark_repository.save(bookmark)
 
     def remove_bookmark(self, user_id: PyObjectId, product_id: PyObjectId) -> None:

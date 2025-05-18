@@ -1,11 +1,17 @@
 from dataclasses import dataclass
 from centeral_marketplace.bookmarks.repository import BookmarkRepository
-from centeral_marketplace.comments.core import CommentCreate, CommentUpdate, CommentPublic
+from centeral_marketplace.channels.repository import ChannelRepository
+from centeral_marketplace.comments.core import (
+    CommentCreate,
+    CommentUpdate,
+    CommentPublic,
+)
 from centeral_marketplace.comments.service import CommentService
 from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination
-from centeral_marketplace.products.core import  ProductPublic
+from centeral_marketplace.products.core import ProductPublic, UpdateProduct
 from centeral_marketplace.products.repository import ProductRepository
 from centeral_marketplace.reactions.service import ReactionService
+from centeral_marketplace.users.core import User
 from fastapi import HTTPException, status
 from injector import inject, singleton
 
@@ -20,6 +26,7 @@ class ProductService:
     comment_service: CommentService
     reaction_service: ReactionService
     bookmark_repository: BookmarkRepository
+    channel_repository: ChannelRepository
 
     def find_all(
         self,
@@ -27,7 +34,7 @@ class ProductService:
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
-        criteria: dict = None,
+        criteria: dict | None = None,
     ) -> PaginatedResponse[ProductPublic]:
         if criteria is None:
             criteria = {}
@@ -154,9 +161,65 @@ class ProductService:
             for product in paginated_products.items
         ]
         return paginated_products
-        
-    def increment_share_count(self, product_id: PyObjectId, user_id: PyObjectId) -> ProductPublic:
+
+    def increment_share_count(
+        self, product_id: PyObjectId, user_id: PyObjectId
+    ) -> ProductPublic:
         product = self.product_repository.find_one(product_id)
         product.shares += 1
         self.product_repository.save(product)
         return product
+
+    def update_product(
+        self, product_id: PyObjectId, product_data: UpdateProduct, user: User
+    ) -> ProductPublic:
+        product = self.product_repository.find_one(product_id)
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Product with ID {product_id} not found",
+            )
+
+        user_channel_ids = set(
+            [seller_info.channel_id for seller_info in user.seller_infos]
+        )
+        channel = self.channel_repository.find_one(product.telegram_channel_id)
+
+        if (
+            product.telegram_channel_id not in user_channel_ids
+            or channel.username not in user.seller_infos
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to update this product",
+            )
+
+        for key, value in product_data.model_dump(exclude_unset=True).items():
+            setattr(product, key, value)
+
+        self.product_repository.save(product)
+        return product
+
+    def delete_product(self, product_id: PyObjectId, user: User) -> None:
+        product = self.product_repository.find_one(product_id)
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Product with ID {product_id} not found",
+            )
+
+        user_channel_ids = set(
+            [seller_info.channel_id for seller_info in user.seller_infos]
+        )
+        channel = self.channel_repository.find_one(product.telegram_channel_id)
+
+        if (
+            product.telegram_channel_id not in user_channel_ids
+            or channel.username not in user.seller_infos
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to delete this product",
+            )
+
+        self.product_repository.delete_one(product_id)
