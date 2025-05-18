@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 import logging
 import traceback
-from typing import Optional
+
 from datetime import datetime, UTC
 
-from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate
+from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate, CommentPublic
 from centeral_marketplace.comments.repository import CommentRepository
 from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination
 from centeral_marketplace.reactions.service import ReactionService
@@ -27,12 +27,12 @@ class CommentService:
 
     def find_all(
         self,
-        criteria: dict = None,
+        user_id: PyObjectId | None = None,
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
-        user_id: PyObjectId | None = None,
-    ) -> PaginatedResponse[Comment]:
+        criteria: dict = None,
+    ) -> PaginatedResponse[CommentPublic]:
         criteria = criteria or {}
         if user_id:
             return self.comment_repository.find_all_with_user_reaction(
@@ -54,7 +54,7 @@ class CommentService:
         self,
         comment_id: PyObjectId,
         user_id: PyObjectId | None = None,
-    ) -> Comment:
+    ) -> CommentPublic:
         if user_id:
             comment = self.comment_repository.find_one_with_user_reaction(
                 comment_id=comment_id, user_id=user_id
@@ -73,9 +73,9 @@ class CommentService:
         self,
         user_id: PyObjectId,
         comment_data: CommentCreate,
-        parent_id: Optional[PyObjectId] = None,
-        product_id: Optional[PyObjectId] = None,
-    ) -> Comment:
+        product_id: PyObjectId | None = None,
+        parent_id: PyObjectId | None = None,
+    ) -> CommentPublic:
         try:
             now = datetime.now(UTC)
             if parent_id:
@@ -109,8 +109,8 @@ class CommentService:
         user_id: PyObjectId,
         comment_id: PyObjectId,
         comment_data: CommentUpdate,
-        parent_id: Optional[PyObjectId] = None,
-    ) -> Comment:
+        parent_id: PyObjectId | None = None,
+    ) -> CommentPublic:
         try:
             if parent_id:
                 self.find_one(parent_id)

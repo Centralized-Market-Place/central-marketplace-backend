@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from centeral_marketplace.bookmarks.repository import BookmarkRepository
-from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate
+from centeral_marketplace.comments.core import CommentCreate, CommentUpdate, CommentPublic
 from centeral_marketplace.comments.service import CommentService
 from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination
-from centeral_marketplace.products.core import Product
+from centeral_marketplace.products.core import  ProductPublic
 from centeral_marketplace.products.repository import ProductRepository
 from centeral_marketplace.reactions.service import ReactionService
 from fastapi import HTTPException, status
@@ -28,7 +28,7 @@ class ProductService:
         sort_by: str = None,
         sort_desc: bool = True,
         criteria: dict = None,
-    ) -> PaginatedResponse[Product]:
+    ) -> PaginatedResponse[ProductPublic]:
         if criteria is None:
             criteria = {}
 
@@ -60,7 +60,7 @@ class ProductService:
         pagination: Pagination = None,
         sort_desc: bool = True,
         user_id: PyObjectId | None = None,
-    ):
+    ) -> PaginatedResponse[CommentPublic]:
         self.find_one(product_id)
         criteria = {"product_id": product_id, "parent_id": None}
         return self.comment_service.find_all(
@@ -73,7 +73,7 @@ class ProductService:
 
     def create_post_comment(
         self, user_id: PyObjectId, product_id: PyObjectId, comment_data: CommentCreate
-    ) -> Comment:
+    ) -> CommentPublic:
         product = self.find_one(product_id)
         comment = self.comment_service.create_comment(
             user_id=user_id, product_id=product_id, comment_data=comment_data
@@ -88,7 +88,7 @@ class ProductService:
         product_id: PyObjectId,
         comment_id: PyObjectId,
         comment_data: CommentUpdate,
-    ) -> Comment:
+    ) -> CommentPublic:
         self.find_one(product_id)
         return self.comment_service.update_comment(
             user_id=user_id, comment_id=comment_id, comment_data=comment_data
@@ -105,7 +105,7 @@ class ProductService:
         self.product_repository.save(product)
         return comment
 
-    def build_product(self, product: Product, user_id: PyObjectId | None = None):
+    def build_product(self, product: ProductPublic, user_id: PyObjectId | None = None):
         if user_id:
             product.is_bookmarked = (
                 self.bookmark_repository.find_one_by_user_and_product(
@@ -118,7 +118,7 @@ class ProductService:
 
     def find_one(
         self, product_id: PyObjectId, user_id: PyObjectId | None = None
-    ) -> Product:
+    ) -> ProductPublic:
         if user_id:
             product = self.product_repository.find_one_with_user_reaction(
                 product_id=product_id, user_id=user_id
@@ -141,7 +141,7 @@ class ProductService:
         sort_by: str = "created_at",
         sort_desc: bool = True,
         query: str = None,
-    ) -> PaginatedResponse[Product]:
+    ) -> PaginatedResponse[ProductPublic]:
         paginated_products = self.product_repository.find_bookmarked_with_query(
             user_id=user_id,
             pagination=pagination,
@@ -154,3 +154,9 @@ class ProductService:
             for product in paginated_products.items
         ]
         return paginated_products
+        
+    def increment_share_count(self, product_id: PyObjectId, user_id: PyObjectId) -> ProductPublic:
+        product = self.product_repository.find_one(product_id)
+        product.shares += 1
+        self.product_repository.save(product)
+        return product

@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
-from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate
+from centeral_marketplace.comments.core import CommentCreate, CommentUpdate, CommentPublic
 from centeral_marketplace.comments.service import CommentService
-from centeral_marketplace.infrastructure.json import Pagination
+from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
 from centeral_marketplace.users.core import User
 from fastapi import APIRouter, Depends, status
 from fastapi_injector import Injected
@@ -16,7 +16,7 @@ comment_router = APIRouter(
 )
 
 
-@comment_router.get("/{comment_id}", response_model=Comment)
+@comment_router.get("/{comment_id}", response_model=CommentPublic)
 async def get_comment(
     comment_id: PyObjectId,
     current_user: Annotated[Optional[User], Depends(get_current_user_optional)],
@@ -28,7 +28,7 @@ async def get_comment(
     )
 
 
-@comment_router.get("/{comment_id}/replies")
+@comment_router.get("/{comment_id}/replies", response_model=PaginatedResponse[CommentPublic])
 async def get_comment_replies(
     comment_id: PyObjectId,
     current_user: Annotated[Optional[User], Depends(get_current_user_optional)],
@@ -48,7 +48,7 @@ async def get_comment_replies(
     )
 
 
-@comment_router.post("/{comment_id}/replies", response_model=Comment)
+@comment_router.post("/{comment_id}/replies", response_model=CommentPublic)
 async def post_comment_reply(
     comment_id: PyObjectId,
     comment_data: CommentCreate,
@@ -61,7 +61,7 @@ async def post_comment_reply(
     return comment
 
 
-@comment_router.post("/{comment_id}/replies/{reply_id}", response_model=Comment)
+@comment_router.post("/{comment_id}/replies/{reply_id}", response_model=CommentPublic)
 async def update_comment_reply(
     comment_id: PyObjectId,
     reply_id: PyObjectId,

@@ -27,7 +27,6 @@ class PersonalInfo(BaseModel):
     date_of_birth: Optional[datetime] = None
     gender: Optional[str] = None
     nationality: Optional[str] = None
-    profile_picture: Optional[str] = None
     bio: Optional[str] = None
 
 
@@ -101,6 +100,7 @@ class User(UserBase, MongoBaseModel):
     verification_status: VerificationStatus = Field(default_factory=VerificationStatus)
     password_hash: str
     role: Role = Role.USER
+    profile_picture_url: Optional[str] = None
     is_verified: bool = False
     telegram: Optional[TelegramData] = None
     seller_infos: List[SellerInfo] = []
@@ -113,7 +113,6 @@ class User(UserBase, MongoBaseModel):
         json_encoders = {PyObjectId: str}
 
     def is_profile_complete(self) -> bool:
-        """Check if the profile has all required information"""
         required_fields = [
             self.first_name,
             self.last_name,
@@ -124,7 +123,6 @@ class User(UserBase, MongoBaseModel):
         return all(field is not None for field in required_fields)
 
     def get_completion_percentage(self) -> float:
-        """Calculate profile completion percentage"""
         total_fields = 13
         completed_fields = sum(
             1
@@ -150,17 +148,21 @@ class User(UserBase, MongoBaseModel):
         return (completed_fields / total_fields) * 100
 
 
-class UserPublic(UserBase):
-    id: PyObjectId
+class UserPublic(UserBase, MongoBaseModel):
     role: Role
     is_verified: bool
-    profile_picture: Optional[str] = None
+    profile_picture_url: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
     seller_infos: List[SellerInfo] = []
-    created_at: datetime
-    updated_at: datetime
     last_active: Optional[datetime] = None
+    personal_info: Optional[PersonalInfo] = None
+    contact_info: Optional[ContactInfo] = None
+    location_info: Optional[LocationInfo] = None
+    communication_preferences: Optional[CommunicationPreferences] = None
+    privacy_settings: Optional[PrivacySettings] = None
+    verification_status: Optional[VerificationStatus] = None
+    
 
     class Config:
         populate_by_name = True
@@ -176,7 +178,7 @@ class AuthResponse(BaseModel):
 class UpdateUser(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    profile_picture_url: Optional[str] = None
     personal_info: Optional[PersonalInfo] = None
     contact_info: Optional[ContactInfo] = None
     location_info: Optional[LocationInfo] = None
@@ -187,6 +189,7 @@ class UpdateUser(BaseModel):
 class UserProfileUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    profile_picture_url: Optional[str] = None
     personal_info: Optional[PersonalInfo] = None
     contact_info: Optional[ContactInfo] = None
     location_info: Optional[LocationInfo] = None

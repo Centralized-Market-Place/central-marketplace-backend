@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination
-from centeral_marketplace.products.core import Product
+from centeral_marketplace.products.core import Product, ProductPublic
 from centeral_marketplace.reactions.core import ReactionTarget
 from injector import inject, singleton
 from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDelegate
@@ -35,7 +35,7 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_by: str = None,
         sort_desc: bool = True,
         criteria: dict = None,
-    ) -> PaginatedResponse[Product]:
+    ) -> PaginatedResponse[ProductPublic]:
         criteria = criteria or {}
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
         skip = (page - 1) * size
@@ -50,6 +50,27 @@ class ProductRepository(RepositoryInterface[Product]):
         if pagination:
             pipeline.append({"$skip": skip})
             pipeline.append({"$limit": size})
+
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            }
+        )
+        
+        pipeline.append(
+            {
+                "$addFields": {
+                    "channel": {
+                        "$arrayElemAt": ["$channel", 0]
+                    }
+                }
+            }
+        )
 
         pipeline.append(
             {
@@ -92,7 +113,7 @@ class ProductRepository(RepositoryInterface[Product]):
         pipeline.append({"$project": {"userReaction": 0}})
 
         cursor = self.delegate.collection.aggregate(pipeline)
-        items = [Product.model_validate(doc) for doc in cursor]
+        items = [ProductPublic.model_validate(doc) for doc in cursor]
 
         total = self.delegate.collection.count_documents(criteria)
 
@@ -107,9 +128,24 @@ class ProductRepository(RepositoryInterface[Product]):
         self,
         product_id: PyObjectId,
         user_id: PyObjectId,
-    ) -> Product | None:
+    ) -> ProductPublic | None:
         pipeline = [
             {"$match": {"_id": ObjectId(str(product_id))}},
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            },
+            {
+                "$addFields": {
+                    "channel": {
+                        "$arrayElemAt": ["$channel", 0]
+                    }
+                }
+            },
             {
                 "$lookup": {
                     "from": "reactions",
@@ -149,17 +185,82 @@ class ProductRepository(RepositoryInterface[Product]):
         docs = list(self.delegate.collection.aggregate(pipeline))
         if not docs:
             return None
-        return Product.model_validate(docs[0])
+        return ProductPublic.model_validate(docs[0])
 
     def find_all(
         self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None
-    ) -> PaginatedResponse[Product]:
-        return self.delegate.find_all(
-            pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+    ) -> PaginatedResponse[ProductPublic]:
+        pipeline = []
+        
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            pipeline.append({"$skip": skip})
+            pipeline.append({"$limit": size})
+
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            }
+        )
+        
+        pipeline.append(
+            {
+                "$addFields": {
+                    "channel": {
+                        "$arrayElemAt": ["$channel", 0]
+                    }
+                }
+            }
+        )
+        
+        cursor = self.delegate.collection.aggregate(pipeline)
+        items = [ProductPublic.model_validate(doc) for doc in cursor]
+        
+        total = self.delegate.collection.count_documents({})
+        
+        page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+        
+        return PaginatedResponse(
+            page=page,
+            page_size=size,
+            total=total,
+            items=items,
         )
 
-    def find_one(self, id: PyObjectId):
-        return self.delegate.find_one(id)
+    def find_one(self, id: PyObjectId) -> ProductPublic | None:
+        pipeline = [
+            {"$match": {"_id": ObjectId(str(id))}},
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            },
+            {
+                "$addFields": {
+                    "channel": {
+                        "$arrayElemAt": ["$channel", 0]
+                    }
+                }
+            },
+        ]
+        
+        docs = list(self.delegate.collection.aggregate(pipeline))
+        if not docs:
+            return None
+        return ProductPublic.model_validate(docs[0])
 
     def find_bookmarked_with_query(
         self,
@@ -168,7 +269,7 @@ class ProductRepository(RepositoryInterface[Product]):
         pagination: Pagination | None = None,
         sort_by: str | None = None,
         sort_desc: bool = True,
-    ) -> PaginatedResponse[Product]:
+    ) -> PaginatedResponse[ProductPublic]:
         criteria: dict = {}
         if query:
             criteria["$or"] = [
@@ -203,6 +304,21 @@ class ProductRepository(RepositoryInterface[Product]):
                 }
             },
             {"$match": {"userBookmark.0": {"$exists": True}}},
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            },
+            {
+                "$addFields": {
+                    "channel": {
+                        "$arrayElemAt": ["$channel", 0]
+                    }
+                }
+            },
             {"$project": {"userBookmark": 0}},
         ]
 
@@ -217,7 +333,7 @@ class ProductRepository(RepositoryInterface[Product]):
             page_pipeline += [{"$skip": skip}, {"$limit": size}]
 
         cursor = self.delegate.collection.aggregate(page_pipeline)
-        items = [Product.model_validate(doc) for doc in cursor]
+        items = [ProductPublic.model_validate(doc) for doc in cursor]
 
         return PaginatedResponse(
             page=page,
@@ -232,13 +348,78 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_desc: bool = True,
         pagination: Pagination = None,
         **kwargs,
-    ) -> PaginatedResponse[Product]:
-        return self.delegate.find_all_by_dict(
-            criteria=kwargs, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+    ) -> PaginatedResponse[ProductPublic]:
+        pipeline = [{"$match": kwargs}]
+        
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            pipeline.append({"$skip": skip})
+            pipeline.append({"$limit": size})
+
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            }
+        )
+        
+        pipeline.append(
+            {
+                "$addFields": {
+                    "channel": {
+                        "$arrayElemAt": ["$channel", 0]
+                    }
+                }
+            }
+        )
+        
+        cursor = self.delegate.collection.aggregate(pipeline)
+        items = [ProductPublic.model_validate(doc) for doc in cursor]
+        
+        total = self.delegate.collection.count_documents(kwargs)
+        
+        page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+        
+        return PaginatedResponse(
+            page=page,
+            page_size=size,
+            total=total,
+            items=items,
         )
 
-    def find_one_by_dict(self, criteria: dict) -> Product:
-        return self.delegate.find_one_by_dict(criteria)
+    def find_one_by_dict(self, criteria: dict) -> ProductPublic | None:
+        pipeline = [
+            {"$match": criteria},
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            },
+            {
+                "$addFields": {
+                    "channel": {
+                        "$arrayElemAt": ["$channel", 0]
+                    }
+                }
+            },
+        ]
+        
+        docs = list(self.delegate.collection.aggregate(pipeline))
+        if not docs:
+            return None
+        return ProductPublic.model_validate(docs[0])
 
     def delete_one(self, id: PyObjectId):
         return self.delegate.delete_one(id)
@@ -249,12 +430,52 @@ class ProductRepository(RepositoryInterface[Product]):
         pagination: Pagination | None = None,
         sort_by: str | None = None,
         sort_desc: bool = True,
-    ) -> PaginatedResponse[Product]:
-        return self.delegate.find_all_by_dict(
-            criteria=criteria,
-            pagination=pagination,
-            sort_by=sort_by,
-            sort_desc=sort_desc,
+    ) -> PaginatedResponse[ProductPublic]:
+        pipeline = [{"$match": criteria}]
+        
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            pipeline.append({"$skip": skip})
+            pipeline.append({"$limit": size})
+
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            }
+        )
+        
+        pipeline.append(
+            {
+                "$addFields": {
+                    "channel": {
+                        "$arrayElemAt": ["$channel", 0]
+                    }
+                }
+            }
+        )
+        
+        cursor = self.delegate.collection.aggregate(pipeline)
+        items = [ProductPublic.model_validate(doc) for doc in cursor]
+        
+        total = self.delegate.collection.count_documents(criteria)
+        
+        page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+        
+        return PaginatedResponse(
+            page=page,
+            page_size=size,
+            total=total,
+            items=items,
         )
 
     def count_all_by_dict(self, criteria):
