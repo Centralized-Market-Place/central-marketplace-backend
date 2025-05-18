@@ -4,7 +4,12 @@ import traceback
 
 from datetime import datetime, UTC
 
-from centeral_marketplace.comments.core import Comment, CommentCreate, CommentUpdate, CommentPublic
+from centeral_marketplace.comments.core import (
+    Comment,
+    CommentCreate,
+    CommentUpdate,
+    CommentPublic,
+)
 from centeral_marketplace.comments.repository import CommentRepository
 from centeral_marketplace.infrastructure.json import PaginatedResponse, Pagination
 from centeral_marketplace.reactions.service import ReactionService

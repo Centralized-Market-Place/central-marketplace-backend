@@ -30,7 +30,7 @@ class CommentPublic(MongoBaseModel):
     parent_id: Optional[PyObjectId] = None
     user_reaction: Optional[ReactionType] = None
     user: Optional[UserPublic] = None
-    
+
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True

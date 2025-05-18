@@ -53,7 +53,7 @@ async def apply_seller(
     "/applications", response_model=PaginatedResponse[SellerApplication]
 )
 async def get_all_seller_applications(
-    current_user: Annotated[User, Depends(require_role("ADMIN"))],
+    current_user: Annotated[User, Depends(require_role(["ADMIN", "SUPER_ADMIN"]))],
     page: int = 1,
     page_size: int = 10,
     status: Optional[SellerApplicationStatus] = Query(
@@ -86,8 +86,10 @@ async def get_seller_application(
 ):
     application = seller_service.get_seller_application(application_id)
 
-    if current_user.role != "ADMIN" and str(application.user_id) != str(
-        current_user.id
+    if (
+        current_user.role != "ADMIN"
+        and current_user.role != "SUPER_ADMIN"
+        and str(application.user_id) != str(current_user.id)
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -103,7 +105,7 @@ async def get_seller_application(
 async def review_seller_application(
     application_id: PyObjectId,
     review: SellerApplicationReview,
-    current_user: Annotated[User, Depends(require_role("ADMIN"))],
+    _: Annotated[User, Depends(require_role(["ADMIN", "SUPER_ADMIN"]))],
     seller_service: SellerService = Injected(SellerService),
 ):
     if application_id != review.application_id:
@@ -112,7 +114,7 @@ async def review_seller_application(
             detail="Application ID in path must match the one in the request body",
         )
 
-    return seller_service.review_seller_application(current_user, review)
+    return seller_service.review_seller_application(review)
 
 
 @sellers_router.get("/channels/me", response_model=list[Channel])

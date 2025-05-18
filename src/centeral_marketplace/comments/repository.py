@@ -22,7 +22,6 @@ class CommentRepository:
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="comments", model=Comment, config=self.config
         )
-        
 
     def save(self, data: Comment):
         return self.delegate.save(data)
@@ -41,15 +40,9 @@ class CommentRepository:
                     "as": "user",
                 }
             },
-            {
-                "$addFields": {
-                    "user": {
-                        "$arrayElemAt": ["$user", 0]
-                    }
-                }
-            },
+            {"$addFields": {"user": {"$arrayElemAt": ["$user", 0]}}},
         ]
-        
+
         docs = list(self.delegate.collection.aggregate(pipeline))
         if not docs:
             return None
@@ -59,7 +52,7 @@ class CommentRepository:
         self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None
     ) -> PaginatedResponse[CommentPublic]:
         pipeline = []
-        
+
         if sort_by:
             order = DESCENDING if sort_desc else ASCENDING
             pipeline.append({"$sort": {sort_by: order}})
@@ -81,24 +74,16 @@ class CommentRepository:
                 }
             }
         )
-        
-        pipeline.append(
-            {
-                "$addFields": {
-                    "user": {
-                        "$arrayElemAt": ["$user", 0]
-                    }
-                }
-            }
-        )
-        
+
+        pipeline.append({"$addFields": {"user": {"$arrayElemAt": ["$user", 0]}}})
+
         cursor = self.delegate.collection.aggregate(pipeline)
         items = [CommentPublic.model_validate(doc) for doc in cursor]
-        
+
         total = self.delegate.collection.count_documents({})
-        
+
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-        
+
         return PaginatedResponse(
             page=page,
             page_size=size,
@@ -114,7 +99,7 @@ class CommentRepository:
         **kwargs,
     ) -> PaginatedResponse[CommentPublic]:
         pipeline = [{"$match": kwargs}]
-        
+
         if sort_by:
             order = DESCENDING if sort_desc else ASCENDING
             pipeline.append({"$sort": {sort_by: order}})
@@ -136,24 +121,16 @@ class CommentRepository:
                 }
             }
         )
-        
-        pipeline.append(
-            {
-                "$addFields": {
-                    "user": {
-                        "$arrayElemAt": ["$user", 0]
-                    }
-                }
-            }
-        )
-        
+
+        pipeline.append({"$addFields": {"user": {"$arrayElemAt": ["$user", 0]}}})
+
         cursor = self.delegate.collection.aggregate(pipeline)
         items = [CommentPublic.model_validate(doc) for doc in cursor]
-        
+
         total = self.delegate.collection.count_documents(kwargs)
-        
+
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-        
+
         return PaginatedResponse(
             page=page,
             page_size=size,
@@ -173,15 +150,9 @@ class CommentRepository:
                     "as": "user",
                 }
             },
-            {
-                "$addFields": {
-                    "user": {
-                        "$arrayElemAt": ["$user", 0]
-                    }
-                }
-            },
+            {"$addFields": {"user": {"$arrayElemAt": ["$user", 0]}}},
         ]
-        
+
         docs = list(self.delegate.collection.aggregate(pipeline))
         if not docs:
             return None
@@ -219,13 +190,7 @@ class CommentRepository:
                     "as": "user",
                 }
             },
-            {
-                "$addFields": {
-                    "user": {
-                        "$arrayElemAt": ["$user", 0]
-                    }
-                }
-            },
+            {"$addFields": {"user": {"$arrayElemAt": ["$user", 0]}}},
             {
                 "$lookup": {
                     "from": "reactions",
@@ -283,13 +248,7 @@ class CommentRepository:
                     "as": "user",
                 }
             },
-            {
-                "$addFields": {
-                    "user": {
-                        "$arrayElemAt": ["$user", 0]
-                    }
-                }
-            },
+            {"$addFields": {"user": {"$arrayElemAt": ["$user", 0]}}},
             {
                 "$lookup": {
                     "from": "reactions",
@@ -337,7 +296,7 @@ class CommentRepository:
         pagination: Pagination = None,
     ) -> PaginatedResponse[CommentPublic]:
         pipeline = [{"$match": criteria}]
-        
+
         if sort_by:
             order = DESCENDING if sort_desc else ASCENDING
             pipeline.append({"$sort": {sort_by: order}})
@@ -359,24 +318,16 @@ class CommentRepository:
                 }
             }
         )
-        
-        pipeline.append(
-            {
-                "$addFields": {
-                    "user": {
-                        "$arrayElemAt": ["$user", 0]
-                    }
-                }
-            }
-        )
-        
+
+        pipeline.append({"$addFields": {"user": {"$arrayElemAt": ["$user", 0]}}})
+
         cursor = self.delegate.collection.aggregate(pipeline)
         items = [CommentPublic.model_validate(doc) for doc in cursor]
-        
+
         total = self.delegate.collection.count_documents(criteria)
-        
+
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-        
+
         return PaginatedResponse(
             page=page,
             page_size=size,

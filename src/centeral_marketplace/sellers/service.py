@@ -157,13 +157,8 @@ class SellerService:
         return application
 
     def review_seller_application(
-        self, admin: User, review: SellerApplicationReview
+        self, review: SellerApplicationReview
     ) -> SellerApplication:
-        if admin.role != Role.ADMIN:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only admins can review seller applications",
-            )
 
         application = self.get_seller_application(review.application_id)
 

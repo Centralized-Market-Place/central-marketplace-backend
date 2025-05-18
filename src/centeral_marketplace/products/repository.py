@@ -61,16 +61,8 @@ class ProductRepository(RepositoryInterface[Product]):
                 }
             }
         )
-        
-        pipeline.append(
-            {
-                "$addFields": {
-                    "channel": {
-                        "$arrayElemAt": ["$channel", 0]
-                    }
-                }
-            }
-        )
+
+        pipeline.append({"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}})
 
         pipeline.append(
             {
@@ -139,13 +131,7 @@ class ProductRepository(RepositoryInterface[Product]):
                     "as": "channel",
                 }
             },
-            {
-                "$addFields": {
-                    "channel": {
-                        "$arrayElemAt": ["$channel", 0]
-                    }
-                }
-            },
+            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
             {
                 "$lookup": {
                     "from": "reactions",
@@ -191,7 +177,7 @@ class ProductRepository(RepositoryInterface[Product]):
         self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None
     ) -> PaginatedResponse[ProductPublic]:
         pipeline = []
-        
+
         if sort_by:
             order = DESCENDING if sort_desc else ASCENDING
             pipeline.append({"$sort": {sort_by: order}})
@@ -212,24 +198,16 @@ class ProductRepository(RepositoryInterface[Product]):
                 }
             }
         )
-        
-        pipeline.append(
-            {
-                "$addFields": {
-                    "channel": {
-                        "$arrayElemAt": ["$channel", 0]
-                    }
-                }
-            }
-        )
-        
+
+        pipeline.append({"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}})
+
         cursor = self.delegate.collection.aggregate(pipeline)
         items = [ProductPublic.model_validate(doc) for doc in cursor]
-        
+
         total = self.delegate.collection.count_documents({})
-        
+
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-        
+
         return PaginatedResponse(
             page=page,
             page_size=size,
@@ -248,15 +226,9 @@ class ProductRepository(RepositoryInterface[Product]):
                     "as": "channel",
                 }
             },
-            {
-                "$addFields": {
-                    "channel": {
-                        "$arrayElemAt": ["$channel", 0]
-                    }
-                }
-            },
+            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
         ]
-        
+
         docs = list(self.delegate.collection.aggregate(pipeline))
         if not docs:
             return None
@@ -312,13 +284,7 @@ class ProductRepository(RepositoryInterface[Product]):
                     "as": "channel",
                 }
             },
-            {
-                "$addFields": {
-                    "channel": {
-                        "$arrayElemAt": ["$channel", 0]
-                    }
-                }
-            },
+            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
             {"$project": {"userBookmark": 0}},
         ]
 
@@ -350,7 +316,7 @@ class ProductRepository(RepositoryInterface[Product]):
         **kwargs,
     ) -> PaginatedResponse[ProductPublic]:
         pipeline = [{"$match": kwargs}]
-        
+
         if sort_by:
             order = DESCENDING if sort_desc else ASCENDING
             pipeline.append({"$sort": {sort_by: order}})
@@ -371,24 +337,16 @@ class ProductRepository(RepositoryInterface[Product]):
                 }
             }
         )
-        
-        pipeline.append(
-            {
-                "$addFields": {
-                    "channel": {
-                        "$arrayElemAt": ["$channel", 0]
-                    }
-                }
-            }
-        )
-        
+
+        pipeline.append({"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}})
+
         cursor = self.delegate.collection.aggregate(pipeline)
         items = [ProductPublic.model_validate(doc) for doc in cursor]
-        
+
         total = self.delegate.collection.count_documents(kwargs)
-        
+
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-        
+
         return PaginatedResponse(
             page=page,
             page_size=size,
@@ -407,15 +365,9 @@ class ProductRepository(RepositoryInterface[Product]):
                     "as": "channel",
                 }
             },
-            {
-                "$addFields": {
-                    "channel": {
-                        "$arrayElemAt": ["$channel", 0]
-                    }
-                }
-            },
+            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
         ]
-        
+
         docs = list(self.delegate.collection.aggregate(pipeline))
         if not docs:
             return None
@@ -432,7 +384,7 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_desc: bool = True,
     ) -> PaginatedResponse[ProductPublic]:
         pipeline = [{"$match": criteria}]
-        
+
         if sort_by:
             order = DESCENDING if sort_desc else ASCENDING
             pipeline.append({"$sort": {sort_by: order}})
@@ -453,24 +405,16 @@ class ProductRepository(RepositoryInterface[Product]):
                 }
             }
         )
-        
-        pipeline.append(
-            {
-                "$addFields": {
-                    "channel": {
-                        "$arrayElemAt": ["$channel", 0]
-                    }
-                }
-            }
-        )
-        
+
+        pipeline.append({"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}})
+
         cursor = self.delegate.collection.aggregate(pipeline)
         items = [ProductPublic.model_validate(doc) for doc in cursor]
-        
+
         total = self.delegate.collection.count_documents(criteria)
-        
+
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-        
+
         return PaginatedResponse(
             page=page,
             page_size=size,

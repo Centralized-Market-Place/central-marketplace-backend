@@ -1,5 +1,9 @@
 from typing import Annotated, Optional
-from centeral_marketplace.comments.core import CommentCreate, CommentUpdate, CommentPublic
+from centeral_marketplace.comments.core import (
+    CommentCreate,
+    CommentUpdate,
+    CommentPublic,
+)
 from centeral_marketplace.comments.service import CommentService
 from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
 from centeral_marketplace.users.core import User
@@ -28,7 +32,9 @@ async def get_comment(
     )
 
 
-@comment_router.get("/{comment_id}/replies", response_model=PaginatedResponse[CommentPublic])
+@comment_router.get(
+    "/{comment_id}/replies", response_model=PaginatedResponse[CommentPublic]
+)
 async def get_comment_replies(
     comment_id: PyObjectId,
     current_user: Annotated[Optional[User], Depends(get_current_user_optional)],

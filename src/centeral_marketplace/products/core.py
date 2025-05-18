@@ -4,14 +4,12 @@ from centeral_marketplace.infrastructure.json import MongoBaseModel
 from centeral_marketplace.reactions.core import ReactionType
 from centeral_marketplace.channels.core import Channel
 from pydantic import (
+    BaseModel,
     NonNegativeInt,
     PositiveInt,
     PositiveFloat,
 )
 from core import PyObjectId
-
-
-
 
 
 class Product(MongoBaseModel):
@@ -65,8 +63,19 @@ class ProductPublic(MongoBaseModel):
     user_reaction: Optional[ReactionType] = None
     channel: Optional[Channel] = None
     link: Optional[str] = None
-    
+
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
         json_encoders = {PyObjectId: str}
+
+
+class UpdateProduct(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[PositiveFloat] = None
+    location: Optional[str] = None
+    is_available: Optional[bool] = None
+    categories: Optional[List[str]] = None
+    phone: Optional[str] = None
+    link: Optional[str] = None

@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List, Optional
 from centeral_marketplace.infrastructure.json import MongoBaseModel
 from centeral_marketplace.sellers.core import SellerInfo
-from pydantic import  BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field
 from core import PyObjectId
 
 
@@ -30,8 +30,6 @@ class PersonalInfo(BaseModel):
     bio: Optional[str] = None
 
 
-
-
 class ContactInfo(BaseModel):
     phone_number: Optional[str] = None
     alternative_email: Optional[EmailStr] = None
@@ -44,7 +42,6 @@ class LocationInfo(BaseModel):
     address: Optional[str] = None
     postal_code: Optional[str] = None
     timezone: Optional[str] = None
-
 
 
 class CommunicationPreferences(BaseModel):
@@ -63,7 +60,6 @@ class PrivacySettings(BaseModel):
     show_activity: bool = True
 
 
-
 class VerificationStatus(BaseModel):
     email_verified: bool = False
     phone_verified: bool = False
@@ -74,7 +70,7 @@ class VerificationStatus(BaseModel):
 
 class UserBase(BaseModel):
     first_name: str
-    last_name: str
+    last_name: Optional[str] = None
     email: Optional[EmailStr] = None
 
 
@@ -162,7 +158,6 @@ class UserPublic(UserBase, MongoBaseModel):
     communication_preferences: Optional[CommunicationPreferences] = None
     privacy_settings: Optional[PrivacySettings] = None
     verification_status: Optional[VerificationStatus] = None
-    
 
     class Config:
         populate_by_name = True

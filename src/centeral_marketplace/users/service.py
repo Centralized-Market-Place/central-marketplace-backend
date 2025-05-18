@@ -163,7 +163,7 @@ class UserService:
                 now = datetime.now(UTC)
                 user = User(
                     first_name=data.first_name,
-                    last_name=data.last_name if data.last_name else "",
+                    last_name=data.last_name,
                     password_hash="",
                     role=Role.USER,
                     created_at=now,
@@ -197,13 +197,14 @@ class UserService:
                 detail="Internal Server Error",
             )
 
-    def update_profile(self, user_id: PyObjectId, profile_data: UserProfileUpdate) -> User:
+    def update_profile(
+        self, user_id: PyObjectId, profile_data: UserProfileUpdate
+    ) -> User:
         user = self.find_one(user_id)
-    
-        
+
         for key, value in profile_data.model_dump(exclude_unset=True).items():
             setattr(user, key, value)
-            
+
         return self.user_repository.save(user)
 
     def get_profile_completion(self, user_id: PyObjectId) -> dict:
