@@ -19,7 +19,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
     def __post_init__(self):
         self.delegate = MongoDBJsonRepositoryDelegate(
-            collection_name="products", model=Product, config=self.config
+            collection_name="structured_products", model=Product, config=self.config
         )
 
     def save(self, data: Product):
