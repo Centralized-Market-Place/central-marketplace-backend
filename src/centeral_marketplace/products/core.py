@@ -34,6 +34,7 @@ class Product(MongoBaseModel):
     categories: List[str] = []
     link: list[str] = []
     phone: list[str] = []
+    categories: list[str] = []
     phone: Optional[str] = None
 
     class Config:
@@ -65,6 +66,7 @@ class ProductPublic(MongoBaseModel):
     channel: Optional[Channel] = None
     link: list[str] = []
     phone: list[str] = []
+    categories: list[str] = []
 
     class Config:
         populate_by_name = True
