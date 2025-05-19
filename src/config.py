@@ -22,6 +22,9 @@ class Config(BaseSettings):
     cloudinary_cloud_name: str
     cloudinary_api_key: str
     cloudinary_api_secret: str
+    brevo_api_key: str
+    email_from: str
+
 
     class Config:
         env_file = ".env"
