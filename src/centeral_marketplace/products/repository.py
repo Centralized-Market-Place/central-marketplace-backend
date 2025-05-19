@@ -105,6 +105,7 @@ class ProductRepository(RepositoryInterface[Product]):
         pipeline.append({"$project": {"userReaction": 0}})
 
         cursor = self.delegate.collection.aggregate(pipeline)
+        
         items = [ProductPublic.model_validate(doc) for doc in cursor]
 
         total = self.delegate.collection.count_documents(criteria)
