@@ -32,7 +32,8 @@ class Product(MongoBaseModel):
     clicks: NonNegativeInt = 0
     is_bookmarked: Optional[bool] = False
     categories: List[str] = []
-    link: Optional[str] = None
+    link: list[str] = []
+    phone: list[str] = []
     phone: Optional[str] = None
 
     class Config:
@@ -62,7 +63,8 @@ class ProductPublic(MongoBaseModel):
     is_bookmarked: Optional[bool] = False
     user_reaction: Optional[ReactionType] = None
     channel: Optional[Channel] = None
-    link: Optional[str] = None
+    link: list[str] = []
+    phone: list[str] = []
 
     class Config:
         populate_by_name = True
