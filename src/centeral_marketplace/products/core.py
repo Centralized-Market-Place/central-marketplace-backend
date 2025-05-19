@@ -62,7 +62,7 @@ class ProductPublic(MongoBaseModel):
     is_bookmarked: Optional[bool] = False
     user_reaction: Optional[ReactionType] = None
     channel: Optional[Channel] = None
-    link: Optional[str] = None
+    link: Optional[any] = None
 
     class Config:
         populate_by_name = True
