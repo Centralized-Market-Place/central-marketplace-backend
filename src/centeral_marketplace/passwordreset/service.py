@@ -4,7 +4,7 @@ import secrets
 from fastapi import HTTPException, status
 from .core import PasswordResetToken
 from centeral_marketplace.users.repository import UserRepository
-from centeral_marketplace.email.service import send_password_reset_email
+from centeral_marketplace.email.service import EmailService
 from .repository import PasswordResetRepository
 from injector import inject, singleton
 
@@ -14,7 +14,7 @@ from injector import inject, singleton
 class PasswordResetService:
     password_reset_repository: PasswordResetRepository
     user_repository: UserRepository
-
+    email_service: EmailService
     def initiate_password_reset(self, email: str):
         user = self.user_repository.find_one_by_dict({"email": email})
         if not user:
@@ -28,8 +28,8 @@ class PasswordResetService:
             expires_at=expires_at
         )
         self.password_reset_repository.save_token(reset_token)
-        reset_link = f"https://centeral-marketplace-webapp-cso4pcdpd.vercel.app/reset-password?token={token}"
-        send_password_reset_email(user.email, reset_link, user_name=user.first_name)
+        reset_link = f"https://centeral-marketplace-webapp.vercel.app/reset-password?token={token}"
+        self.email_service.send_password_reset_email(user.email, reset_link, user_name=user.first_name)
         return {"message": "Password reset email sent"}
 
     def confirm_password_reset(self, token: str, new_password: str):

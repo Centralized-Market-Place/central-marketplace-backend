@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 import hashlib
 import hmac
 import logging
@@ -16,6 +16,7 @@ from fastapi import HTTPException, status
 from injector import inject, singleton
 
 from centeral_marketplace.users.repository import UserRepository
+from centeral_marketplace.email.repository import EmailVerificationTokenRepository
 from centeral_marketplace.users.auth import (
     create_access_token,
     decode_token,
@@ -31,6 +32,9 @@ from centeral_marketplace.users.core import (
     UserProfileUpdate,
     ContactInfo,
 )
+from centeral_marketplace.email.core import EmailVerificationToken
+from centeral_marketplace.email.service import EmailService
+import secrets
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +46,8 @@ class UserService:
     user_repository: UserRepository
     notification_service: NotificationService
     config: Config
+    email_verification_token_repository: EmailVerificationTokenRepository
+    email_service: EmailService
 
     def find_all(
         self, pagination: Pagination = None, sort_by: str = None, sort_desc: bool = True
@@ -91,7 +97,22 @@ class UserService:
             notification_type=NotificationType.SYSTEM,
         )
 
-        return self.user_repository.save(created_user)
+        saved_user = self.user_repository.save(created_user)
+
+     
+        token = secrets.token_urlsafe(32)
+        expires_at = now + timedelta(hours=24)
+        verification_token = EmailVerificationToken(
+            token=token,
+            user_id=saved_user.id,
+            created_at=now,
+            expires_at=expires_at
+        )
+        self.email_verification_token_repository.save_token(verification_token)
+        verification_link = f"https://centeral-marketplace-webapp.vercel.app/verify-email?token={token}"
+        self.email_service.send_verification_email(saved_user.email, verification_link, user_name=saved_user.first_name)
+
+        return saved_user
 
     def create_admin(self, user: UserCreate) -> User:
         existing_user = self.user_repository.find_one_by_dict({"email": user.email})
