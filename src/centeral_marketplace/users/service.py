@@ -109,7 +109,7 @@ class UserService:
             expires_at=expires_at
         )
         self.email_verification_token_repository.save_token(verification_token)
-        verification_link = f"https://centeral-marketplace-webapp-cso4pcdpd.vercel.app/verify-email?token={token}"
+        verification_link = f"https://centeral-marketplace-webapp.vercel.app/verify-email?token={token}"
         self.email_service.send_verification_email(saved_user.email, verification_link, user_name=saved_user.first_name)
 
         return saved_user

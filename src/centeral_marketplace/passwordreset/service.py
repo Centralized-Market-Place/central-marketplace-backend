@@ -28,7 +28,7 @@ class PasswordResetService:
             expires_at=expires_at
         )
         self.password_reset_repository.save_token(reset_token)
-        reset_link = f"https://centeral-marketplace-webapp-cso4pcdpd.vercel.app/reset-password?token={token}"
+        reset_link = f"https://centeral-marketplace-webapp.vercel.app/reset-password?token={token}"
         self.email_service.send_password_reset_email(user.email, reset_link, user_name=user.first_name)
         return {"message": "Password reset email sent"}
 

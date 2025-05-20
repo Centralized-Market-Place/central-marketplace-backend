@@ -163,6 +163,6 @@ async def resend_verification(
     )
     
     email_verification_token_repository.save_token(verification_token)
-    verification_link = f"https://centeral-marketplace-webapp-cso4pcdpd.vercel.app/verify-email?token={token}"
+    verification_link = f"https://centeral-marketplace-webapp.vercel.app/verify-email?token={token}"
     email_service.send_verification_email(user.email, verification_link, user_name=user.first_name)
     return ResendVerificationResponse(message="Verification email resent")
