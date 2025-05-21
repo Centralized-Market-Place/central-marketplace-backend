@@ -1,15 +1,31 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Verify Your Email</title>
-</head>
-<body>
-    <h2>Hello {{ user_name }},</h2>
-    <p>Thank you for registering. Please verify your email address by clicking the link below:</p>
-    <p><a href="{{ verification_link }}">Verify Email</a></p>
-    <p>If you did not request this, please ignore this email.</p>
-    <br>
-    <p>Best regards,<br>Your Central Marketplace Team</p>
-</body>
-</html> 
+{% extends "email_base.html" %} {% block title %}Verify Your Email - Central
+Marketplace{% endblock %} {% block content %}
+<h2>Hello {{ user_name }},</h2>
+<p>
+  Welcome to Central Marketplace! We're excited to have you join our community.
+</p>
+
+<p>
+  To get started, please verify your email address by clicking the button below:
+</p>
+
+<div style="text-align: center">
+  <a href="{{ verification_link }}" class="button">Verify My Email</a>
+</div>
+
+<p>Or copy and paste this link into your browser:</p>
+<p
+  style="
+    background-color: #f7f7f7;
+    padding: 10px;
+    border-radius: 4px;
+    word-break: break-all;
+  "
+>
+  {{ verification_link }}
+</p>
+
+<p>If you did not create an account with us, please ignore this email.</p>
+
+<p>Thank you,<br />The Central Marketplace Team</p>
+{% endblock %}

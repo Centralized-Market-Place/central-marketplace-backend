@@ -14,6 +14,7 @@ class PasswordResetRepository:
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="password_reset_tokens", model=PasswordResetToken, config=self.config
         )
+        self.delegate.ensure_index("token", unique=True)
 
     def save_token(self, token: PasswordResetToken):
         return self.delegate.save(token)
@@ -25,3 +26,4 @@ class PasswordResetRepository:
         token = self.delegate.find_one_by_dict({"token": token_str})
         if token:
             self.delegate.delete_one(token.id) 
+    

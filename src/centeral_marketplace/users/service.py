@@ -12,7 +12,7 @@ from pydantic import EmailStr
 
 from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
 from config import Config
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 from injector import inject, singleton
 
 from centeral_marketplace.users.repository import UserRepository
@@ -32,7 +32,7 @@ from centeral_marketplace.users.core import (
     UserProfileUpdate,
     ContactInfo,
 )
-from centeral_marketplace.email.core import EmailVerificationToken
+from centeral_marketplace.email.core import EmailVerificationToken, VerifyEmailResponse, ResendVerificationResponse
 from centeral_marketplace.email.service import EmailService
 import secrets
 
@@ -71,7 +71,7 @@ class UserService:
             )
         return user
 
-    def register_user(self, user: UserCreate) -> User:
+    def register_user(self, user: UserCreate, background_tasks: BackgroundTasks | None = None) -> User:
         existing_user = self.user_repository.find_one_by_dict({"email": user.email})
         if existing_user:
             raise HTTPException(
@@ -99,20 +99,92 @@ class UserService:
 
         saved_user = self.user_repository.save(created_user)
 
-     
+        if background_tasks:
+            background_tasks.add_task(
+                self._send_verification_email, 
+                user_id=saved_user.id, 
+                email=saved_user.email, 
+                first_name=saved_user.first_name
+            )
+        else:
+            self._send_verification_email(
+                user_id=saved_user.id, 
+                email=saved_user.email, 
+                first_name=saved_user.first_name
+            )
+
+        return saved_user
+        
+    def _send_verification_email(self, user_id: PyObjectId, email: str, first_name: str):
+        now = datetime.now(UTC)
         token = secrets.token_urlsafe(32)
         expires_at = now + timedelta(hours=24)
         verification_token = EmailVerificationToken(
             token=token,
-            user_id=saved_user.id,
+            user_id=user_id,
             created_at=now,
             expires_at=expires_at
         )
         self.email_verification_token_repository.save_token(verification_token)
-        verification_link = f"https://centeral-marketplace-webapp.vercel.app/verify-email?token={token}"
-        self.email_service.send_verification_email(saved_user.email, verification_link, user_name=saved_user.first_name)
+        verification_link = f"{self.config.web_app_url}/verify-email?token={token}"
+        self.email_service.send_verification_email(email, verification_link, user_name=first_name)
+        
+    def verify_email(self, token: str) -> VerifyEmailResponse:
+        token_obj = self.email_verification_token_repository.get_token(token)
+        
+        if not token_obj:
+            return VerifyEmailResponse(message="Invalid or expired token")
+        
+        user = self.user_repository.find_one(token_obj.user_id)
+        
+        if not user:
+            return VerifyEmailResponse(message="User not found")
+        
+        if user.verification_status.email_verified or user.is_verified:
+            return VerifyEmailResponse(message="Email already verified")
+        
+        if token_obj.expires_at:
+            expires_at = token_obj.expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=UTC)
+            if expires_at < datetime.now(UTC):
+                self.email_verification_token_repository.delete_token(token)
+                return VerifyEmailResponse(message="Token expired. Please request a new verification email.")
+        
+        user.verification_status.email_verified = True
+        user.is_verified = True
+        self.user_repository.save(user)
 
-        return saved_user
+        self.email_verification_token_repository.delete_token(token)
+        
+        return VerifyEmailResponse(message="Email verified successfully")
+        
+    def resend_verification(self, email: str, background_tasks: BackgroundTasks | None = None) -> ResendVerificationResponse:
+        user = self.user_repository.find_one_by_dict({"email": email})
+        
+        if not user:
+            return ResendVerificationResponse(message="User not found")
+            
+        if user.verification_status.email_verified or user.is_verified:
+            return ResendVerificationResponse(message="Email is already verified")
+            
+        self.email_verification_token_repository.delete_tokens_for_user(user.id)
+        
+        if background_tasks:
+            background_tasks.add_task(
+                self._send_verification_email, 
+                user_id=user.id, 
+                email=user.email, 
+                first_name=user.first_name
+            )
+        else:
+            self._send_verification_email(
+                user_id=user.id, 
+                email=user.email, 
+                first_name=user.first_name
+            )
+            
+        return ResendVerificationResponse(message="Verification email resent")
 
     def create_admin(self, user: UserCreate) -> User:
         existing_user = self.user_repository.find_one_by_dict({"email": user.email})
@@ -196,6 +268,7 @@ class UserService:
                         photo_url=data.photo_url,
                     ),
                 )
+                user.is_verified = True
 
             else:
                 user.telegram = TelegramData(

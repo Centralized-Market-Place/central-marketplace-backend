@@ -1,12 +1,7 @@
 from typing import Annotated, Dict
-from centeral_marketplace.email.core import EmailVerificationToken, ResendVerificationRequest, ResendVerificationResponse, VerifyEmailRequest, VerifyEmailResponse
-from centeral_marketplace.email.repository import EmailVerificationTokenRepository
-from centeral_marketplace.users.auth import create_access_token
-from centeral_marketplace.users.repository import UserRepository
-from fastapi import APIRouter, Depends, HTTPException, status
+from centeral_marketplace.email.core import ResendVerificationRequest, ResendVerificationResponse, VerifyEmailRequest, VerifyEmailResponse
+from fastapi import APIRouter, Depends, BackgroundTasks
 from fastapi_injector import Injected
-import secrets
-from datetime import datetime, UTC, timedelta
 
 from centeral_marketplace.users.service import UserService
 from centeral_marketplace.infrastructure.json import (
@@ -22,8 +17,8 @@ from centeral_marketplace.users.core import (
     TelegramLogin,
     UserProfileUpdate,
 )
+from centeral_marketplace.users.auth import create_access_token
 from middleware import get_current_user, require_role
-from centeral_marketplace.email.service import EmailService
 
 
 users_router = APIRouter(
@@ -53,9 +48,10 @@ async def get_users(
 @users_router.post("/register", response_model=UserPublic)
 async def register_user(
     user: UserCreate,
+    background_tasks: BackgroundTasks,
     user_service: UserService = Injected(UserService),
 ):
-    return user_service.register_user(user)
+    return user_service.register_user(user, background_tasks=background_tasks)
 
 
 @users_router.post("/login", response_model=AuthResponse)
@@ -105,64 +101,15 @@ async def get_profile_completion(
 @users_router.post("/verify-email", response_model=VerifyEmailResponse)
 async def verify_email(
     data: VerifyEmailRequest,
-    email_verification_token_repository: EmailVerificationTokenRepository = Injected(EmailVerificationTokenRepository),
-    user_repository: UserRepository = Injected(UserRepository),
+    user_service: UserService = Injected(UserService),
 ):  
-   
-    token_obj = email_verification_token_repository.get_token(data.token)
-    
-
-    if not token_obj:
-        return VerifyEmailResponse(message="Invalid or expired token")
-    
-    user = user_repository.find_one(token_obj.user_id)
-    
-    if not user:
-        return VerifyEmailResponse(message="User not found")
-    
-    if user.verification_status.email_verified or user.is_verified:
-        return VerifyEmailResponse(message="Email already verified")
-    
-    if token_obj.expires_at:
-        expires_at = token_obj.expires_at
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=UTC)
-        if expires_at < datetime.now(UTC):
-            email_verification_token_repository.delete_token(data.token)
-            return VerifyEmailResponse(message="Token expired. Please request a new verification email.")
-    
-    user.verification_status.email_verified = True
-    user.is_verified = True
-    user_repository.save(user)
-    print(f"we have the user saved {user}")
-    email_verification_token_repository.delete_token(data.token)
-    return VerifyEmailResponse(message="Email verified successfully")
+    return user_service.verify_email(data.token)
 
 
 @users_router.post("/resend-verification", response_model=ResendVerificationResponse)
 async def resend_verification(
     data: ResendVerificationRequest,
-    email_verification_token_repository: EmailVerificationTokenRepository = Injected(EmailVerificationTokenRepository),
+    background_tasks: BackgroundTasks,
     user_service: UserService = Injected(UserService),
-    email_service: EmailService = Injected(EmailService),
 ):
-    user = user_service.user_repository.find_one_by_dict({"email": data.email})
-    if not user:
-        return ResendVerificationResponse(message="User not found")
-    if user.verification_status.email_verified or user.is_verified:
-        return ResendVerificationResponse(message="Email is already verified")
-
-    token = secrets.token_urlsafe(32)
-    now = datetime.now(UTC)
-    expires_at = now + timedelta(hours=24)
-    verification_token = EmailVerificationToken(
-        token=token,
-        user_id=user.id,
-        created_at=now,
-        expires_at=expires_at
-    )
-    
-    email_verification_token_repository.save_token(verification_token)
-    verification_link = f"https://centeral-marketplace-webapp.vercel.app/verify-email?token={token}"
-    email_service.send_verification_email(user.email, verification_link, user_name=user.first_name)
-    return ResendVerificationResponse(message="Verification email resent")
+    return user_service.resend_verification(data.email, background_tasks=background_tasks)
