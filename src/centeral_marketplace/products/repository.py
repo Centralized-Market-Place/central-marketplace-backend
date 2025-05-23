@@ -9,6 +9,7 @@ from config import Config
 from core import PyObjectId
 from bson import ObjectId
 from pymongo import ASCENDING, DESCENDING
+from typing import Optional
 
 
 @inject
@@ -31,14 +32,17 @@ class ProductRepository(RepositoryInterface[Product]):
     def find_all_with_user_reaction(
         self,
         user_id: PyObjectId,
+        last_id: Optional[PyObjectId] = None,
         pagination: Pagination | None = None,
         sort_by: str = None,
         sort_desc: bool = True,
         criteria: dict = None,
     ) -> PaginatedResponse[ProductPublic]:
         criteria = criteria or {}
+        if last_id:
+            criteria["_id"] = {"$gt": ObjectId(str(last_id))}
+
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-        skip = (page - 1) * size
 
         pipeline = []
         pipeline.append({"$match": criteria})
@@ -48,67 +52,64 @@ class ProductRepository(RepositoryInterface[Product]):
             pipeline.append({"$sort": {sort_by: order}})
 
         if pagination:
-            pipeline.append({"$skip": skip})
             pipeline.append({"$limit": size})
 
-        pipeline.append(
+        pipeline.extend([
             {
-                "$lookup": {
-                    "from": "channels",
-                    "localField": "channel_id",
-                    "foreignField": "_id",
-                    "as": "channel",
-                }
-            }
-        )
-
-        pipeline.append({"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}})
-
-        pipeline.append(
-            {
-                "$lookup": {
-                    "from": "reactions",
-                    "let": {"pid": "$_id"},
-                    "pipeline": [
+                "$facet": {
+                    "items": [
                         {
-                            "$match": {
-                                "$expr": {
-                                    "$and": [
-                                        {"$eq": ["$target_id", "$$pid"]},
-                                        {"$eq": ["$user_id", ObjectId(str(user_id))]},
-                                        {
-                                            "$eq": [
-                                                "$target_type",
-                                                ReactionTarget.PRODUCT.value,
-                                            ]
-                                        },
-                                    ]
+                            "$lookup": {
+                                "from": "channels",
+                                "localField": "channel_id",
+                                "foreignField": "_id",
+                                "as": "channel"
+                            }
+                        },
+                        {"$unwind": "$channel"},
+                        {
+                            "$lookup": {
+                                "from": "reactions",
+                                "let": {"pid": "$_id"},
+                                "pipeline": [
+                                    {
+                                        "$match": {
+                                            "$expr": {
+                                                "$and": [
+                                                    {"$eq": ["$target_id", "$$pid"]},
+                                                    {"$eq": ["$user_id", ObjectId(str(user_id))]},
+                                                    {
+                                                        "$eq": [
+                                                            "$target_type",
+                                                            ReactionTarget.PRODUCT.value,
+                                                        ]
+                                                    },
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    {"$project": {"reaction_type": 1, "_id": 0}},
+                                ],
+                                "as": "userReaction",
+                            }
+                        },
+                        {
+                            "$addFields": {
+                                "user_reaction": {
+                                    "$arrayElemAt": ["$userReaction.reaction_type", 0]
                                 }
                             }
                         },
-                        {"$project": {"reaction_type": 1, "_id": 0}},
+                        {"$project": {"userReaction": 0}}
                     ],
-                    "as": "userReaction",
+                    "total": [{"$count": "count"}]
                 }
             }
-        )
+        ])
 
-        pipeline.append(
-            {
-                "$addFields": {
-                    "user_reaction": {
-                        "$arrayElemAt": ["$userReaction.reaction_type", 0]
-                    }
-                }
-            }
-        )
-        pipeline.append({"$project": {"userReaction": 0}})
-
-        cursor = self.delegate.collection.aggregate(pipeline)
-        
-        items = [ProductPublic.model_validate(doc) for doc in cursor]
-
-        total = self.delegate.collection.count_documents(criteria)
+        result = list(self.delegate.collection.aggregate(pipeline))[0]
+        items = [ProductPublic.model_validate(doc) for doc in result["items"]]
+        total = result["total"][0]["count"] if result["total"] else 0
 
         return PaginatedResponse(
             page=page,
@@ -239,68 +240,89 @@ class ProductRepository(RepositoryInterface[Product]):
         self,
         user_id: PyObjectId,
         query: str | None = None,
+        last_id: Optional[PyObjectId] = None,
         pagination: Pagination | None = None,
         sort_by: str | None = None,
         sort_desc: bool = True,
     ) -> PaginatedResponse[ProductPublic]:
         criteria: dict = {}
         if query:
-            criteria["$or"] = [
-                {"name": {"$regex": query, "$options": "i"}},
-                {"description": {"$regex": query, "$options": "i"}},
-            ]
+            criteria["$text"] = {"$search": query}
+        if last_id:
+            criteria["_id"] = {"$gt": ObjectId(str(last_id))}
 
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-        skip = (page - 1) * size
         order = DESCENDING if sort_desc else ASCENDING
 
-        base_pipeline: list[dict] = [
-            {"$match": criteria},
+        pipeline = [
             {
-                "$lookup": {
-                    "from": "bookmarks",
-                    "let": {"pid": "$_id"},
-                    "pipeline": [
+                "$facet": {
+                    "items": [
+                        {"$match": criteria},
                         {
-                            "$match": {
-                                "$expr": {
-                                    "$and": [
-                                        {"$eq": ["$product_id", "$$pid"]},
-                                        {"$eq": ["$user_id", ObjectId(str(user_id))]},
-                                    ]
-                                }
+                            "$lookup": {
+                                "from": "bookmarks",
+                                "let": {"pid": "$_id"},
+                                "pipeline": [
+                                    {
+                                        "$match": {
+                                            "$expr": {
+                                                "$and": [
+                                                    {"$eq": ["$product_id", "$$pid"]},
+                                                    {"$eq": ["$user_id", ObjectId(str(user_id))]},
+                                                ]
+                                            }
+                                        }
+                                    },
+                                ],
+                                "as": "userBookmark"
                             }
                         },
-                        {"$project": {"_id": 1}},
+                        {"$match": {"userBookmark.0": {"$exists": True}}},
+                        {
+                            "$lookup": {
+                                "from": "channels",
+                                "localField": "channel_id",
+                                "foreignField": "_id",
+                                "as": "channel"
+                            }
+                        },
+                        {"$unwind": "$channel"},
+                        {"$project": {"userBookmark": 0}},
+                        {"$sort": {sort_by if sort_by else "_id": order}},
+                        {"$limit": size if pagination else 1000}
                     ],
-                    "as": "userBookmark",
+                    "total": [
+                        {"$match": criteria},
+                        {
+                            "$lookup": {
+                                "from": "bookmarks",
+                                "let": {"pid": "$_id"},
+                                "pipeline": [
+                                    {
+                                        "$match": {
+                                            "$expr": {
+                                                "$and": [
+                                                    {"$eq": ["$product_id", "$$pid"]},
+                                                    {"$eq": ["$user_id", ObjectId(str(user_id))]},
+                                                ]
+                                            }
+                                        }
+                                    },
+                                ],
+                                "as": "userBookmark"
+                            }
+                        },
+                        {"$match": {"userBookmark.0": {"$exists": True}}},
+                        {"$count": "count"}
+                    ]
                 }
-            },
-            {"$match": {"userBookmark.0": {"$exists": True}}},
-            {
-                "$lookup": {
-                    "from": "channels",
-                    "localField": "channel_id",
-                    "foreignField": "_id",
-                    "as": "channel",
-                }
-            },
-            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
-            {"$project": {"userBookmark": 0}},
+            }
         ]
 
-        count_pipeline = base_pipeline + [{"$count": "count"}]
-        count_res = list(self.delegate.collection.aggregate(count_pipeline))
-        total = count_res[0]["count"] if count_res else 0
-
-        page_pipeline = base_pipeline.copy()
-        if sort_by:
-            page_pipeline.append({"$sort": {sort_by: order}})
-        if pagination:
-            page_pipeline += [{"$skip": skip}, {"$limit": size}]
-
-        cursor = self.delegate.collection.aggregate(page_pipeline)
-        items = [ProductPublic.model_validate(doc) for doc in cursor]
+        result = list(self.delegate.collection.aggregate(pipeline))[0]
+        items = [ProductPublic.model_validate(doc) for doc in result["items"]]
+        total = result["total"][0]["count"] if result["total"] else 0
 
         return PaginatedResponse(
             page=page,

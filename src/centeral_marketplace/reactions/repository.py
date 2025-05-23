@@ -3,8 +3,6 @@ from centeral_marketplace.infrastructure.mongo import MongoDBJsonRepositoryDeleg
 from config import Config
 from injector import inject, singleton
 from centeral_marketplace.reactions.core import Reaction
-from pymongo import ASCENDING
-
 from core import PyObjectId
 
 
@@ -17,13 +15,6 @@ class ReactionRepository:
     def __post_init__(self):
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="reactions", model=Reaction, config=self.config
-        )
-        self.delegate.ensure_compound_index(
-            [
-                ("user_id", ASCENDING),
-                ("target_id", ASCENDING),
-            ],
-            unique=True,
         )
 
     def save(self, reaction: Reaction):

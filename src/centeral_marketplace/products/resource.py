@@ -11,7 +11,7 @@ from centeral_marketplace.infrastructure.json import (
 from centeral_marketplace.products.core import ProductPublic
 from centeral_marketplace.products.service import ProductService
 from centeral_marketplace.users.core import User
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from fastapi_injector import Injected
 
 from core import PyObjectId
@@ -32,15 +32,12 @@ async def get_products(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
-    channel_id: PyObjectId = Query(None, alias="channelId"),
+    channel_id: PyObjectId = None,
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
     if query:
-        criteria["$or"] = [
-            {"name": {"$regex": query, "$options": "i"}},
-            {"description": {"$regex": query, "$options": "i"}},
-        ]
+        criteria["$text"] = {"$search": query}
     if channel_id:
         criteria["channel_id"] = channel_id
 
