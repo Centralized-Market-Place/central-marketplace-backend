@@ -154,9 +154,6 @@ class UserService:
         user.verification_status.email_verified = True
         user.is_verified = True
         self.user_repository.save(user)
-
-        self.email_verification_token_repository.delete_token(token)
-        
         return VerifyEmailResponse(message="Email verified successfully")
         
     def resend_verification(self, email: str, background_tasks: BackgroundTasks | None = None) -> ResendVerificationResponse:
@@ -322,3 +319,101 @@ class UserService:
         if not user.location_info.city:
             missing_fields.append("city")
         return missing_fields
+
+    def request_telegram_email_add(self, user_id: PyObjectId, email: EmailStr, background_tasks: BackgroundTasks | None = None) -> User:
+        user = self.find_one(user_id)
+        
+        if not user.telegram:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User is not a Telegram user"
+            )
+            
+        if user.email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User already has an email associated"
+            )
+            
+        existing_user = self.user_repository.find_one_by_dict({"email": email})
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email is already in use"
+            )
+            
+        now = datetime.now(UTC)
+        token = secrets.token_urlsafe(32)
+        expires_at = now + timedelta(hours=24)
+        verification_token = EmailVerificationToken(
+            token=token,
+            user_id=user_id,
+            created_at=now,
+            expires_at=expires_at,
+            metadata={"action": "telegram_email_password_setup", "email": email}
+        )
+        
+        self.email_verification_token_repository.save_token(verification_token)
+        verification_link = f"{self.config.web_app_url}/telegram-email-setup?token={token}"
+        
+        if background_tasks:
+            background_tasks.add_task(
+                self.email_service.send_verification_email,
+                to_email=email,
+                verification_link=verification_link,
+                user_name=user.first_name
+            )
+        else:
+            self.email_service.send_verification_email(
+                to_email=email,
+                verification_link=verification_link,
+                user_name=user.first_name
+            )
+            
+        return user
+
+    def complete_telegram_email_password_setup(self, token: str, password: str) -> User:
+        token_obj = self.email_verification_token_repository.get_token(token)
+        
+        if not token_obj:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'token object not found for token: {token}'
+            )
+            
+        if not token_obj.metadata or token_obj.metadata.get("action") != "telegram_email_password_setup":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="token is not valid for password set"
+            )
+            
+        user = self.user_repository.find_one(token_obj.user_id)
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="user not associated with the given token"
+
+            )
+            
+        if token_obj.expires_at:
+            expires_at = token_obj.expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=UTC)
+            if expires_at < datetime.now(UTC):
+                self.email_verification_token_repository.delete_token(token)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="token has expired"
+                )
+        
+        email = token_obj.metadata.get("email")
+        user.email = email
+        user.password_hash = hash_password(password)
+        user.verification_status.email_verified = True
+        user.is_verified = True
+        
+        self.user_repository.save(user)
+        self.email_verification_token_repository.delete_token(token)
+
+        return user

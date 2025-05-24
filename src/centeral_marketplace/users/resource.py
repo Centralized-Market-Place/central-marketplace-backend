@@ -16,6 +16,8 @@ from centeral_marketplace.users.core import (
     UserPublic,
     TelegramLogin,
     UserProfileUpdate,
+    TelegramEmailAddRequest,
+    TelegramPasswordSetRequest
 )
 from centeral_marketplace.users.auth import create_access_token
 from middleware import get_current_user, require_role
@@ -113,3 +115,21 @@ async def resend_verification(
     user_service: UserService = Injected(UserService),
 ):
     return user_service.resend_verification(data.email, background_tasks=background_tasks)
+
+
+@users_router.post("/telegram/add-email", response_model=UserPublic)
+async def request_telegram_email_add(
+    data: TelegramEmailAddRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    background_tasks: BackgroundTasks,
+    user_service: UserService = Injected(UserService),
+):
+    return user_service.request_telegram_email_add(current_user.id, data.email, background_tasks=background_tasks)
+
+
+@users_router.post("/telegram/complete-setup", response_model=UserPublic)
+async def complete_telegram_email_setup(
+    data: TelegramPasswordSetRequest,
+    user_service: UserService = Injected(UserService),
+):
+    return user_service.complete_telegram_email_password_setup(data.token, data.password)
