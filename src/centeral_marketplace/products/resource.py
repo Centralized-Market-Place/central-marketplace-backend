@@ -1,4 +1,5 @@
-from typing import Annotated
+from typing import Annotated, Optional, List
+
 from centeral_marketplace.comments.core import (
     CommentCreate,
     CommentPublic,
@@ -33,16 +34,46 @@ async def get_products(
     sort_desc: bool = True,
     query: str = None,
     channel_id: PyObjectId = Query(None, alias="channelId"),
+    min_price: Optional[float] = Query(None),
+    max_price: Optional[float] = Query(None),
+    categories: List[str] = Query(default=[]),
+    location: Optional[str] = Query(None),
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
+
+    # Search by query (name or description)
     if query:
         criteria["$or"] = [
             {"name": {"$regex": query, "$options": "i"}},
             {"description": {"$regex": query, "$options": "i"}},
         ]
+
+    # Filter by channel
     if channel_id:
         criteria["channel_id"] = channel_id
+
+    # Filter by price range
+    if min_price is not None or max_price is not None:
+        criteria["price"] = {}
+        if min_price is not None:
+            criteria["price"]["$gte"] = min_price
+        if max_price is not None:
+            criteria["price"]["$lte"] = max_price
+
+    # Normalize category list
+    normalized_category = []
+    if isinstance(categories, list):
+        normalized_category = [cat.lower() for cat in categories]
+    elif isinstance(categories, str):
+        normalized_category = [categories.lower()]
+
+    if normalized_category:
+        criteria["categories"] = {"$in": normalized_category}
+
+    # Filter by exact location (case-insensitive match)
+    if location:
+        criteria["location"] = {"$regex": f"^{location}$", "$options": "i"}
 
     user_id = current_user.id if current_user else None
 
