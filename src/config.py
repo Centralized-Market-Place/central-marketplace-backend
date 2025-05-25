@@ -24,6 +24,7 @@ class Config(BaseSettings):
     cloudinary_api_secret: str
     brevo_api_key: str
     email_from: str
+    web_app_url: str
 
 
     class Config:

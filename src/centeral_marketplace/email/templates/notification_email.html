@@ -1,13 +1,27 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Notification</title>
-</head>
-<body>
-    <h2>Hello {{ user_name }},</h2>
-    <p>{{ message }}</p>
-    <br>
-    <p>Best regards,<br>Your Central Marketplace Team</p>
-</body>
-</html> 
+{% extends "email_base.html" %} {% block title %}Notification - Central
+Marketplace{% endblock %} {% block content %}
+<h2>Hello {{ user_name }},</h2>
+
+<div
+  style="
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f7f7f7;
+    border-left: 4px solid #4a6eb5;
+    border-radius: 4px;
+  "
+>
+  <p>{{ message }}</p>
+</div>
+
+<p>
+  To view more details or take action, please visit your
+  <a
+    href="https://centeral-marketplace-webapp.vercel.app/dashboard"
+    style="color: #4a6eb5; text-decoration: none; font-weight: bold"
+    >Dashboard</a
+  >.
+</p>
+
+<p>Thank you,<br />The Central Marketplace Team</p>
+{% endblock %}

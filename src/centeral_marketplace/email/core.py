@@ -1,17 +1,16 @@
+from centeral_marketplace.infrastructure.json import MongoBaseModel
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 from centeral_marketplace.infrastructure.mongo import PyObjectId
-from pydantic import Field
 
 
-class EmailVerificationToken(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+class EmailVerificationToken(MongoBaseModel):
     token: str
     user_id: PyObjectId
-    created_at: datetime
     expires_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class ResendVerificationRequest(BaseModel):

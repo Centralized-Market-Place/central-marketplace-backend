@@ -4,6 +4,7 @@ from centeral_marketplace.infrastructure.json import (
     Pagination,
 )
 from centeral_marketplace.channels.service import ChannelService
+from core import PyObjectId
 from fastapi import APIRouter
 from fastapi_injector import Injected
 
@@ -25,11 +26,7 @@ async def get_channels(
     criteria = {}
 
     if query:
-        criteria["$or"] = [
-            {"title": {"$regex": query, "$options": "i"}},
-            {"username": {"$regex": query, "$options": "i"}},
-            {"description": {"$regex": query, "$options": "i"}},
-        ]
+        criteria["$text"] = {"$search": query}
 
     paginated = channel_service.find_all(
         pagination=Pagination(page=page, size=page_size),
@@ -43,7 +40,7 @@ async def get_channels(
 
 @channel_router.get("/{channel_id}", response_model=Channel)
 async def get_channel(
-    channel_id: str,
+    channel_id: PyObjectId,
     channel_service: ChannelService = Injected(ChannelService),
 ):
     channel = channel_service.find_one(channel_id)

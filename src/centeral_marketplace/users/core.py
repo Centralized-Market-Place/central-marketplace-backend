@@ -52,13 +52,6 @@ class CommunicationPreferences(BaseModel):
     notification_frequency: str = "daily"
 
 
-class PrivacySettings(BaseModel):
-    profile_visibility: str = "public"
-    show_email: bool = False
-    show_phone: bool = False
-    show_location: bool = True
-    show_activity: bool = True
-
 
 class VerificationStatus(BaseModel):
     email_verified: bool = False
@@ -91,7 +84,6 @@ class User(UserBase, MongoBaseModel):
     communication_preferences: CommunicationPreferences = Field(
         default_factory=CommunicationPreferences
     )
-    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
 
     verification_status: VerificationStatus = Field(default_factory=VerificationStatus)
     password_hash: str
@@ -156,7 +148,6 @@ class UserPublic(UserBase, MongoBaseModel):
     contact_info: Optional[ContactInfo] = None
     location_info: Optional[LocationInfo] = None
     communication_preferences: Optional[CommunicationPreferences] = None
-    privacy_settings: Optional[PrivacySettings] = None
     verification_status: Optional[VerificationStatus] = None
 
     class Config:
@@ -170,17 +161,6 @@ class AuthResponse(BaseModel):
     user: User
 
 
-class UpdateUser(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    profile_picture_url: Optional[str] = None
-    personal_info: Optional[PersonalInfo] = None
-    contact_info: Optional[ContactInfo] = None
-    location_info: Optional[LocationInfo] = None
-    communication_preferences: Optional[CommunicationPreferences] = None
-    privacy_settings: Optional[PrivacySettings] = None
-
-
 class UserProfileUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -189,7 +169,6 @@ class UserProfileUpdate(BaseModel):
     contact_info: Optional[ContactInfo] = None
     location_info: Optional[LocationInfo] = None
     communication_preferences: Optional[CommunicationPreferences] = None
-    privacy_settings: Optional[PrivacySettings] = None
 
 
 class TelegramLogin(BaseModel):
@@ -200,3 +179,12 @@ class TelegramLogin(BaseModel):
     photo_url: Optional[str] = None
     auth_date: int
     hash: str
+
+
+class TelegramEmailAddRequest(BaseModel):
+    email: EmailStr
+
+
+class TelegramPasswordSetRequest(BaseModel):
+    token: str
+    password: str = Field(..., min_length=6)
