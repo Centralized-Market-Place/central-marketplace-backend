@@ -33,7 +33,6 @@ async def get_products(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
-    channel_id: PyObjectId = Query(None, alias="channelId"),
     min_price: Optional[float] = Query(None),
     max_price: Optional[float] = Query(None),
     categories: List[str] = Query(default=[]),
