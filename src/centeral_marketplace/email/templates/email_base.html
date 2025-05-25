@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Central Marketplace{% endblock %}</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f7f7f7;
+        color: #333333;
+        line-height: 1.6;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        padding: 20px 0;
+        border-bottom: 1px solid #eeeeee;
+      }
+      .logo {
+        max-width: 200px;
+        height: auto;
+      }
+      .content {
+        padding: 30px 20px;
+      }
+      .button {
+        display: inline-block;
+        background-color: #4a6eb5;
+        color: white !important;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 4px;
+        font-weight: bold;
+        margin: 20px 0;
+      }
+      .button:hover {
+        background-color: #3a5a9f;
+      }
+      .footer {
+        text-align: center;
+        padding: 20px;
+        color: #666666;
+        font-size: 12px;
+        border-top: 1px solid #eeeeee;
+      }
+      .social-links {
+        margin: 15px 0;
+      }
+      .social-link {
+        display: inline-block;
+        margin: 0 10px;
+        color: #4a6eb5;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img src="cid:logo" alt="Central Marketplace Logo" class="logo" />
+      </div>
+
+      <div class="content">{% block content %}{% endblock %}</div>
+
+      <div class="footer">
+        <p>© {{ current_year }} Central Marketplace. All rights reserved.</p>
+        <p>
+          If you have any questions, please contact our support team at
+          support@centralmarketplace.com
+        </p>
+        <div class="social-links">
+          <a href="#" class="social-link">Facebook</a>
+          <a href="#" class="social-link">Twitter</a>
+          <a href="#" class="social-link">Instagram</a>
+        </div>
+        <p>
+          This email was sent to you because you are registered with Central
+          Marketplace.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

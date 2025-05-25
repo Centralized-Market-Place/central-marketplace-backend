@@ -6,7 +6,6 @@ from config import Config
 from injector import inject, singleton
 from centeral_marketplace.bookmarks.core import Bookmark
 from core import PyObjectId
-from pymongo import ASCENDING
 
 
 @singleton
@@ -20,10 +19,6 @@ class BookmarkRepository:
             collection_name="bookmarks",
             model=Bookmark,
             config=self.config,
-        )
-
-        self.delegate.ensure_compound_index(
-            [("user_id", ASCENDING), ("product_id", ASCENDING)], unique=True
         )
 
     def save(self, bookmark: Bookmark) -> Bookmark:

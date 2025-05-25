@@ -9,10 +9,10 @@ from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
     Pagination,
 )
-from centeral_marketplace.products.core import ProductPublic
+from centeral_marketplace.products.core import ProductPublic, UpdateProduct
 from centeral_marketplace.products.service import ProductService
 from centeral_marketplace.users.core import User
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from fastapi_injector import Injected
 
 from core import PyObjectId
@@ -38,6 +38,7 @@ async def get_products(
     max_price: Optional[float] = Query(None),
     categories: List[str] = Query(default=[]),
     location: Optional[str] = Query(None),
+    channel_id: PyObjectId = None,
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
@@ -50,6 +51,7 @@ async def get_products(
         ]
 
     # Filter by channel
+        criteria["$text"] = {"$search": query}
     if channel_id:
         criteria["channel_id"] = channel_id
 
@@ -190,3 +192,21 @@ async def increment_product_share_count(
     return product_service.increment_share_count(
         product_id=product_id, user_id=current_user.id
     )
+
+@product_router.post("/{product_id}", response_model=ProductPublic)
+async def update_product(
+    product_id: PyObjectId,
+    product_update: UpdateProduct,
+    current_user: Annotated[User, Depends(get_current_user)],
+    product_service: ProductService = Injected(ProductService),
+): 
+    
+    return product_service.update_product(product_id,product_update, current_user)
+
+@product_router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product(
+    product_id: PyObjectId,
+    current_user: Annotated[User, Depends(get_current_user)],
+    product_service: ProductService = Injected(ProductService),
+):
+    return product_service.delete_product(product_id, current_user)

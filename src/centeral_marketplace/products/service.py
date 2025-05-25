@@ -173,21 +173,16 @@ class ProductService:
     def update_product(
         self, product_id: PyObjectId, product_data: UpdateProduct, user: User
     ) -> ProductPublic:
-        product = self.product_repository.find_one(product_id)
-        if not product:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Product with ID {product_id} not found",
-            )
+        product = self.find_one(product_id)
 
         user_channel_ids = set(
             [seller_info.channel_id for seller_info in user.seller_infos]
         )
-        channel = self.channel_repository.find_one(product.telegram_channel_id)
+        channel = product.channel
 
         if (
-            product.telegram_channel_id not in user_channel_ids
-            or channel.username not in user.seller_infos
+            str(product.telegram_channel_id) not in user_channel_ids
+            or channel.username not in user_channel_ids
         ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -198,24 +193,19 @@ class ProductService:
             setattr(product, key, value)
 
         self.product_repository.save(product)
-        return product
+        return self.find_one(product_id)
 
     def delete_product(self, product_id: PyObjectId, user: User) -> None:
-        product = self.product_repository.find_one(product_id)
-        if not product:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Product with ID {product_id} not found",
-            )
+        product = self.find_one(product_id)
 
         user_channel_ids = set(
             [seller_info.channel_id for seller_info in user.seller_infos]
         )
-        channel = self.channel_repository.find_one(product.telegram_channel_id)
+        channel = product.channel
 
         if (
-            product.telegram_channel_id not in user_channel_ids
-            or channel.username not in user.seller_infos
+            str(product.telegram_channel_id )not in user_channel_ids
+            or channel.username not in user_channel_ids
         ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

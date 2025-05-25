@@ -1,17 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from fastapi_injector import Injected
 from .core import PasswordResetRequest, PasswordResetConfirm
 from .service import PasswordResetService
-from centeral_marketplace.email.service import EmailService
+
 password_reset_router = APIRouter(prefix="/password-reset", tags=["password-reset"])
 
 @password_reset_router.post("/request")
 async def password_reset_request(
     data: PasswordResetRequest,
+    background_tasks: BackgroundTasks,
     password_reset_service: PasswordResetService = Injected(PasswordResetService),
 ):
-    
-    return password_reset_service.initiate_password_reset(data.email)
+    return password_reset_service.initiate_password_reset(data.email, background_tasks)
 
 @password_reset_router.post("/confirm")
 async def password_reset_confirm(
