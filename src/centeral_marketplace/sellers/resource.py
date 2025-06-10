@@ -1,6 +1,4 @@
 from typing import Annotated, Optional
-from centeral_marketplace.channels.core import Channel
-from centeral_marketplace.channels.service import ChannelService
 from core import PyObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi_injector import Injected
@@ -115,11 +113,3 @@ async def review_seller_application(
         )
 
     return seller_service.review_seller_application(review)
-
-
-@sellers_router.get("/channels/me", response_model=list[Channel])
-def get_my_channels(
-    current_user: Annotated[User, Depends(get_current_user)],
-    channel_service: ChannelService = Injected(ChannelService),
-):
-    return channel_service.get_my_channels(current_user.id)

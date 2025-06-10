@@ -1,12 +1,15 @@
+from typing import Annotated
 from centeral_marketplace.channels.core import Channel
 from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
     Pagination,
 )
 from centeral_marketplace.channels.service import ChannelService
+from centeral_marketplace.users.core import User
 from core import PyObjectId
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi_injector import Injected
+from middleware import get_current_user
 
 channel_router = APIRouter(
     prefix="/channels",
@@ -45,3 +48,10 @@ async def get_channel(
 ):
     channel = channel_service.find_one(channel_id)
     return channel
+
+@channel_router.get("/me", response_model=list[Channel])
+def get_my_channels(
+    current_user: Annotated[User, Depends(get_current_user)],
+    channel_service: ChannelService = Injected(ChannelService),
+):
+    return channel_service.get_my_channels(current_user.id)
