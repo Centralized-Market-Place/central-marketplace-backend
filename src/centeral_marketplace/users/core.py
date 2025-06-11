@@ -1,8 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 from centeral_marketplace.infrastructure.json import MongoBaseModel
-from centeral_marketplace.sellers.core import SellerInfo
 from pydantic import BaseModel, EmailStr, Field
 from core import PyObjectId
 
@@ -91,7 +90,6 @@ class User(UserBase, MongoBaseModel):
     profile_picture_url: Optional[str] = None
     is_verified: bool = False
     telegram: Optional[TelegramData] = None
-    seller_infos: List[SellerInfo] = []
     last_login: Optional[datetime] = None
     last_active: Optional[datetime] = None
 
@@ -142,7 +140,6 @@ class UserPublic(UserBase, MongoBaseModel):
     profile_picture_url: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
-    seller_infos: List[SellerInfo] = []
     last_active: Optional[datetime] = None
     personal_info: Optional[PersonalInfo] = None
     contact_info: Optional[ContactInfo] = None

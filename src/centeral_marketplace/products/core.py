@@ -30,6 +30,7 @@ class Product(MongoBaseModel):
     shares: NonNegativeInt = 0
     comments: int = 0
     clicks: NonNegativeInt = 0
+    updated_by_seller: Optional[bool] = False
     is_bookmarked: Optional[bool] = False
     categories: List[str] = []
     link: list[str] = []
@@ -61,6 +62,7 @@ class ProductPublic(MongoBaseModel):
     downvotes: NonNegativeInt = 0
     shares: NonNegativeInt = 0
     comments: int = 0
+    updated_by_seller: Optional[bool] = False
     is_bookmarked: Optional[bool] = False
     user_reaction: Optional[ReactionType] = None
     channel: Optional[Channel] = None

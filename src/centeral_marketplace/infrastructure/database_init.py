@@ -34,6 +34,7 @@ class DatabaseInitializer:
         ], name="products_channel_created")
         
         collection.create_index([("created_at", DESCENDING)], name="products_created_at")
+        collection.create_index([("date", DESCENDING)], name="products_date")
         collection.create_index([("updated_at", DESCENDING)], name="products_updated_at")
         collection.create_index([("price", ASCENDING)], name="products_price")
         

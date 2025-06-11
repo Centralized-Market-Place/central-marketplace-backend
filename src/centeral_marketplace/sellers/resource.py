@@ -51,10 +51,10 @@ async def apply_seller(
     "/applications", response_model=PaginatedResponse[SellerApplication]
 )
 async def get_all_seller_applications(
-    current_user: Annotated[User, Depends(require_role(["ADMIN", "SUPER_ADMIN"]))],
+    _: Annotated[User, Depends(require_role(["ADMIN", "SUPER_ADMIN"]))],
     page: int = 1,
     page_size: int = 10,
-    status: Optional[SellerApplicationStatus] = Query(
+    application_status: Optional[SellerApplicationStatus] = Query(
         None, description="Filter by application status"
     ),
     search: Optional[str] = Query(
@@ -64,7 +64,7 @@ async def get_all_seller_applications(
 ):
     pagination = Pagination(page=page, size=page_size)
     return seller_service.get_all_seller_applications(
-        pagination=pagination, status=status, search=search
+        pagination=pagination, application_status=application_status, search=search
     )
 
 

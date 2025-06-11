@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 import logging
+import traceback
+
 from centeral_marketplace.channels.service import ChannelService
 from fastapi import HTTPException, status
 from injector import inject, singleton
@@ -40,146 +42,223 @@ class SellerService:
     def verify_bot_admin_status(
         self, user: User, channel_id: str
     ) -> TelegramBotStatusResponse:
-        if not user.telegram:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User is not logged in with Telegram",
+        try:
+            if not user.telegram:
+                logger.error(f"User {user.id} attempted bot admin verification without Telegram login")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="User is not logged in with Telegram",
+                )
+
+            has_bot_admin_access = self.telegram_service.is_bot_admin(channel_id)
+            verified_channel_ownership = self.telegram_service.verify_channel_ownership(
+                user.telegram.telegram_id, channel_id
             )
 
-        has_bot_admin_access = self.telegram_service.is_bot_admin(channel_id)
-        verified_channel_ownership = self.telegram_service.verify_channel_ownership(
-            user.telegram.telegram_id, channel_id
-        )
-
-        return TelegramBotStatusResponse(
-            has_bot_admin_access=has_bot_admin_access,
-            verified_channel_ownership=verified_channel_ownership,
-        )
+            return TelegramBotStatusResponse(
+                has_bot_admin_access=has_bot_admin_access,
+                verified_channel_ownership=verified_channel_ownership,
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error verifying bot admin status for user {user.id} and channel {channel_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to verify bot admin status",
+            ) from e
 
     def is_verified_channel_admin(self, user: User, channel_id: str) -> bool:
-        if not user.telegram:
-            return False
+        try:
+            if not user.telegram:
+                return False
 
-        bot_status = self.verify_bot_admin_status(user, channel_id)
-        return bot_status.has_bot_admin_access and bot_status.verified_channel_ownership
+            bot_status = self.verify_bot_admin_status(user, channel_id)
+            return bot_status.has_bot_admin_access and bot_status.verified_channel_ownership
+        except Exception:
+            logger.error(f"Error checking channel admin status for user {user.id}: {traceback.format_exc()}")
+            return False
 
     def save_seller_application(
         self, user: User, application_data: SellerApplicationCreate
     ) -> SellerApplication:
-        if not user.telegram:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User is not logged in with Telegram",
-            )
-
-        existing_applications = self.seller_repository.find_by_user_id(user.id)
-
-        for app in existing_applications:
-            if app.status == SellerApplicationStatus.PENDING:
+        try:
+            if not user.telegram:
+                logger.error(f"User {user.id} attempted seller application without Telegram login")
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="User already has a pending seller application",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="User is not logged in with Telegram",
                 )
 
-        bot_status = self.verify_bot_admin_status(user, application_data.channel_id)
+            existing_applications = self.seller_repository.find_by_user_id(user.id)
 
-        if not bot_status.has_bot_admin_access:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Bot is not added as an admin to the channel",
+            for app in existing_applications:
+                if app.status == SellerApplicationStatus.PENDING:
+                    logger.error(f"User {user.id} already has pending seller application")
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="User already has a pending seller application",
+                    )
+
+            bot_status = self.verify_bot_admin_status(user, application_data.channel_id)
+
+            if not bot_status.has_bot_admin_access:
+                logger.error(f"Bot not admin in channel {application_data.channel_id} for user {user.id}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Bot is not added as an admin to the channel",
+                )
+
+            if not bot_status.verified_channel_ownership:
+                logger.error(f"User {user.id} not owner of channel {application_data.channel_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="User is not the owner of the channel",
+                )
+
+            seller_info = SellerInfo(
+                business_name=application_data.business_name,
+                tin_number=application_data.tin_number,
+                channel_id=application_data.channel_id,
+                channel_name=application_data.channel_name,
+                government_id=application_data.government_id,
+                has_bot_admin_access=bot_status.has_bot_admin_access,
+                verified_channel_ownership=bot_status.verified_channel_ownership,
             )
 
-        if not bot_status.verified_channel_ownership:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User is not the owner of the channel",
+            now = datetime.now(UTC)
+            application = SellerApplication(
+                user_id=user.id,
+                seller_info=seller_info,
+                status=SellerApplicationStatus.PENDING,
+                created_at=now,
             )
 
-        seller_info = SellerInfo(
-            business_name=application_data.business_name,
-            tin_number=application_data.tin_number,
-            channel_id=application_data.channel_id,
-            channel_name=application_data.channel_name,
-            government_id=application_data.government_id,
-            has_bot_admin_access=bot_status.has_bot_admin_access,
-            verified_channel_ownership=bot_status.verified_channel_ownership,
-        )
-
-        now = datetime.now(UTC)
-        application = SellerApplication(
-            user_id=user.id,
-            seller_info=seller_info,
-            status=SellerApplicationStatus.PENDING,
-            created_at=now,
-        )
-
-        try:
-            return self.seller_repository.save(application)
+            saved_application = self.seller_repository.save(application)
+            logger.info(f"Seller application created for user {user.id}")
+            return saved_application
+        except HTTPException:
+            raise
         except DuplicateKeyError:
+            logger.error(f"Duplicate seller application for channel {application_data.channel_id}")
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="An application for this channel already exists",
             )
+        except Exception as e:
+            logger.error(f"Error saving seller application for user {user.id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to save seller application",
+            ) from e
+        
+    def get_approved_seller_applications(self, user_id: PyObjectId) -> list[SellerApplication]:
+        try:
+            applications = self.seller_repository.find_all_by_dict(
+                criteria={"user_id": user_id, "status": SellerApplicationStatus.APPROVED},
+                sort_by="created_at",
+                sort_desc=True,
+            ).items
+            return applications
+        except Exception as e:
+            logger.error(f"Error getting approved seller applications for user {user_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to get approved seller applications",
+            ) from e
+    
 
     def get_all_seller_applications(
         self,
         pagination: Pagination = None,
-        status: SellerApplicationStatus = None,
+        application_status: SellerApplicationStatus = None,
         search: str = None,
     ) -> PaginatedResponse[SellerApplication]:
-        criteria = {}
-        if status:
-            criteria["status"] = status
-        if search:
-            criteria["$or"] = [
-                {"seller_info.business_name": {"$regex": search, "$options": "i"}},
-                {"seller_info.channel_name": {"$regex": search, "$options": "i"}},
-            ]
-        return self.seller_repository.find_all_by_dict(
-            criteria=criteria,
-            pagination=pagination,
-            sort_by="created_at",
-            sort_desc=True,
-        )
+        try:
+            criteria = {}
+            if application_status:
+                criteria["status"] = application_status
+            if search:
+                criteria["$or"] = [
+                    {"seller_info.business_name": {"$regex": search, "$options": "i"}},
+                    {"seller_info.channel_name": {"$regex": search, "$options": "i"}},
+                ]
+            return self.seller_repository.find_all_by_dict(
+                criteria=criteria,
+                pagination=pagination,
+                sort_by="created_at",
+                sort_desc=True,
+            )
+        except Exception as e:
+            logger.error(f"Error getting seller applications: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to retrieve seller applications",
+            ) from e
 
     def get_user_seller_applications(
         self, user_id: PyObjectId
     ) -> list[SellerApplication]:
-        return self.seller_repository.find_by_user_id(user_id)
+        try:
+            return self.seller_repository.find_by_user_id(user_id)
+        except Exception as e:
+            logger.error(f"Error getting seller applications for user {user_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to retrieve user seller applications",
+            ) from e
 
     def get_seller_application(self, application_id: PyObjectId) -> SellerApplication:
-        application = self.seller_repository.find_one(application_id)
-        if not application:
+        try:
+            application = self.seller_repository.find_one(application_id)
+            if not application:
+                logger.error(f"Seller application with ID {application_id} not found")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Seller application with ID {application_id} not found",
+                )
+            return application
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting seller application {application_id}: {traceback.format_exc()}")
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Seller application not found",
-            )
-        return application
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to retrieve seller application",
+            ) from e
 
     def review_seller_application(
         self, review: SellerApplicationReview
     ) -> SellerApplication:
+        try:
+            application = self.get_seller_application(review.application_id)
 
-        application = self.get_seller_application(review.application_id)
+            application.status = review.status
+            application.admin_review_notes = review.admin_review_notes
+            application.updated_at = datetime.now(UTC)
 
-        application.status = review.status
-        application.admin_review_notes = review.admin_review_notes
-        application.updated_at = datetime.now(UTC)
+            updated_application = self.seller_repository.save(application)
 
-        updated_application = self.seller_repository.save(application)
+            if review.status == SellerApplicationStatus.APPROVED:
+                channel = self.telegram_service.get_channel_info(
+                    application.seller_info.channel_id
+                )
+                if channel:
+                    channel.verified = True
+                    self.channel_service.save(channel)
+                user = self.user_repository.find_one(application.user_id)
+                if user:
+                    user.role = Role.SELLER
+                    user.updated_at = datetime.now(UTC)
+                    self.user_repository.save(user)
+                    logger.info(f"Approved seller application {application.id} for user {user.id}")
 
-        if review.status == SellerApplicationStatus.APPROVED:
-            channel = self.telegram_service.get_channel_info(
-                application.seller_info.channel_id
-            )
-            if channel:
-                channel.verified = True
-                self.channel_service.save(channel)
-            user = self.user_repository.find_one(application.user_id)
-            if user:
-                user.role = Role.SELLER
-                user.seller_infos.append(application.seller_info)
-                user.updated_at = datetime.now(UTC)
-                self.user_repository.save(user)
-
-        return updated_application
+            return updated_application
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error reviewing seller application {review.application_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to review seller application",
+            ) from e

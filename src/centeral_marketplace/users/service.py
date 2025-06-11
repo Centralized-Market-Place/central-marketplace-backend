@@ -3,6 +3,7 @@ from datetime import datetime, UTC, timedelta
 import hashlib
 import hmac
 import logging
+import traceback
 from typing import List
 
 from core import PyObjectId
@@ -37,6 +38,8 @@ from centeral_marketplace.email.service import EmailService
 import secrets
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 
 @singleton
@@ -52,24 +55,64 @@ class UserService:
     def find_all(
         self, pagination: Pagination = None, sort_by: str = None, sort_desc: bool = True
     ) -> PaginatedResponse[User]:
-        return self.user_repository.find_all(
-            pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
-        )
+        try:
+            return self.user_repository.find_all(
+                pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+            )
+        except Exception as e:
+            logger.error(f"Error finding all users: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to retrieve users",
+            ) from e
 
     def count_all_by_dict(self, criteria: dict) -> int:
-        return self.user_repository.count_all_by_dict(criteria)
+        try:
+            return self.user_repository.count_all_by_dict(criteria)
+        except Exception as e:
+            logger.error(f"Error counting users: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to count users",
+            ) from e
 
     def find_user_by_email(self, email: EmailStr) -> User:
-        return self.user_repository.find_one_by_dict({"email": email})
+        try:
+            user = self.user_repository.find_one_by_dict({"email": email})
+            if not user:
+                logger.error(f"User with email {email} not found")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"User with email {email} not found",
+                )
+            return user
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error finding user by email {email}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to find user",
+            ) from e
 
     def find_one(self, user_id: PyObjectId) -> User:
-        user = self.user_repository.find_one(user_id)
-        if not user:
+        try:
+            user = self.user_repository.find_one(user_id)
+            if not user:
+                logger.error(f"User with ID {user_id} not found")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"User with ID {user_id} not found",
+                )
+            return user
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error finding user {user_id}: {traceback.format_exc()}")
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {user_id} not found",
-            )
-        return user
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to retrieve user",
+            ) from e
 
     def register_user(self, user: UserCreate, background_tasks: BackgroundTasks | None = None) -> User:
         existing_user = self.user_repository.find_one_by_dict({"email": user.email})
@@ -205,23 +248,39 @@ class UserService:
         return self.user_repository.save(created_user)
 
     def authenticate_user(self, email: EmailStr, password: str) -> str:
-        user = self.user_repository.find_one_by_dict({"email": email})
-        if not user or not verify_password(password, user.password_hash):
+        try:
+            user = self.user_repository.find_one_by_dict({"email": email})
+            if not user or not verify_password(password, user.password_hash):
+                logger.error(f"Authentication failed for email {email}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password",
+                )
+            user.last_login = datetime.utcnow()
+            self.user_repository.save(user)
+            logger.info(f"User {user.id} authenticated successfully")
+            return create_access_token({"sub": str(user.id)})
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error authenticating user {email}: {traceback.format_exc()}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Incorrect Email or Password",
-            )
-        user.last_login = datetime.utcnow()
-        self.user_repository.save(user)
-        return create_access_token({"sub": str(user.id)})
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Authentication failed",
+            ) from e
 
     def validate_token(self, token: str) -> User:
         try:
             payload = decode_token(token)
             user_id = payload.get("sub")
-            return self.user_repository.find_one(user_id)
-        except Exception:
-            raise ValueError("Invalid Token")
+            user = self.user_repository.find_one(user_id)
+            if not user:
+                logger.error(f"Invalid token - user {user_id} not found")
+                raise ValueError("Invalid Token")
+            return user
+        except Exception as e:
+            logger.error(f"Token validation failed: {traceback.format_exc()}")
+            raise ValueError("Invalid Token") from e
 
     def verify_telegram_auth(self, data: TelegramLogin) -> bool:
         received_data = data.model_dump()
