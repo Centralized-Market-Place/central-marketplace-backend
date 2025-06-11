@@ -20,6 +20,10 @@ class BookmarkRepository:
             model=Bookmark,
             config=self.config,
         )
+    
+        self.delegate.ensure_compound_index([("user_id", 1), ("product_id", 1), ("created_at", -1)], unique=True, name="bookmarks_unique_user_product")
+        self.delegate.ensure_index("product_id", name="bookmarks_product")
+        self.delegate.ensure_compound_index([("user_id", 1), ("created_at", -1)], name="bookmarks_user_created")
 
     def save(self, bookmark: Bookmark) -> Bookmark:
         return self.delegate.save(bookmark)

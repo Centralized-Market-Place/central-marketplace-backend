@@ -351,12 +351,10 @@ class SellerService:
                     
                     total_products += channel_analytics_data["total_products"]
                     total_views += channel_analytics_data["total_views"]
+                    total_available_products += channel_analytics_data["available_products"]
                     
                     if channel_analytics_data["total_products"] > 0:
                         total_prices.append(channel_analytics_data["average_price"] * channel_analytics_data["total_products"])
-                        total_available_products += int(
-                            (channel_analytics_data["availability_percentage"] / 100) * channel_analytics_data["total_products"]
-                        )
                     
 
             average_price = sum(total_prices) / total_products if total_products > 0 else 0.0

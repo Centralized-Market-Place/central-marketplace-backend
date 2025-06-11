@@ -22,6 +22,13 @@ class ProductRepository(RepositoryInterface[Product]):
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="structured_products", model=Product, config=self.config
         )
+        
+        self.delegate.ensure_text_index(["name", "description"], name="products_text_search")
+        self.delegate.ensure_compound_index([("channel_id", 1), ("created_at", -1)], name="products_channel_created")
+        self.delegate.ensure_index("date", name="products_date")
+        self.delegate.ensure_index("price", name="products_price")
+        self.delegate.ensure_index("is_available", name="products_is_available")
+        self.delegate.ensure_index("channel_id", name="products_channel_id")
 
     def save(self, data: Product):
         return self.delegate.save(data)
@@ -472,18 +479,7 @@ class ProductRepository(RepositoryInterface[Product]):
                     "total_products": 1,
                     "total_views": 1,
                     "average_price": {"$ifNull": ["$average_price", 0]},
-                    "availability_percentage": {
-                        "$cond": [
-                            {"$eq": ["$total_products", 0]},
-                            0,
-                            {
-                                "$multiply": [
-                                    {"$divide": ["$available_products", "$total_products"]},
-                                    100
-                                ]
-                            }
-                        ]
-                    }
+                    "available_products": 1
                 }
             }
         ]
@@ -494,11 +490,10 @@ class ProductRepository(RepositoryInterface[Product]):
                 "total_products": 0,
                 "total_views": 0,
                 "average_price": 0.0,
-                "availability_percentage": 0.0
+                "available_products": 0
             }
         
         analytics = result[0]
         analytics["average_price"] = float(analytics["average_price"]) if analytics["average_price"] else 0.0
-        analytics["availability_percentage"] = float(analytics["availability_percentage"])
         
         return analytics

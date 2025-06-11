@@ -28,14 +28,30 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         self.collection: Collection = db[collection_name]
         self.model: Type[Entity] = model
 
-    def ensure_index(self, field: str, unique: bool = False):
+    def ensure_index(self, field: str, unique: bool = False, name: str = None):
         """Ensure an index on the specified field."""
-        index_name = self.collection.create_index([(field, ASCENDING)], unique=unique)
+        index_kwargs = {"unique": unique}
+        if name:
+            index_kwargs["name"] = name
+        index_name = self.collection.create_index([(field, ASCENDING)], **index_kwargs)
         logger.debug("Index '%s' ensured on field '%s'.", index_name, field)
 
-    def ensure_compound_index(self, fields: List[tuple], unique: bool = False):
-        index_name = self.collection.create_index(fields, unique=unique)
+    def ensure_compound_index(self, fields: List[tuple], unique: bool = False, name: str = None):
+        """Ensure a compound index on the specified fields."""
+        index_kwargs = {"unique": unique}
+        if name:
+            index_kwargs["name"] = name
+        index_name = self.collection.create_index(fields, **index_kwargs)
         logger.debug("Compound index '%s' ensured on fields '%s'.", index_name, fields)
+
+    def ensure_text_index(self, fields: List[str], name: str = None):
+        """Ensure a text index on the specified fields."""
+        text_fields = [(field, "text") for field in fields]
+        index_kwargs = {}
+        if name:
+            index_kwargs["name"] = name
+        index_name = self.collection.create_index(text_fields, **index_kwargs)
+        logger.debug("Text index '%s' ensured on fields '%s'.", index_name, fields)
 
     def _to_oid(self, value: Any) -> ObjectId | Any:
         if value is None or isinstance(value, ObjectId):

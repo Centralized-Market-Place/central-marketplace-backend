@@ -33,4 +33,4 @@ class ChannelAnalytics(BaseModel):
     total_products: int
     total_views: int
     average_price: float
-    availability_percentage: float
+    available_products: int
