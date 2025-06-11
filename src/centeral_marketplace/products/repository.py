@@ -450,3 +450,55 @@ class ProductRepository(RepositoryInterface[Product]):
 
     def delete_all(self):
         return self.delegate.delete_all()
+
+    def get_channel_analytics(self, channel_id: PyObjectId) -> dict:
+        pipeline = [
+            {"$match": {"channel_id": ObjectId(str(channel_id))}},
+            {
+                "$group": {
+                    "_id": None,
+                    "total_products": {"$sum": 1},
+                    "total_views": {"$sum": "$views"},
+                    "average_price": {"$avg": "$price"},
+                    "available_products": {
+                        "$sum": {"$cond": [{"$eq": ["$is_available", True]}, 1, 0]}
+                    },
+                    "prices": {"$push": "$price"}
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "total_products": 1,
+                    "total_views": 1,
+                    "average_price": {"$ifNull": ["$average_price", 0]},
+                    "availability_percentage": {
+                        "$cond": [
+                            {"$eq": ["$total_products", 0]},
+                            0,
+                            {
+                                "$multiply": [
+                                    {"$divide": ["$available_products", "$total_products"]},
+                                    100
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+        
+        result = list(self.delegate.collection.aggregate(pipeline))
+        if not result:
+            return {
+                "total_products": 0,
+                "total_views": 0,
+                "average_price": 0.0,
+                "availability_percentage": 0.0
+            }
+        
+        analytics = result[0]
+        analytics["average_price"] = float(analytics["average_price"]) if analytics["average_price"] else 0.0
+        analytics["availability_percentage"] = float(analytics["availability_percentage"])
+        
+        return analytics

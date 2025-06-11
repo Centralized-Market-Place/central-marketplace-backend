@@ -95,9 +95,9 @@ class ChannelService:
         except HTTPException:
             raise
         except Exception:
-            logger.error(f"error updating channel: {channel}")
+            logger.error(f"error updating channel: {channel_id}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"error updating channel: {channel}"
+                detail=f"error updating channel: {channel_id}"
             )
         

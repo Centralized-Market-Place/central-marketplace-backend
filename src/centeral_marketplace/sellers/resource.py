@@ -8,6 +8,7 @@ from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
 )
 from centeral_marketplace.sellers.core import (
+    SellerAnalytics,
     SellerApplication,
     SellerApplicationCreate,
     SellerApplicationReview,
@@ -135,3 +136,11 @@ async def review_seller_application(
         )
 
     return seller_service.review_seller_application(review)
+
+
+@sellers_router.get("/analytics", response_model=SellerAnalytics)
+async def get_seller_analytics(
+    current_user: Annotated[User, Depends(require_role([Role.SELLER]))],
+    seller_service: SellerService = Injected(SellerService),
+):
+    return seller_service.get_seller_analytics(current_user.id)

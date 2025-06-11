@@ -3,7 +3,9 @@ import logging
 import traceback
 
 from centeral_marketplace.bookmarks.repository import BookmarkRepository
+from centeral_marketplace.channels.core import ChannelAnalytics
 from centeral_marketplace.channels.repository import ChannelRepository
+from centeral_marketplace.channels.service import ChannelService
 from centeral_marketplace.comments.core import (
     CommentCreate,
     CommentUpdate,
@@ -35,7 +37,9 @@ class ProductService:
     reaction_service: ReactionService
     bookmark_repository: BookmarkRepository
     channel_repository: ChannelRepository
+    channel_service: ChannelService
     seller_service: SellerService
+
 
     def find_all(
         self,
@@ -258,6 +262,7 @@ class ProductService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to increment share count",
             ) from e
+        
 
     def update_product(
         self, product_id: PyObjectId, product_data: UpdateProduct, user: User
@@ -322,4 +327,27 @@ class ProductService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to delete product",
+            ) from e
+
+    def get_channel_analytics(self, channel_id: PyObjectId) -> ChannelAnalytics:
+
+        try:
+            channel = self.channel_repository.find_one(channel_id)
+            if not channel:
+                logger.error(f"Channel with ID {channel_id} not found")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Channel with ID {channel_id} not found",
+                )
+            
+            analytics_data = self.product_repository.get_channel_analytics(channel_id)
+            return ChannelAnalytics(**analytics_data)
+        
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting analytics for channel {channel_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to retrieve channel analytics",
             ) from e

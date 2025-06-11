@@ -9,6 +9,7 @@ from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
 )
 from centeral_marketplace.users.core import (
+    Role,
     User,
     UserCreate,
     UserLogin,
@@ -31,7 +32,7 @@ users_router = APIRouter(
 
 @users_router.get("/", response_model=PaginatedResponse[User])
 async def get_users(
-    current_user: Annotated[User, Depends(require_role(["SUPER_ADMIN"]))],
+    current_user: Annotated[User, Depends(require_role([Role.SUPER_ADMIN.value]))],
     page: int = 1,
     page_size: int = 10,
     sort_by: str = None,

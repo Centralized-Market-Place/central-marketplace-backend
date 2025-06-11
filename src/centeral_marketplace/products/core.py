@@ -83,5 +83,4 @@ class UpdateProduct(BaseModel):
     location: Optional[str] = None
     is_available: Optional[bool] = None
     categories: Optional[List[str]] = None
-    phone: Optional[str] = None
-    link: Optional[str] = None
+    phone: Optional[List[str]] = None

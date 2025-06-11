@@ -56,3 +56,11 @@ class SellerApplicationReview(BaseModel):
 class TelegramBotStatusResponse(BaseModel):
     has_bot_admin_access: bool
     verified_channel_ownership: bool
+
+
+class SellerAnalytics(BaseModel):
+    total_channels: int
+    total_products: int
+    total_views: int
+    average_price: float
+    availability_percentage: float

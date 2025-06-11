@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 from centeral_marketplace.comments.core import (
     CommentCreate,
     CommentPublic,
@@ -11,7 +11,7 @@ from centeral_marketplace.infrastructure.json import (
 from centeral_marketplace.products.core import ProductPublic, UpdateProduct
 from centeral_marketplace.products.service import ProductService
 from centeral_marketplace.users.core import User
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from fastapi_injector import Injected
 
 from core import PyObjectId
@@ -32,14 +32,14 @@ async def get_products(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
-    channel_id: PyObjectId = None,
+    channel_ids: List[PyObjectId] = Query(default=[]),
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
     if query:
         criteria["$text"] = {"$search": query}
-    if channel_id:
-        criteria["channel_id"] = channel_id
+    if channel_ids:
+        criteria["channel_id"] = {"$in": channel_ids}
 
     user_id = current_user.id if current_user else None
 
@@ -50,7 +50,6 @@ async def get_products(
         sort_desc=sort_desc,
         criteria=criteria,
     )
-
 
 @product_router.get("/bookmarked", response_model=PaginatedResponse[ProductPublic])
 async def get_product_bookmarks(

@@ -10,7 +10,9 @@ from pymongo.errors import DuplicateKeyError
 
 from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
 from centeral_marketplace.infrastructure.telegram.service import TelegramService
+from centeral_marketplace.products.repository import ProductRepository
 from centeral_marketplace.sellers.core import (
+    SellerAnalytics,
     SellerApplication,
     SellerApplicationCreate,
     SellerApplicationReview,
@@ -38,6 +40,7 @@ class SellerService:
     user_repository: UserRepository
     telegram_service: TelegramService
     channel_repo: ChannelRepository
+    product_repository: ProductRepository
     config: Config
 
     def verify_bot_admin_status(
@@ -317,4 +320,61 @@ class SellerService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to review seller application",
+            ) from e
+
+    def get_seller_analytics(self, user_id: PyObjectId) -> SellerAnalytics:
+        try:
+            approved_applications = self.get_approved_seller_applications(user_id)
+            
+            if not approved_applications:
+                logger.error(f"User {user_id} has no approved seller applications")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User has no approved seller applications",
+                )
+
+            total_channels = len(approved_applications)
+            total_products = 0
+            total_views = 0
+            total_prices = []
+            total_available_products = 0
+
+            for application in approved_applications:
+                channel_id = application.seller_info.channel_id
+                
+                channel = self.channel_repo.find_one_by_dict(
+                    {"$or": [{"username": channel_id}, {"telegram_id": channel_id}]}
+                )
+                
+                if channel:
+                    channel_analytics_data = self.product_repository.get_channel_analytics(channel.id)
+                    
+                    total_products += channel_analytics_data["total_products"]
+                    total_views += channel_analytics_data["total_views"]
+                    
+                    if channel_analytics_data["total_products"] > 0:
+                        total_prices.append(channel_analytics_data["average_price"] * channel_analytics_data["total_products"])
+                        total_available_products += int(
+                            (channel_analytics_data["availability_percentage"] / 100) * channel_analytics_data["total_products"]
+                        )
+                    
+
+            average_price = sum(total_prices) / total_products if total_products > 0 else 0.0
+            availability_percentage = (total_available_products / total_products * 100) if total_products > 0 else 0.0
+
+            return SellerAnalytics(
+                total_channels=total_channels,
+                total_products=total_products,
+                total_views=total_views,
+                average_price=average_price,
+                availability_percentage=availability_percentage,
+            )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting seller analytics for user {user_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to retrieve seller analytics",
             ) from e
