@@ -12,10 +12,11 @@ from centeral_marketplace.sellers.core import (
     SellerApplicationCreate,
     SellerApplicationReview,
     SellerApplicationStatus,
+    SellerApplicationUpdate,
     TelegramBotStatusResponse,
 )
 from centeral_marketplace.sellers.service import SellerService
-from centeral_marketplace.users.core import User
+from centeral_marketplace.users.core import Role, User
 from middleware import get_current_user, require_role
 
 
@@ -51,7 +52,7 @@ async def apply_seller(
     "/applications", response_model=PaginatedResponse[SellerApplication]
 )
 async def get_all_seller_applications(
-    _: Annotated[User, Depends(require_role(["ADMIN", "SUPER_ADMIN"]))],
+    _: Annotated[User, Depends(require_role([Role.ADMIN, Role.SUPER_ADMIN]))],
     page: int = 1,
     page_size: int = 10,
     application_status: Optional[SellerApplicationStatus] = Query(
@@ -85,8 +86,8 @@ async def get_seller_application(
     application = seller_service.get_seller_application(application_id)
 
     if (
-        current_user.role != "ADMIN"
-        and current_user.role != "SUPER_ADMIN"
+        current_user.role != Role.ADMIN
+        and current_user.role != Role.SUPER_ADMIN
         and str(application.user_id) != str(current_user.id)
     ):
         raise HTTPException(
@@ -96,6 +97,27 @@ async def get_seller_application(
 
     return application
 
+@sellers_router.post(
+    "/applications/{application_id}", response_model=SellerApplication
+)
+async def update_seller_application(
+    application_id: PyObjectId,
+    application: SellerApplicationUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    seller_service: SellerService = Injected(SellerService),
+):
+    return seller_service.update_seller_application(current_user, application_id, application)
+
+@sellers_router.delete(
+    "/applications/{application_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_seller_application(
+    application_id: PyObjectId,
+    current_user: Annotated[User, Depends(get_current_user)],
+    seller_service: SellerService = Injected(SellerService),
+):
+    seller_service.delete_seller_application(current_user, application_id)
+
 
 @sellers_router.post(
     "/applications/{application_id}/review", response_model=SellerApplication
@@ -103,7 +125,7 @@ async def get_seller_application(
 async def review_seller_application(
     application_id: PyObjectId,
     review: SellerApplicationReview,
-    _: Annotated[User, Depends(require_role(["ADMIN", "SUPER_ADMIN"]))],
+    _: Annotated[User, Depends(require_role([Role.ADMIN, Role.SUPER_ADMIN]))],
     seller_service: SellerService = Injected(SellerService),
 ):
     if application_id != review.application_id:

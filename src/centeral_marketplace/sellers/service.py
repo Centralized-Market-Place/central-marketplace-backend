@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 import logging
 import traceback
 
-from centeral_marketplace.channels.service import ChannelService
+from centeral_marketplace.channels.repository import ChannelRepository
 from fastapi import HTTPException, status
 from injector import inject, singleton
 from pymongo.errors import DuplicateKeyError
@@ -15,6 +15,7 @@ from centeral_marketplace.sellers.core import (
     SellerApplicationCreate,
     SellerApplicationReview,
     SellerApplicationStatus,
+    SellerApplicationUpdate,
     SellerInfo,
     TelegramBotStatusResponse,
 )
@@ -36,7 +37,7 @@ class SellerService:
     seller_repository: SellerApplicationRepository
     user_repository: UserRepository
     telegram_service: TelegramService
-    channel_service: ChannelService
+    channel_repo: ChannelRepository
     config: Config
 
     def verify_bot_admin_status(
@@ -207,6 +208,7 @@ class SellerService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve user seller applications",
             ) from e
+        
 
     def get_seller_application(self, application_id: PyObjectId) -> SellerApplication:
         try:
@@ -227,6 +229,60 @@ class SellerService:
                 detail="Unable to retrieve seller application",
             ) from e
 
+    def update_seller_application(self, user: User, application_id: PyObjectId, application_data: SellerApplicationUpdate) -> SellerApplication:
+        try:
+            application = self.get_seller_application(application_id)
+            if str(application.user_id) != str(user.id):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You are not allowed to update this application",
+                )
+            if application.status != SellerApplicationStatus.PENDING:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Only pending applications can be updated",
+                )
+            
+            for key, value in application_data.model_dump(exclude_unset=True).items():
+                setattr(application.seller_info, key, value)
+
+            updated_application = self.seller_repository.save(application)
+            logger.info(f"Seller application updated for user {user.id}")
+            return updated_application
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error updating seller application {application_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to update seller application",
+            ) from e
+    
+    def delete_seller_application(self, user: User, application_id: PyObjectId) -> None:
+        try:
+            application = self.get_seller_application(application_id)
+            if str(application.user_id) != str(user.id):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You are not allowed to delete this application",
+                )
+            if application.status == SellerApplicationStatus.APPROVED:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot delete approved applications",
+                )
+            
+            self.seller_repository.delete_one(application_id)
+            logger.info(f"Seller application deleted for user {user.id}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error deleting seller application {application_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to delete seller application",
+            ) from e
+            
     def review_seller_application(
         self, review: SellerApplicationReview
     ) -> SellerApplication:
@@ -245,7 +301,7 @@ class SellerService:
                 )
                 if channel:
                     channel.verified = True
-                    self.channel_service.save(channel)
+                    self.channel_repo.save(channel)
                 user = self.user_repository.find_one(application.user_id)
                 if user:
                     user.role = Role.SELLER

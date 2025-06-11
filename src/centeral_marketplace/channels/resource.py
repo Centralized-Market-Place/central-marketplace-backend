@@ -1,5 +1,5 @@
 from typing import Annotated
-from centeral_marketplace.channels.core import Channel
+from centeral_marketplace.channels.core import Channel, UpdateChannel
 from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
     Pagination,
@@ -55,3 +55,12 @@ def get_my_channels(
     channel_service: ChannelService = Injected(ChannelService),
 ):
     return channel_service.get_my_channels(current_user.id)
+
+@channel_router.post("/{channel_id}", response_model=Channel)
+async def update_channel(
+    channel_id: PyObjectId,
+    update_data: UpdateChannel,
+    current_user: Annotated[User, Depends(get_current_user)],
+    channel_service: ChannelService = Injected(ChannelService),
+):
+    return channel_service.update_channel(current_user, channel_id, update_data)
