@@ -1,5 +1,4 @@
 import logging
-from centeral_marketplace.infrastructure.database_init import DatabaseInitializer
 from centeral_marketplace.users.core import UserCreate
 from centeral_marketplace.users.service import UserService
 from config import Config
@@ -65,8 +64,6 @@ def create_app(injector: Injector | None = None) -> FastAPI:
 
     user_service = injector.get(UserService)
     config = injector.get(Config)
-    db_initializer = DatabaseInitializer(config)
-    db_initializer.initialize_all()
 
     @app.on_event("startup")
     async def startup_event():

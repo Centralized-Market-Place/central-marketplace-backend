@@ -26,7 +26,6 @@ class Config(BaseSettings):
     email_from: str
     web_app_url: str
 
-
     class Config:
         env_file = ".env"
         case_sensitive = False
