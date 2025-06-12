@@ -31,12 +31,11 @@ class Product(MongoBaseModel):
     comments: int = 0
     clicks: NonNegativeInt = 0
     updated_by_seller: Optional[bool] = False
+    deleted_by_seller: Optional[bool] = False
     is_bookmarked: Optional[bool] = False
     categories: List[str] = []
-    link: list[str] = []
-    phone: list[str] = []
-    categories: list[str] = []
-    phone: Optional[str] = None
+    link: List[str] = []
+    phone: List[str] = []
 
     class Config:
         populate_by_name = True
@@ -62,7 +61,6 @@ class ProductPublic(MongoBaseModel):
     downvotes: NonNegativeInt = 0
     shares: NonNegativeInt = 0
     comments: int = 0
-    updated_by_seller: Optional[bool] = False
     is_bookmarked: Optional[bool] = False
     user_reaction: Optional[ReactionType] = None
     channel: Optional[Channel] = None
@@ -82,5 +80,4 @@ class UpdateProduct(BaseModel):
     price: Optional[PositiveFloat] = None
     location: Optional[str] = None
     is_available: Optional[bool] = None
-    categories: Optional[List[str]] = None
     phone: Optional[List[str]] = None

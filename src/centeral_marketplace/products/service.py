@@ -284,22 +284,18 @@ class ProductService:
         self, product_id: PyObjectId, product_data: UpdateProduct, user: User
     ) -> ProductPublic:
         try:
-            product = self.find_one(product_id)
-            seller_applications = self.seller_service.get_approved_seller_applications(
-                user.id
-            )
+            product = self.product_repository.find_one_product(product_id)
+            seller_applications = self.channel_service.get_my_channels(user.id)
 
             user_channel_ids = set(
                 [
-                    application.seller_info.channel_id
-                    for application in seller_applications
+                    str(channel.id)
+                    for channel in seller_applications
                 ]
             )
-            channel = product.channel
 
             if (
-                str(product.telegram_channel_id) not in user_channel_ids
-                or channel.username not in user_channel_ids
+                str(product.channel_id) not in user_channel_ids
             ):
                 logger.error(
                     f"User {user.id} attempted to update product {product_id} without permission"
@@ -311,7 +307,8 @@ class ProductService:
 
             for key, value in product_data.model_dump(exclude_unset=True).items():
                 setattr(product, key, value)
-
+                
+            product.updated_by_seller = True
             self.product_repository.save(product)
             return self.find_one(product_id)
         except HTTPException:
@@ -327,22 +324,18 @@ class ProductService:
 
     def delete_product(self, product_id: PyObjectId, user: User) -> None:
         try:
-            product = self.find_one(product_id)
-            seller_applications = self.seller_service.get_approved_seller_applications(
-                user.id
-            )
+            product = self.product_repository.find_one_product(product_id)
+            channels = self.channel_service.get_my_channels(user.id)
 
             user_channel_ids = set(
                 [
-                    seller_info.seller_info.channel_id
-                    for seller_info in seller_applications
+                    str(channel.id)
+                    for channel in channels
                 ]
             )
-            channel = product.channel
 
             if (
-                str(product.telegram_channel_id) not in user_channel_ids
-                or channel.username not in user_channel_ids
+                str(product.channel_id) not in user_channel_ids
             ):
                 logger.error(
                     f"User {user.id} attempted to delete product {product_id} without permission"
@@ -352,9 +345,14 @@ class ProductService:
                     detail="You are not authorized to delete this product",
                 )
 
-            self.product_repository.delete_one(product_id)
-        except HTTPException:
-            raise
+            product.deleted_by_seller = True
+            self.product_repository.save(product)
+
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Product with ID {product_id} not found",
+            )
         except Exception as e:
             logger.error(
                 f"Error deleting product {product_id}: {traceback.format_exc()}"
