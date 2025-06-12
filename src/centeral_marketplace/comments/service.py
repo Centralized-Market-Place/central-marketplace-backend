@@ -85,7 +85,9 @@ class CommentService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error finding comment {comment_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error finding comment {comment_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve comment",
@@ -137,30 +139,34 @@ class CommentService:
         try:
             if parent_id:
                 self.find_one(parent_id)
-            
+
             comment = self.comment_repository.find_one(comment_id)
             if not comment:
                 logger.error(f"Comment with ID {comment_id} not found for update")
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, 
-                    detail=f"Comment with ID {comment_id} not found"
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Comment with ID {comment_id} not found",
                 )
-            
+
             if comment.user_id != user_id:
-                logger.error(f"User {user_id} attempted to update comment {comment_id} they don't own")
+                logger.error(
+                    f"User {user_id} attempted to update comment {comment_id} they don't own"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You are not authorized to update this comment",
                 )
-            
+
             for key, value in comment_data.model_dump(exclude_unset=True).items():
                 setattr(comment, key, value)
-            
+
             return self.comment_repository.save(comment)
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error updating comment {comment_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error updating comment {comment_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to update comment",
@@ -172,22 +178,26 @@ class CommentService:
             if not comment:
                 logger.error(f"Comment with ID {comment_id} not found for deletion")
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, 
-                    detail=f"Comment with ID {comment_id} not found"
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Comment with ID {comment_id} not found",
                 )
-            
+
             if comment.user_id != user_id:
-                logger.error(f"User {user_id} attempted to delete comment {comment_id} they don't own")
+                logger.error(
+                    f"User {user_id} attempted to delete comment {comment_id} they don't own"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You are not authorized to delete this comment",
                 )
-            
+
             return self.comment_repository.delete_one(comment_id)
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error deleting comment {comment_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error deleting comment {comment_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to delete comment",

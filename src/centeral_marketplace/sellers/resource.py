@@ -98,16 +98,18 @@ async def get_seller_application(
 
     return application
 
-@sellers_router.post(
-    "/applications/{application_id}", response_model=SellerApplication
-)
+
+@sellers_router.post("/applications/{application_id}", response_model=SellerApplication)
 async def update_seller_application(
     application_id: PyObjectId,
     application: SellerApplicationUpdate,
     current_user: Annotated[User, Depends(get_current_user)],
     seller_service: SellerService = Injected(SellerService),
 ):
-    return seller_service.update_seller_application(current_user, application_id, application)
+    return seller_service.update_seller_application(
+        current_user, application_id, application
+    )
+
 
 @sellers_router.delete(
     "/applications/{application_id}", status_code=status.HTTP_204_NO_CONTENT

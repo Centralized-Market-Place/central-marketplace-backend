@@ -51,7 +51,6 @@ class CommunicationPreferences(BaseModel):
     notification_frequency: str = "daily"
 
 
-
 class VerificationStatus(BaseModel):
     email_verified: bool = False
     phone_verified: bool = False
@@ -117,7 +116,6 @@ class User(UserBase, MongoBaseModel):
                 self.last_name,
                 self.personal_info.date_of_birth,
                 self.personal_info.gender,
-                self.personal_info.profile_picture,
                 self.contact_info.phone_number,
                 self.location_info.country,
                 self.location_info.city,

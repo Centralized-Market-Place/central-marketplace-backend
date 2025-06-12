@@ -31,12 +31,14 @@ class BookmarkService:
         try:
             # Verify product exists
             self.product_service.find_one(product_id)
-            
+
             existing = self.bookmark_repository.find_one_by_user_and_product(
                 user_id, product_id
             )
             if existing:
-                logger.error(f"User {user_id} attempted to bookmark already bookmarked product {product_id}")
+                logger.error(
+                    f"User {user_id} attempted to bookmark already bookmarked product {product_id}"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Product is already bookmarked",
@@ -50,7 +52,9 @@ class BookmarkService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error adding bookmark for user {user_id} and product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error adding bookmark for user {user_id} and product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to add bookmark",
@@ -62,18 +66,21 @@ class BookmarkService:
                 user_id, product_id
             )
             if not existing:
-                logger.error(f"User {user_id} attempted to remove non-existent bookmark for product {product_id}")
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, 
-                    detail="Bookmark not found"
+                logger.error(
+                    f"User {user_id} attempted to remove non-existent bookmark for product {product_id}"
                 )
-            
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Bookmark not found"
+                )
+
             self.bookmark_repository.delete_one(existing.id)
             logger.info(f"User {user_id} removed bookmark for product {product_id}")
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error removing bookmark for user {user_id} and product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error removing bookmark for user {user_id} and product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to remove bookmark",
@@ -85,16 +92,19 @@ class BookmarkService:
                 user_id, product_id
             )
             if not bookmark:
-                logger.error(f"Bookmark not found for user {user_id} and product {product_id}")
+                logger.error(
+                    f"Bookmark not found for user {user_id} and product {product_id}"
+                )
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, 
-                    detail="Bookmark not found"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Bookmark not found"
                 )
             return bookmark
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error getting bookmark for user {user_id} and product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error getting bookmark for user {user_id} and product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve bookmark",
@@ -114,7 +124,9 @@ class BookmarkService:
             logger.info(f"Retrieved {len(result.items)} bookmarks for user {user_id}")
             return result
         except Exception as e:
-            logger.error(f"Error finding bookmarks for user {user_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error finding bookmarks for user {user_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve bookmarks",
@@ -134,12 +146,16 @@ class BookmarkService:
             result = PaginatedResponse(
                 items=products, total=len(products), page=1, size=len(products)
             )
-            logger.info(f"Retrieved {len(products)} bookmarked products for user {user_id}")
+            logger.info(
+                f"Retrieved {len(products)} bookmarked products for user {user_id}"
+            )
             return result
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error finding bookmarked products for user {user_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error finding bookmarked products for user {user_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve bookmarked products",

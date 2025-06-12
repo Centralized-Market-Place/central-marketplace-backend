@@ -11,7 +11,6 @@ class SellerApplicationStatus(str, Enum):
     REJECTED = "REJECTED"
 
 
-
 class SellerInfo(BaseModel):
     business_name: str
     tin_number: str
@@ -40,6 +39,7 @@ class SellerApplicationCreate(BaseModel):
     channel_id: str
     channel_name: str
     government_id: str
+
 
 class SellerApplicationUpdate(BaseModel):
     business_name: Optional[str] = None

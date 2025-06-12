@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+
 @singleton
 @inject
 @dataclass
@@ -47,12 +48,16 @@ class ChannelService:
             logger.error(f"channel with id: {channel_id} not found")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"channel with id: {channel_id} not found"
+                detail=f"channel with id: {channel_id} not found",
             )
 
     def get_my_channels(self, user_id: PyObjectId) -> list[Channel]:
-        seller_applications = self.seller_service.get_approved_seller_applications(user_id)
-        channel_ids = [seller_info.seller_info.channel_id for seller_info in seller_applications]
+        seller_applications = self.seller_service.get_approved_seller_applications(
+            user_id
+        )
+        channel_ids = [
+            seller_info.seller_info.channel_id for seller_info in seller_applications
+        ]
         channels = []
         for channel_id in channel_ids:
             channel = self.channel_repository.find_one_by_dict(
@@ -70,27 +75,31 @@ class ChannelService:
             logger.error(f"error saving channel: {channel}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"error saving channel: {channel}"
+                detail=f"error saving channel: {channel}",
             )
-        
+
     def check_channel_ownership(self, user: User, channel_id: PyObjectId) -> bool:
         channels = self.get_my_channels(user.id)
         return any(str(channel.id) == str(channel_id) for channel in channels)
-    
-    def update_channel(self, user: User, channel_id: PyObjectId, update_data: UpdateChannel) -> Channel:
+
+    def update_channel(
+        self, user: User, channel_id: PyObjectId, update_data: UpdateChannel
+    ) -> Channel:
         try:
             channel = self.find_one(channel_id)
-            
+
             if not self.check_channel_ownership(user, channel_id):
-                logger.error(f"user {user.id} does not own channel with id: {channel_id}")
+                logger.error(
+                    f"user {user.id} does not own channel with id: {channel_id}"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"user {user.id} does not own channel with id: {channel_id}"
+                    detail=f"user {user.id} does not own channel with id: {channel_id}",
                 )
 
             for key, value in update_data.model_dump(exclude_unset=True).items():
                 setattr(channel, key, value)
-            
+
             return self.channel_repository.save(channel)
         except HTTPException:
             raise
@@ -98,6 +107,5 @@ class ChannelService:
             logger.error(f"error updating channel: {channel_id}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"error updating channel: {channel_id}"
+                detail=f"error updating channel: {channel_id}",
             )
-        

@@ -18,7 +18,7 @@ class UserRepository(RepositoryInterface[User]):
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="users", model=User, config=self.config
         )
-        
+
         self.delegate.ensure_index("email", unique=True, name="users_email")
         self.delegate.ensure_index("created_at", name="users_created_at")
 

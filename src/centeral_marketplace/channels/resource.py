@@ -41,6 +41,7 @@ async def get_channels(
 
     return paginated
 
+
 @channel_router.get("/me", response_model=list[Channel])
 def get_my_channels(
     current_user: Annotated[User, Depends(require_role([Role.SELLER.value]))],
@@ -66,6 +67,7 @@ async def update_channel(
     channel_service: ChannelService = Injected(ChannelService),
 ):
     return channel_service.update_channel(current_user, channel_id, update_data)
+
 
 @channel_router.get("/{channel_id}/analytics", response_model=ChannelAnalytics)
 async def get_channel_analytics(

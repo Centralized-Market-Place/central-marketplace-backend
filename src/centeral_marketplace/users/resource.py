@@ -1,5 +1,10 @@
 from typing import Annotated, Dict
-from centeral_marketplace.email.core import ResendVerificationRequest, ResendVerificationResponse, VerifyEmailRequest, VerifyEmailResponse
+from centeral_marketplace.email.core import (
+    ResendVerificationRequest,
+    ResendVerificationResponse,
+    VerifyEmailRequest,
+    VerifyEmailResponse,
+)
 from fastapi import APIRouter, Depends, BackgroundTasks
 from fastapi_injector import Injected
 
@@ -18,7 +23,7 @@ from centeral_marketplace.users.core import (
     TelegramLogin,
     UserProfileUpdate,
     TelegramEmailAddRequest,
-    TelegramPasswordSetRequest
+    TelegramPasswordSetRequest,
 )
 from centeral_marketplace.users.auth import create_access_token
 from middleware import get_current_user, require_role
@@ -105,7 +110,7 @@ async def get_profile_completion(
 async def verify_email(
     data: VerifyEmailRequest,
     user_service: UserService = Injected(UserService),
-):  
+):
     return user_service.verify_email(data.token)
 
 
@@ -115,7 +120,9 @@ async def resend_verification(
     background_tasks: BackgroundTasks,
     user_service: UserService = Injected(UserService),
 ):
-    return user_service.resend_verification(data.email, background_tasks=background_tasks)
+    return user_service.resend_verification(
+        data.email, background_tasks=background_tasks
+    )
 
 
 @users_router.post("/telegram/add-email", response_model=UserPublic)
@@ -125,7 +132,9 @@ async def request_telegram_email_add(
     background_tasks: BackgroundTasks,
     user_service: UserService = Injected(UserService),
 ):
-    return user_service.request_telegram_email_add(current_user.id, data.email, background_tasks=background_tasks)
+    return user_service.request_telegram_email_add(
+        current_user.id, data.email, background_tasks=background_tasks
+    )
 
 
 @users_router.post("/telegram/complete-setup", response_model=UserPublic)
@@ -133,4 +142,6 @@ async def complete_telegram_email_setup(
     data: TelegramPasswordSetRequest,
     user_service: UserService = Injected(UserService),
 ):
-    return user_service.complete_telegram_email_password_setup(data.token, data.password)
+    return user_service.complete_telegram_email_password_setup(
+        data.token, data.password
+    )

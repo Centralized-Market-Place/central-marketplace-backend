@@ -22,9 +22,13 @@ class ProductRepository(RepositoryInterface[Product]):
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="structured_products", model=Product, config=self.config
         )
-        
-        self.delegate.ensure_text_index(["name", "description"], name="products_text_search")
-        self.delegate.ensure_compound_index([("channel_id", 1), ("created_at", -1)], name="products_channel_created")
+
+        self.delegate.ensure_text_index(
+            ["name", "description"], name="products_text_search"
+        )
+        self.delegate.ensure_compound_index(
+            [("channel_id", 1), ("created_at", -1)], name="products_channel_created"
+        )
         self.delegate.ensure_index("date", name="products_date")
         self.delegate.ensure_index("price", name="products_price")
         self.delegate.ensure_index("is_available", name="products_is_available")
@@ -61,58 +65,73 @@ class ProductRepository(RepositoryInterface[Product]):
         if pagination:
             pipeline.append({"$limit": size})
 
-        pipeline.extend([
-            {
-                "$facet": {
-                    "items": [
-                        {
-                            "$lookup": {
-                                "from": "channels",
-                                "localField": "channel_id",
-                                "foreignField": "_id",
-                                "as": "channel"
-                            }
-                        },
-                        {"$unwind": "$channel"},
-                        {
-                            "$lookup": {
-                                "from": "reactions",
-                                "let": {"pid": "$_id"},
-                                "pipeline": [
-                                    {
-                                        "$match": {
-                                            "$expr": {
-                                                "$and": [
-                                                    {"$eq": ["$target_id", "$$pid"]},
-                                                    {"$eq": ["$user_id", ObjectId(str(user_id))]},
-                                                    {
-                                                        "$eq": [
-                                                            "$target_type",
-                                                            ReactionTarget.PRODUCT.value,
-                                                        ]
-                                                    },
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    {"$project": {"reaction_type": 1, "_id": 0}},
-                                ],
-                                "as": "userReaction",
-                            }
-                        },
-                        {
-                            "$addFields": {
-                                "user_reaction": {
-                                    "$arrayElemAt": ["$userReaction.reaction_type", 0]
+        pipeline.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {
+                                "$lookup": {
+                                    "from": "channels",
+                                    "localField": "channel_id",
+                                    "foreignField": "_id",
+                                    "as": "channel",
                                 }
-                            }
-                        },
-                        {"$project": {"userReaction": 0}}
-                    ],
-                    "total": [{"$count": "count"}]
+                            },
+                            {"$unwind": "$channel"},
+                            {
+                                "$lookup": {
+                                    "from": "reactions",
+                                    "let": {"pid": "$_id"},
+                                    "pipeline": [
+                                        {
+                                            "$match": {
+                                                "$expr": {
+                                                    "$and": [
+                                                        {
+                                                            "$eq": [
+                                                                "$target_id",
+                                                                "$$pid",
+                                                            ]
+                                                        },
+                                                        {
+                                                            "$eq": [
+                                                                "$user_id",
+                                                                ObjectId(str(user_id)),
+                                                            ]
+                                                        },
+                                                        {
+                                                            "$eq": [
+                                                                "$target_type",
+                                                                ReactionTarget.PRODUCT.value,
+                                                            ]
+                                                        },
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        {"$project": {"reaction_type": 1, "_id": 0}},
+                                    ],
+                                    "as": "userReaction",
+                                }
+                            },
+                            {
+                                "$addFields": {
+                                    "user_reaction": {
+                                        "$arrayElemAt": [
+                                            "$userReaction.reaction_type",
+                                            0,
+                                        ]
+                                    }
+                                }
+                            },
+                            {"$project": {"userReaction": 0}},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
                 }
-            }
-        ])
+            ]
+        )
 
         result = list(self.delegate.collection.aggregate(pipeline))[0]
         items = [ProductPublic.model_validate(doc) for doc in result["items"]]
@@ -276,13 +295,18 @@ class ProductRepository(RepositoryInterface[Product]):
                                             "$expr": {
                                                 "$and": [
                                                     {"$eq": ["$product_id", "$$pid"]},
-                                                    {"$eq": ["$user_id", ObjectId(str(user_id))]},
+                                                    {
+                                                        "$eq": [
+                                                            "$user_id",
+                                                            ObjectId(str(user_id)),
+                                                        ]
+                                                    },
                                                 ]
                                             }
                                         }
                                     },
                                 ],
-                                "as": "userBookmark"
+                                "as": "userBookmark",
                             }
                         },
                         {"$match": {"userBookmark.0": {"$exists": True}}},
@@ -291,13 +315,13 @@ class ProductRepository(RepositoryInterface[Product]):
                                 "from": "channels",
                                 "localField": "channel_id",
                                 "foreignField": "_id",
-                                "as": "channel"
+                                "as": "channel",
                             }
                         },
                         {"$unwind": "$channel"},
                         {"$project": {"userBookmark": 0}},
                         {"$sort": {sort_by if sort_by else "_id": order}},
-                        {"$limit": size if pagination else 1000}
+                        {"$limit": size if pagination else 1000},
                     ],
                     "total": [
                         {"$match": criteria},
@@ -311,18 +335,23 @@ class ProductRepository(RepositoryInterface[Product]):
                                             "$expr": {
                                                 "$and": [
                                                     {"$eq": ["$product_id", "$$pid"]},
-                                                    {"$eq": ["$user_id", ObjectId(str(user_id))]},
+                                                    {
+                                                        "$eq": [
+                                                            "$user_id",
+                                                            ObjectId(str(user_id)),
+                                                        ]
+                                                    },
                                                 ]
                                             }
                                         }
                                     },
                                 ],
-                                "as": "userBookmark"
+                                "as": "userBookmark",
                             }
                         },
                         {"$match": {"userBookmark.0": {"$exists": True}}},
-                        {"$count": "count"}
-                    ]
+                        {"$count": "count"},
+                    ],
                 }
             }
         ]
@@ -470,7 +499,7 @@ class ProductRepository(RepositoryInterface[Product]):
                     "available_products": {
                         "$sum": {"$cond": [{"$eq": ["$is_available", True]}, 1, 0]}
                     },
-                    "prices": {"$push": "$price"}
+                    "prices": {"$push": "$price"},
                 }
             },
             {
@@ -479,21 +508,23 @@ class ProductRepository(RepositoryInterface[Product]):
                     "total_products": 1,
                     "total_views": 1,
                     "average_price": {"$ifNull": ["$average_price", 0]},
-                    "available_products": 1
+                    "available_products": 1,
                 }
-            }
+            },
         ]
-        
+
         result = list(self.delegate.collection.aggregate(pipeline))
         if not result:
             return {
                 "total_products": 0,
                 "total_views": 0,
                 "average_price": 0.0,
-                "available_products": 0
+                "available_products": 0,
             }
-        
+
         analytics = result[0]
-        analytics["average_price"] = float(analytics["average_price"]) if analytics["average_price"] else 0.0
-        
+        analytics["average_price"] = (
+            float(analytics["average_price"]) if analytics["average_price"] else 0.0
+        )
+
         return analytics

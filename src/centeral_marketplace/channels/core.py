@@ -24,10 +24,12 @@ class Channel(MongoBaseModel):
     class Config:
         from_attributes = True
 
+
 class UpdateChannel(BaseModel):
     title: Optional[str] = None
     description_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
+
 
 class ChannelAnalytics(BaseModel):
     total_products: int

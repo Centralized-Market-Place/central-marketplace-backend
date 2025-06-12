@@ -40,7 +40,6 @@ class ProductService:
     channel_service: ChannelService
     seller_service: SellerService
 
-
     def find_all(
         self,
         user_id: PyObjectId | None = None,
@@ -101,7 +100,9 @@ class ProductService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error finding comments for product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error finding comments for product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve product comments",
@@ -121,7 +122,9 @@ class ProductService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error creating comment for product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error creating comment for product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to create comment",
@@ -142,7 +145,9 @@ class ProductService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error updating comment {comment_id} for product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error updating comment {comment_id} for product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to update comment",
@@ -162,7 +167,9 @@ class ProductService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error deleting comment {comment_id} for product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error deleting comment {comment_id} for product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to delete comment",
@@ -178,8 +185,10 @@ class ProductService:
                     is not None
                 )
             return product
-        except Exception as e:
-            logger.error(f"Error building product {product.id}: {traceback.format_exc()}")
+        except Exception:
+            logger.error(
+                f"Error building product {product.id}: {traceback.format_exc()}"
+            )
 
             return product
 
@@ -193,7 +202,7 @@ class ProductService:
                 )
             else:
                 product = self.product_repository.find_one(product_id)
-            
+
             if not product:
                 logger.error(f"Product with ID {product_id} not found")
                 raise HTTPException(
@@ -205,7 +214,9 @@ class ProductService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error finding product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error finding product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve product",
@@ -233,7 +244,9 @@ class ProductService:
             ]
             return paginated_products
         except Exception as e:
-            logger.error(f"Error finding bookmarked products for user {user_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error finding bookmarked products for user {user_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve bookmarked products",
@@ -245,33 +258,42 @@ class ProductService:
         try:
             product = self.product_repository.find_one(product_id)
             if not product:
-                logger.error(f"Product with ID {product_id} not found for share increment")
+                logger.error(
+                    f"Product with ID {product_id} not found for share increment"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Product with ID {product_id} not found",
                 )
-            
+
             product.shares += 1
             self.product_repository.save(product)
             return product
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error incrementing share count for product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error incrementing share count for product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to increment share count",
             ) from e
-        
 
     def update_product(
         self, product_id: PyObjectId, product_data: UpdateProduct, user: User
     ) -> ProductPublic:
         try:
             product = self.find_one(product_id)
+            seller_applications = self.seller_service.get_approved_seller_applications(
+                user.id
+            )
 
             user_channel_ids = set(
-                [seller_info.channel_id for seller_info in user.seller_infos]
+                [
+                    application.seller_info.channel_id
+                    for application in seller_applications
+                ]
             )
             channel = product.channel
 
@@ -279,7 +301,9 @@ class ProductService:
                 str(product.telegram_channel_id) not in user_channel_ids
                 or channel.username not in user_channel_ids
             ):
-                logger.error(f"User {user.id} attempted to update product {product_id} without permission")
+                logger.error(
+                    f"User {user.id} attempted to update product {product_id} without permission"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You are not authorized to update this product",
@@ -293,7 +317,9 @@ class ProductService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error updating product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error updating product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to update product",
@@ -302,10 +328,15 @@ class ProductService:
     def delete_product(self, product_id: PyObjectId, user: User) -> None:
         try:
             product = self.find_one(product_id)
-            seller_applications = self.seller_service.get_approved_seller_applications(user.id)
+            seller_applications = self.seller_service.get_approved_seller_applications(
+                user.id
+            )
 
             user_channel_ids = set(
-                [seller_info.seller_info.channel_id for seller_info in seller_applications]
+                [
+                    seller_info.seller_info.channel_id
+                    for seller_info in seller_applications
+                ]
             )
             channel = product.channel
 
@@ -313,7 +344,9 @@ class ProductService:
                 str(product.telegram_channel_id) not in user_channel_ids
                 or channel.username not in user_channel_ids
             ):
-                logger.error(f"User {user.id} attempted to delete product {product_id} without permission")
+                logger.error(
+                    f"User {user.id} attempted to delete product {product_id} without permission"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You are not authorized to delete this product",
@@ -323,14 +356,15 @@ class ProductService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error deleting product {product_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error deleting product {product_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to delete product",
             ) from e
 
     def get_channel_analytics(self, channel_id: PyObjectId) -> ChannelAnalytics:
-
         try:
             channel = self.channel_repository.find_one(channel_id)
             if not channel:
@@ -339,14 +373,16 @@ class ProductService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Channel with ID {channel_id} not found",
                 )
-            
+
             analytics_data = self.product_repository.get_channel_analytics(channel_id)
             return ChannelAnalytics(**analytics_data)
-        
+
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error getting analytics for channel {channel_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error getting analytics for channel {channel_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve channel analytics",

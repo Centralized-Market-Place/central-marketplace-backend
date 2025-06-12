@@ -16,11 +16,14 @@ class EmailVerificationToken(MongoBaseModel):
 class ResendVerificationRequest(BaseModel):
     email: EmailStr
 
+
 class VerifyEmailRequest(BaseModel):
     token: str
 
+
 class ResendVerificationResponse(BaseModel):
     message: str
+
 
 class VerifyEmailResponse(BaseModel):
     message: str

@@ -33,11 +33,15 @@ class ReactionService:
         reaction_type: ReactionType,
     ):
         try:
-            existing = self.reaction_repo.find_one_by_user_and_target(user_id, target_id)
+            existing = self.reaction_repo.find_one_by_user_and_target(
+                user_id, target_id
+            )
 
             if existing and existing.reaction_type == reaction_type:
                 self.reaction_repo.delete(existing.id)
-                self._adjust_target(target_id, target_type, reaction_type, decrement=True)
+                self._adjust_target(
+                    target_id, target_type, reaction_type, decrement=True
+                )
                 return existing
 
             if existing:
@@ -62,7 +66,9 @@ class ReactionService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error processing reaction for target {target_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error processing reaction for target {target_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to process reaction",
@@ -74,7 +80,9 @@ class ReactionService:
         try:
             return self.reaction_repo.find_one_by_user_and_target(user_id, target_id)
         except Exception as e:
-            logger.error(f"Error getting reaction for target {target_id} by user {user_id}: {traceback.format_exc()}")
+            logger.error(
+                f"Error getting reaction for target {target_id} by user {user_id}: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to retrieve reaction",
@@ -87,10 +95,12 @@ class ReactionService:
             if target_type == ReactionTarget.PRODUCT:
                 product = self.product_repo.find_one(target_id)
                 if not product:
-                    logger.error(f"Product with ID {target_id} not found for reaction adjustment")
+                    logger.error(
+                        f"Product with ID {target_id} not found for reaction adjustment"
+                    )
                     raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND, 
-                        detail=f"Product with ID {target_id} not found"
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Product with ID {target_id} not found",
                     )
                 if reaction_type == ReactionType.UPVOTE:
                     product.upvotes += delta
@@ -101,10 +111,12 @@ class ReactionService:
             elif target_type == ReactionTarget.COMMENT:
                 comment = self.comment_repo.find_one(target_id)
                 if not comment:
-                    logger.error(f"Comment with ID {target_id} not found for reaction adjustment")
+                    logger.error(
+                        f"Comment with ID {target_id} not found for reaction adjustment"
+                    )
                     raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND, 
-                        detail=f"Comment with ID {target_id} not found"
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Comment with ID {target_id} not found",
                     )
                 if reaction_type == ReactionType.LIKE:
                     comment.likes += delta
@@ -114,7 +126,9 @@ class ReactionService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error adjusting target {target_id} for reaction: {traceback.format_exc()}")
+            logger.error(
+                f"Error adjusting target {target_id} for reaction: {traceback.format_exc()}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to update reaction count",

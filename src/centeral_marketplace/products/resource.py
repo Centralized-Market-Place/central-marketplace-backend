@@ -51,6 +51,7 @@ async def get_products(
         criteria=criteria,
     )
 
+
 @product_router.get("/bookmarked", response_model=PaginatedResponse[ProductPublic])
 async def get_product_bookmarks(
     current_user: Annotated[User, Depends(get_current_user)],
@@ -156,15 +157,16 @@ async def increment_product_share_count(
         product_id=product_id, user_id=current_user.id
     )
 
+
 @product_router.post("/{product_id}", response_model=ProductPublic)
 async def update_product(
     product_id: PyObjectId,
     product_update: UpdateProduct,
     current_user: Annotated[User, Depends(get_current_user)],
     product_service: ProductService = Injected(ProductService),
-): 
-    
-    return product_service.update_product(product_id,product_update, current_user)
+):
+    return product_service.update_product(product_id, product_update, current_user)
+
 
 @product_router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(

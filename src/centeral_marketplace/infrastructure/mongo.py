@@ -36,7 +36,9 @@ class MongoDBJsonRepositoryDelegate(Generic[Entity]):
         index_name = self.collection.create_index([(field, ASCENDING)], **index_kwargs)
         logger.debug("Index '%s' ensured on field '%s'.", index_name, field)
 
-    def ensure_compound_index(self, fields: List[tuple], unique: bool = False, name: str = None):
+    def ensure_compound_index(
+        self, fields: List[tuple], unique: bool = False, name: str = None
+    ):
         """Ensure a compound index on the specified fields."""
         index_kwargs = {"unique": unique}
         if name:
