@@ -17,6 +17,15 @@ class ReactionRepository:
             collection_name="reactions", model=Reaction, config=self.config
         )
 
+        self.delegate.ensure_compound_index(
+            [("target_id", 1), ("user_id", 1), ("target_type", 1)],
+            unique=True,
+            name="reactions_unique_user_target",
+        )
+        self.delegate.ensure_index("user_id", name="reactions_user")
+        self.delegate.ensure_index("target_id", name="reactions_target")
+        self.delegate.ensure_index("created_at", name="reactions_created_at")
+
     def save(self, reaction: Reaction):
         return self.delegate.save(reaction)
 

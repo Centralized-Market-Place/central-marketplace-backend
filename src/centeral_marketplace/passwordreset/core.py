@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, EmailStr
 from core import PyObjectId
 
+
 class PasswordResetToken(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     token: str
@@ -11,9 +12,11 @@ class PasswordResetToken(BaseModel):
     expires_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+
 class PasswordResetRequest(BaseModel):
     email: EmailStr
 
+
 class PasswordResetConfirm(BaseModel):
     token: str
-    new_password: str = Field(..., min_length=6) 
+    new_password: str = Field(..., min_length=6)

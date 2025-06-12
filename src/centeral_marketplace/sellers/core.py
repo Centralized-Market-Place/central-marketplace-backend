@@ -41,6 +41,12 @@ class SellerApplicationCreate(BaseModel):
     government_id: str
 
 
+class SellerApplicationUpdate(BaseModel):
+    business_name: Optional[str] = None
+    tin_number: Optional[str] = None
+    government_id: Optional[str] = None
+
+
 class SellerApplicationReview(BaseModel):
     application_id: PyObjectId
     status: SellerApplicationStatus
@@ -50,3 +56,11 @@ class SellerApplicationReview(BaseModel):
 class TelegramBotStatusResponse(BaseModel):
     has_bot_admin_access: bool
     verified_channel_ownership: bool
+
+
+class SellerAnalytics(BaseModel):
+    total_channels: int
+    total_products: int
+    total_views: int
+    average_price: float
+    availability_percentage: float

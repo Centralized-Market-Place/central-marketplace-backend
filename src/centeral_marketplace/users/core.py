@@ -1,8 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 from centeral_marketplace.infrastructure.json import MongoBaseModel
-from centeral_marketplace.sellers.core import SellerInfo
 from pydantic import BaseModel, EmailStr, Field
 from core import PyObjectId
 
@@ -52,7 +51,6 @@ class CommunicationPreferences(BaseModel):
     notification_frequency: str = "daily"
 
 
-
 class VerificationStatus(BaseModel):
     email_verified: bool = False
     phone_verified: bool = False
@@ -91,7 +89,6 @@ class User(UserBase, MongoBaseModel):
     profile_picture_url: Optional[str] = None
     is_verified: bool = False
     telegram: Optional[TelegramData] = None
-    seller_infos: List[SellerInfo] = []
     last_login: Optional[datetime] = None
     last_active: Optional[datetime] = None
 
@@ -119,7 +116,6 @@ class User(UserBase, MongoBaseModel):
                 self.last_name,
                 self.personal_info.date_of_birth,
                 self.personal_info.gender,
-                self.personal_info.profile_picture,
                 self.contact_info.phone_number,
                 self.location_info.country,
                 self.location_info.city,
@@ -142,7 +138,6 @@ class UserPublic(UserBase, MongoBaseModel):
     profile_picture_url: Optional[str] = None
     last_login: Optional[datetime] = None
     telegram: Optional[TelegramData] = None
-    seller_infos: List[SellerInfo] = []
     last_active: Optional[datetime] = None
     personal_info: Optional[PersonalInfo] = None
     contact_info: Optional[ContactInfo] = None

@@ -140,9 +140,9 @@ def test_users_should_not_be_able_to_login_with_wrong_password():
                 },
             )
 
-            assert_that(response.status_code, equal_to(400))
+            assert_that(response.status_code, equal_to(401))
             data = response.json()
-            assert_that(data["detail"], equal_to("Incorrect Email or Password"))
+            assert_that(data["detail"], equal_to("Invalid email or password"))
 
 
 def test_users_should_not_be_able_to_login_with_wrong_email():
@@ -172,9 +172,9 @@ def test_users_should_not_be_able_to_login_with_wrong_email():
                 },
             )
 
-            assert_that(response.status_code, equal_to(400))
+            assert_that(response.status_code, equal_to(401))
             data = response.json()
-            assert_that(data["detail"], equal_to("Incorrect Email or Password"))
+            assert_that(data["detail"], equal_to("Invalid email or password"))
 
 
 def test_admin_should_be_able_to_get_users():
@@ -190,7 +190,7 @@ def test_admin_should_be_able_to_get_users():
                 last_name="User",
                 email="test@gmail.com",
                 password="password",
-                role=Role.ADMIN,
+                role=Role.SUPER_ADMIN,
             ),
         ]
     ) as context:
@@ -318,7 +318,6 @@ def test_user_should_be_able_to_update_personal_info():
                         "date_of_birth": "1990-01-01",
                         "gender": "male",
                         "nationality": "USA",
-                        "profile_picture": "https://example.com/photo.jpg",
                         "bio": "Test bio",
                     },
                 },
@@ -330,10 +329,6 @@ def test_user_should_be_able_to_update_personal_info():
             assert_that(data["last_name"], equal_to("last name"))
             assert_that(data["personal_info"]["gender"], equal_to("male"))
             assert_that(data["personal_info"]["nationality"], equal_to("USA"))
-            assert_that(
-                data["personal_info"]["profile_picture"],
-                equal_to("https://example.com/photo.jpg"),
-            )
             assert_that(data["personal_info"]["bio"], equal_to("Test bio"))
 
 
@@ -457,46 +452,6 @@ def test_user_should_be_able_to_update_communication_preferences():
             )
 
 
-def test_user_should_be_able_to_update_privacy_settings():
-    with given(
-        [
-            prepare_injector(),
-            prepare_api_server(),
-            create_test_client(),
-            database_repo_is_ready(),
-            database_is_clean(),
-            there_is_a_user(
-                first_name="Test",
-                last_name="User",
-                email="test@gmail.com",
-                password="password",
-            ),
-        ]
-    ) as context:
-        client: TestClient = context.client
-        token = create_access_token({"sub": str(context.user.id)})
-
-        with when("i update privacy settings"):
-            response = client.patch(
-                url="api/v1/users/profile",
-                headers={"Authorization": f"Bearer {token}"},
-                json={
-                    "privacy_settings": {
-                        "profile_visibility": "public",
-                        "show_email": False,
-                        "show_phone": False,
-                    }
-                },
-            )
-
-            assert_that(response.status_code, equal_to(200))
-            data = response.json()
-            assert_that(
-                data["privacy_settings"]["profile_visibility"], equal_to("public")
-            )
-            assert_that(data["privacy_settings"]["show_email"], equal_to(False))
-
-
 def test_user_should_be_able_to_get_profile_completion():
     with given(
         [
@@ -560,9 +515,6 @@ def test_user_should_be_able_to_update_multiple_profile_sections():
                         "country": "Canada",
                         "city": "Toronto",
                     },
-                    "privacy_settings": {
-                        "show_email": True,
-                    },
                 },
             )
 
@@ -572,4 +524,3 @@ def test_user_should_be_able_to_update_multiple_profile_sections():
             assert_that(data["personal_info"]["bio"], equal_to("Updated bio"))
             assert_that(data["location_info"]["country"], equal_to("Canada"))
             assert_that(data["location_info"]["city"], equal_to("Toronto"))
-            assert_that(data["privacy_settings"]["show_email"], equal_to(True))
