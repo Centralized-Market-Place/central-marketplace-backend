@@ -27,7 +27,7 @@ class Channel(MongoBaseModel):
 
 class UpdateChannel(BaseModel):
     title: Optional[str] = None
-    description_url: Optional[str] = None
+    description: Optional[str] = None
     thumbnail_url: Optional[str] = None
 
 
