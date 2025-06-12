@@ -80,7 +80,7 @@ class ChannelService:
 
     def check_channel_ownership(self, user: User, channel_id: PyObjectId) -> bool:
         channels = self.get_my_channels(user.id)
-        return any(str(channel.id) == str(channel_id) for channel in channels)
+        return str(channel_id) in [str(channel.id) for channel in channels]
 
     def update_channel(
         self, user: User, channel_id: PyObjectId, update_data: UpdateChannel
