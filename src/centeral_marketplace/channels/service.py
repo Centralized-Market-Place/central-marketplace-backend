@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 import logging
+from bson import ObjectId
 from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
 from centeral_marketplace.channels.core import Channel, UpdateChannel
 from centeral_marketplace.channels.repository import ChannelRepository
+from centeral_marketplace.products.repository import ProductRepository
 from centeral_marketplace.sellers.service import SellerService
 from centeral_marketplace.users.core import User
 from centeral_marketplace.users.repository import UserRepository
@@ -23,6 +25,7 @@ class ChannelService:
     channel_repository: ChannelRepository
     user_repository: UserRepository
     seller_service: SellerService
+    product_repository: ProductRepository
 
     def find_all(
         self,
@@ -58,12 +61,17 @@ class ChannelService:
         channel_ids = [
             seller_info.seller_info.channel_id for seller_info in seller_applications
         ]
+        
         channels = []
         for channel_id in channel_ids:
             channel = self.channel_repository.find_one_by_dict(
                 {"$or": [{"username": channel_id}, {"telegram_id": channel_id}]}
             )
+            product_count = self.product_repository.count_all_by_dict(
+                {"channel_id": ObjectId(str(channel.id))}
+            )
             if channel:
+                channel.total_products = product_count
                 channels.append(channel)
 
         return channels
