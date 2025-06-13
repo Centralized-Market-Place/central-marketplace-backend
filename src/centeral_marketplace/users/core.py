@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 from centeral_marketplace.infrastructure.json import MongoBaseModel
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 from core import PyObjectId
 
 
@@ -183,3 +183,12 @@ class TelegramEmailAddRequest(BaseModel):
 class TelegramPasswordSetRequest(BaseModel):
     token: str
     password: str = Field(..., min_length=6)
+
+
+class UserRoleUpdate(BaseModel):
+    role: Role
+    @validator("role")
+    def validate_role(cls, v):
+        if v not in [Role.ADMIN, Role.USER]:
+            raise ValueError("Role can only be ADMIN or USER")
+        return v

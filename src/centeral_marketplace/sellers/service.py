@@ -249,9 +249,9 @@ class SellerService:
                 f"Error getting seller application {application_id}: {traceback.format_exc()}"
             )
             raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Seller application with ID {application_id} not found",
-                ) from e
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Seller application with ID {application_id} not found",
+            ) from e
 
     def update_seller_application(
         self,

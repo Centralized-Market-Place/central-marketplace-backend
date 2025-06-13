@@ -61,7 +61,7 @@ class ChannelService:
         channel_ids = [
             seller_info.seller_info.channel_id for seller_info in seller_applications
         ]
-        
+
         channels = []
         for channel_id in channel_ids:
             channel = self.channel_repository.find_one_by_dict(

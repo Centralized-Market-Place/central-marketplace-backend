@@ -1,0 +1,43 @@
+{% extends "email_base.html" %} {% block title %}Admin Invitation - Central
+Marketplace{% endblock %} {% block content %}
+<h2>Hello,</h2>
+<p>
+  You have been invited to join Central Marketplace as an {{ role }} by {{
+  invited_by_name }}.
+</p>
+
+<p>
+  To accept this invitation and set up your account, please click the button
+  below:
+</p>
+
+<div style="text-align: center">
+  <a href="{{ invitation_link }}" class="button">Accept Invitation</a>
+</div>
+
+<p>Or copy and paste this link into your browser:</p>
+<p
+  style="
+    background-color: #f7f7f7;
+    padding: 10px;
+    border-radius: 4px;
+    word-break: break-all;
+  "
+>
+  {{ invitation_link }}
+</p>
+
+<p>
+  <strong>Role:</strong> {{ role }}<br />
+  <strong>Invited by:</strong> {{ invited_by_name }}<br />
+  <strong>Expires:</strong> {{ expires_at.strftime('%B %d, %Y at %I:%M %p UTC')
+  }}
+</p>
+
+<p>
+  If you did not expect this invitation or believe it was sent in error, please
+  ignore this email.
+</p>
+
+<p>Thank you,<br />The Central Marketplace Team</p>
+{% endblock %}

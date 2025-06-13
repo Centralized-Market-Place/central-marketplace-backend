@@ -32,6 +32,7 @@ from centeral_marketplace.users.core import (
     UserCreate,
     UserProfileUpdate,
     ContactInfo,
+    UserRoleUpdate,
 )
 from centeral_marketplace.email.core import (
     EmailVerificationToken,
@@ -57,11 +58,20 @@ class UserService:
     email_service: EmailService
 
     def find_all(
-        self, pagination: Pagination = None, sort_by: str = None, sort_desc: bool = True
+        self,
+        criteria: dict | None = None,
+        pagination: Pagination = None,
+        sort_by: str = None,
+        sort_desc: bool = True,
     ) -> PaginatedResponse[User]:
         try:
-            return self.user_repository.find_all(
-                pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+            if criteria is None:
+                criteria = {}
+            return self.user_repository.find_all_by_dict(
+                criteria=criteria,
+                pagination=pagination,
+                sort_by=sort_by,
+                sort_desc=sort_desc,
             )
         except Exception as e:
             logger.error(f"Error finding all users: {traceback.format_exc()}")
@@ -494,3 +504,53 @@ class UserService:
         self.email_verification_token_repository.delete_token(token)
 
         return user
+
+    def update_user_role(self, user_id: PyObjectId, role_data: UserRoleUpdate) -> User:
+        try:
+            user = self.find_one(user_id)
+
+            if role_data.role == Role.SELLER or role_data.role == Role.SUPER_ADMIN:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="seller and super admin roles cannot be changed",
+                )
+            
+            if role_data.role not in [Role.USER, Role.ADMIN]: 
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="role can only be user or admin",
+                )
+
+            user.role = role_data.role
+            user.updated_at = datetime.now(UTC)
+
+            updated_user = self.user_repository.save(user)
+            logger.info(f"User {user_id} role updated to {role_data.role}")
+            return updated_user
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(
+                f"Error updating user role {user_id}: {traceback.format_exc()}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to update user role",
+            ) from e
+
+    def get_admin_users(self, pagination: Pagination = None) -> PaginatedResponse[User]:
+        try:
+            criteria = {"role": {"$in": [Role.ADMIN.value, Role.SUPER_ADMIN.value]}}
+            return self.user_repository.find_all_by_dict(
+                criteria=criteria,
+                pagination=pagination,
+                sort_by="created_at",
+                sort_desc=True,
+            )
+        except Exception as e:
+            logger.error(f"Error getting admin users: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to retrieve admin users",
+            ) from e

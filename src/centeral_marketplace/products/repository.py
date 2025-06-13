@@ -29,7 +29,9 @@ class ProductRepository(RepositoryInterface[Product]):
         self.delegate.ensure_index("date", name="products_date")
         self.delegate.ensure_index("price", name="products_price")
         self.delegate.ensure_index("is_available", name="products_is_available")
-        self.delegate.ensure_index("deleted_by_seller", name="products_deleted_by_seller")
+        self.delegate.ensure_index(
+            "deleted_by_seller", name="products_deleted_by_seller"
+        )
         self.delegate.ensure_index("channel_id", name="products_channel_id")
 
     def save(self, data: Product):
@@ -246,7 +248,7 @@ class ProductRepository(RepositoryInterface[Product]):
             total=total,
             items=items,
         )
-    
+
     def find_one_product(self, id: PyObjectId) -> Product:
         criteria = {"_id": ObjectId(str(id)), "deleted_by_seller": {"$ne": True}}
         return self.delegate.find_one_by_dict(criteria)

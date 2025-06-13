@@ -226,3 +226,41 @@ class EmailService:
                 html_content=html_content,
                 from_email=from_email,
             )
+
+    def send_admin_invitation_email(
+        self,
+        to_email: str,
+        invitation_link: str,
+        role: str,
+        invited_by_name: str,
+        expires_at,
+        from_email: str = None,
+        background_tasks: Optional[BackgroundTasks] = None,
+    ):
+        subject = "Admin Invitation - Central Marketplace"
+        text_content = f"You have been invited to join Central Marketplace as an {role} by {invited_by_name}. Click the following link to accept: {invitation_link}"
+        html_content = self.render_template(
+            "admin_invitation_email.html",
+            invitation_link=invitation_link,
+            role=role,
+            invited_by_name=invited_by_name,
+            expires_at=expires_at,
+        )
+
+        if background_tasks:
+            return self.send_email_background(
+                background_tasks=background_tasks,
+                to_email=to_email,
+                subject=subject,
+                text_content=text_content,
+                html_content=html_content,
+                from_email=from_email,
+            )
+        else:
+            return self.send_email(
+                to_email=to_email,
+                subject=subject,
+                text_content=text_content,
+                html_content=html_content,
+                from_email=from_email,
+            )

@@ -287,16 +287,9 @@ class ProductService:
             product = self.product_repository.find_one_product(product_id)
             seller_applications = self.channel_service.get_my_channels(user.id)
 
-            user_channel_ids = set(
-                [
-                    str(channel.id)
-                    for channel in seller_applications
-                ]
-            )
+            user_channel_ids = set([str(channel.id) for channel in seller_applications])
 
-            if (
-                str(product.channel_id) not in user_channel_ids
-            ):
+            if str(product.channel_id) not in user_channel_ids:
                 logger.error(
                     f"User {user.id} attempted to update product {product_id} without permission"
                 )
@@ -307,7 +300,7 @@ class ProductService:
 
             for key, value in product_data.model_dump(exclude_unset=True).items():
                 setattr(product, key, value)
-                
+
             product.updated_by_seller = True
             self.product_repository.save(product)
             return self.find_one(product_id)
@@ -327,16 +320,9 @@ class ProductService:
             product = self.product_repository.find_one_product(product_id)
             channels = self.channel_service.get_my_channels(user.id)
 
-            user_channel_ids = set(
-                [
-                    str(channel.id)
-                    for channel in channels
-                ]
-            )
+            user_channel_ids = set([str(channel.id) for channel in channels])
 
-            if (
-                str(product.channel_id) not in user_channel_ids
-            ):
+            if str(product.channel_id) not in user_channel_ids:
                 logger.error(
                     f"User {user.id} attempted to delete product {product_id} without permission"
                 )
