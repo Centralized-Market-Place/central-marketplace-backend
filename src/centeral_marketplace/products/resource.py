@@ -41,15 +41,11 @@ async def get_products(
 ):
     criteria: dict = {}
 
-    # Search by query (name or description)
-    if query:
-        criteria["$or"] = [
-            {"name": {"$regex": query, "$options": "i"}},
-            {"description": {"$regex": query, "$options": "i"}},
-        ]
+ 
+   
 
     # Filter by channel
-        criteria["$text"] = {"$search": query}
+    criteria["$text"] = {"$search": query}
     if channel_ids:
         criteria["channel_id"] = {"$in": channel_ids}
 
@@ -65,15 +61,11 @@ async def get_products(
     normalized_category = []
     if isinstance(categories, list):
         normalized_category = [cat.lower() for cat in categories]
-    elif isinstance(categories, str):
-        normalized_category = [categories.lower()]
+    
 
     if normalized_category:
         criteria["categories"] = {"$in": normalized_category}
 
-    # Filter by exact location (case-insensitive match)
-    if location:
-        criteria["location"] = {"$regex": f"^{location}$", "$options": "i"}
 
     user_id = current_user.id if current_user else None
 
