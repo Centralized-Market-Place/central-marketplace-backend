@@ -35,17 +35,16 @@ async def get_products(
     min_price: Optional[float] = Query(None),
     max_price: Optional[float] = Query(None),
     categories: List[str] = Query(default=[]),
-    location: Optional[str] = Query(None),
     channel_ids: list[PyObjectId] = Query(default=[]),
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
 
- 
-   
+    # Filter by text search (only if query is provided)
+    if query:
+        criteria["$text"] = {"$search": query}
 
-    # Filter by channel
-    criteria["$text"] = {"$search": query}
+    # Filter by channel IDs
     if channel_ids:
         criteria["channel_id"] = {"$in": channel_ids}
 
@@ -57,15 +56,13 @@ async def get_products(
         if max_price is not None:
             criteria["price"]["$lte"] = max_price
 
-    # Normalize category list
-    normalized_category = []
-    if isinstance(categories, list):
-        normalized_category = [cat.lower() for cat in categories]
+    # Filter by categories (normalize to lowercase)
+    normalized_categories = []
+    if isinstance(categories, list) and categories:
+        normalized_categories = [cat.lower() for cat in categories if cat.strip()]
     
-
-    if normalized_category:
-        criteria["categories"] = {"$in": normalized_category}
-
+    if normalized_categories:
+        criteria["categories"] = {"$in": normalized_categories}
 
     user_id = current_user.id if current_user else None
 
