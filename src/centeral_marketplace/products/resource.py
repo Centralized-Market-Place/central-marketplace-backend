@@ -40,24 +40,21 @@ async def get_products(
 ):
     criteria: dict = {}
 
-   
     if query:
         criteria["$text"] = {"$search": query}
- 
-    
+
     if channel_ids:
         criteria["channel_id"] = {"$in": channel_ids}
 
-    
     if categories:
-        
         if isinstance(categories, str):
-            category_list = [cat.strip() for cat in categories.split(',') if cat.strip()]
-        
-        if category_list:
-                criteria["categories"] = {"$in": category_list}
+            category_list = [
+                cat.strip() for cat in categories.split(",") if cat.strip()
+            ]
 
-    
+        if category_list:
+            criteria["categories"] = {"$in": category_list}
+
     if min_price is not None or max_price is not None:
         criteria["price"] = {}
         if min_price is not None:

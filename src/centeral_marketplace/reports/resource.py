@@ -10,7 +10,7 @@ from centeral_marketplace.reports.core import (
     ReportReview,
     ReportStatus,
     ReportTarget,
-    ReportType
+    ReportType,
 )
 from centeral_marketplace.reports.service import ReportService
 from centeral_marketplace.users.core import Role, User

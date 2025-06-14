@@ -26,4 +26,3 @@ async def get_category_hierarchy(
     category_service: CategoryService = Injected(CategoryService),
 ):
     return category_service.get_category_hierarchy()
-
