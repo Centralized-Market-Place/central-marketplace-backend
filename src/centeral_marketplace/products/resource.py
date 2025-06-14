@@ -41,34 +41,24 @@ async def get_products(
 ):
     criteria: dict = {}
 
-    # Filter by text search (only if query is provided)
+   
     if query:
         criteria["$text"] = {"$search": query}
  
-    # Filter by channel IDs
+    
     if channel_ids:
         criteria["channel_id"] = {"$in": channel_ids}
 
-    # Filter by categories (OR logic between multiple categories)
+    
     if categories:
-        # Parse comma-separated categories string
+        
         if isinstance(categories, str):
             category_list = [cat.strip() for cat in categories.split(',') if cat.strip()]
-        else:
-            category_list = categories if isinstance(categories, list) else []
         
         if category_list:
-            # Expand categories to include both parent and child categories
-            # The $in operator provides OR logic between multiple categories
-            expanded_categories = CategoryMapping.expand_categories(category_list)
-            
-            if expanded_categories:
-                criteria["categories"] = {"$in": expanded_categories}
-                # Debug logging (remove in production)
-                print(f"DEBUG: Original categories: {category_list}")
-                print(f"DEBUG: Expanded categories: {expanded_categories}")
+                criteria["categories"] = {"$in": category_list}
 
-    # Filter by price range (AND logic with categories)
+    
     if min_price is not None or max_price is not None:
         criteria["price"] = {}
         if min_price is not None:
