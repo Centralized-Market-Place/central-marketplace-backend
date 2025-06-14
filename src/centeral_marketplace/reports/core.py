@@ -61,8 +61,38 @@ class ReportReview(BaseModel):
     class Config:
         use_enum_values = True
 
+
 class ReportStatistics(BaseModel):
     total_reports: int
     pending_reports: int
     approved_reports: int
     rejected_reports: int
+
+
+class SellerApplicationStatistics(BaseModel):
+    total_applications: int
+    pending_applications: int
+    approved_applications: int
+    rejected_applications: int
+
+
+class UserStatistics(BaseModel):
+    total_users: int
+    active_users: int
+    admin_users: int
+    seller_users: int
+    new_users_last_30_days: int
+
+
+class InviteStatistics(BaseModel):
+    total_invites: int
+    pending_invites: int
+    accepted_invites: int
+    expired_invites: int
+
+
+class AdminDashboardStats(BaseModel):
+    reports: ReportStatistics
+    seller_applications: SellerApplicationStatistics
+    users: UserStatistics
+    invites: InviteStatistics

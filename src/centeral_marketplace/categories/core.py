@@ -5,7 +5,7 @@ from pydantic import Field
 
 
 class Category(MongoBaseModel):
-    category_name : str= Field(default="")
+    category_name: str = Field(default="")
 
     class Config:
         from_attributes = True

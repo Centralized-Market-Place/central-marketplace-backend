@@ -35,7 +35,10 @@ class ChannelRepository(RepositoryInterface[Channel]):
     def find_all(self, sort_by: str = None, sort_desc: bool = True, pagination=None):
         criteria = {"is_deleted": False, "is_suspended": False}
         return self.delegate.find_all(
-            criteria=criteria, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+            criteria=criteria,
+            pagination=pagination,
+            sort_by=sort_by,
+            sort_desc=sort_desc,
         )
 
     def find_one(self, id: PyObjectId):
@@ -51,7 +54,10 @@ class ChannelRepository(RepositoryInterface[Channel]):
     ):
         criteria = {"is_deleted": False, "is_suspended": False, **kwargs}
         return self.delegate.find_all_by_dict(
-            criteria=criteria, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+            criteria=criteria,
+            pagination=pagination,
+            sort_by=sort_by,
+            sort_desc=sort_desc,
         )
 
     def find_one_by_dict(self, criteria: dict):

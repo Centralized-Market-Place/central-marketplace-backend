@@ -54,10 +54,7 @@ async def get_users(
         criteria["$text"] = {"$search": query}
     criteria["role"] = role.value
     users = user_service.find_all(
-        criteria=criteria,
-        pagination=pagination, 
-        sort_by=sort_by, 
-        sort_desc=sort_desc
+        criteria=criteria, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
     )
 
     return users
@@ -165,4 +162,3 @@ async def update_user_role(
     user_service: UserService = Injected(UserService),
 ):
     return user_service.update_user_role(user_id, role_data)
-

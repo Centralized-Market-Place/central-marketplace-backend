@@ -514,8 +514,8 @@ class UserService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="seller and super admin roles cannot be changed",
                 )
-            
-            if role_data.role not in [Role.USER, Role.ADMIN]: 
+
+            if role_data.role not in [Role.USER, Role.ADMIN]:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="role can only be user or admin",

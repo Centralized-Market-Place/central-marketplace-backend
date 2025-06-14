@@ -10,7 +10,12 @@ from centeral_marketplace.infrastructure.json import (
 )
 from centeral_marketplace.products.core import ProductPublic, UpdateProduct
 from centeral_marketplace.products.service import ProductService
-from centeral_marketplace.reports.core import Report, ReportCreate, ReportTarget, ReportType
+from centeral_marketplace.reports.core import (
+    Report,
+    ReportCreate,
+    ReportTarget,
+    ReportType,
+)
 from centeral_marketplace.reports.service import ReportService
 from centeral_marketplace.users.core import User
 from fastapi import APIRouter, Depends, status, Query
@@ -62,7 +67,7 @@ async def get_products(
     normalized_categories = []
     if isinstance(categories, list) and categories:
         normalized_categories = [cat.lower() for cat in categories if cat.strip()]
-    
+
     if normalized_categories:
         criteria["categories"] = {"$in": normalized_categories}
 
@@ -107,7 +112,9 @@ async def get_product(
     return product_service.find_one(product_id, user_id=user_id)
 
 
-@product_router.post("/{product_id}/report", response_model=Report, status_code=status.HTTP_201_CREATED)
+@product_router.post(
+    "/{product_id}/report", response_model=Report, status_code=status.HTTP_201_CREATED
+)
 async def report_product(
     product_id: PyObjectId,
     report_type: ReportType,

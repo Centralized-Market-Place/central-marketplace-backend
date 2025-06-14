@@ -61,7 +61,7 @@ class AdminInvitationRepository(RepositoryInterface[AdminInvitation]):
 
     def delete_one(self, id: PyObjectId):
         return self.delegate.delete_one(id)
-    
+
     def delete_all(self):
         return self.delegate.delete_all()
 

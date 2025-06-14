@@ -6,7 +6,12 @@ from centeral_marketplace.infrastructure.json import (
 )
 from centeral_marketplace.channels.service import ChannelService
 from centeral_marketplace.products.service import ProductService
-from centeral_marketplace.reports.core import Report, ReportCreate, ReportTarget, ReportType
+from centeral_marketplace.reports.core import (
+    Report,
+    ReportCreate,
+    ReportTarget,
+    ReportType,
+)
 from centeral_marketplace.reports.service import ReportService
 from centeral_marketplace.users.core import Role, User
 from core import PyObjectId
@@ -61,7 +66,9 @@ async def get_channel(
     return channel
 
 
-@channel_router.post("/{channel_id}/report", response_model=Report, status_code=status.HTTP_201_CREATED)
+@channel_router.post(
+    "/{channel_id}/report", response_model=Report, status_code=status.HTTP_201_CREATED
+)
 async def report_channel(
     channel_id: PyObjectId,
     report_type: ReportType,

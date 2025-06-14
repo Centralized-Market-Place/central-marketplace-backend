@@ -17,10 +17,6 @@ category_router = APIRouter(
 async def get_categories(
     category_service: CategoryService = Injected(CategoryService),
 ):
-   
-
     paginated = category_service.find_all()
 
     return paginated
-
-

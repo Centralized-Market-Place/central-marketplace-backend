@@ -187,6 +187,7 @@ class TelegramPasswordSetRequest(BaseModel):
 
 class UserRoleUpdate(BaseModel):
     role: Role
+
     @validator("role")
     def validate_role(cls, v):
         if v not in [Role.ADMIN, Role.USER]:

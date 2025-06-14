@@ -25,9 +25,9 @@ class ReportRepository(RepositoryInterface[Report]):
         self.delegate.ensure_index("report_type", name="reports_report_type")
         self.delegate.ensure_index("created_at", name="reports_created_at")
         self.delegate.ensure_index(
-            ["target_id", "target_type", "reporter_id"], 
-            unique=True, 
-            name="reports_unique_user_target"
+            ["target_id", "target_type", "reporter_id"],
+            unique=True,
+            name="reports_unique_user_target",
         )
 
     def save(self, data: Report):
@@ -72,11 +72,13 @@ class ReportRepository(RepositoryInterface[Report]):
     def delete_all(self):
         return self.delegate.delete_all()
 
-    def find_existing_report(self, reporter_id: PyObjectId, target_id: PyObjectId, target_type: str) -> Report:
+    def find_existing_report(
+        self, reporter_id: PyObjectId, target_id: PyObjectId, target_type: str
+    ) -> Report:
         """Find if user has already reported this target"""
         criteria = {
             "reporter_id": reporter_id,
             "target_id": target_id,
-            "target_type": target_type
+            "target_type": target_type,
         }
-        return self.find_one_by_dict(criteria) 
+        return self.find_one_by_dict(criteria)
