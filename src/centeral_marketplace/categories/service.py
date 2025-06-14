@@ -1,12 +1,10 @@
 from dataclasses import dataclass
 from typing import Dict, List
-from centeral_marketplace.infrastructure.json import Pagination, PaginatedResponse
+from centeral_marketplace.infrastructure.json import PaginatedResponse
 from centeral_marketplace.categories.core import Category, CategoryMapping
 from centeral_marketplace.categories.repository import CategoryRepository
 from centeral_marketplace.users.repository import UserRepository
 from injector import inject, singleton
-
-from core import PyObjectId
 
 
 @singleton
