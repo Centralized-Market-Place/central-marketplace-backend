@@ -24,11 +24,6 @@ class ReportRepository(RepositoryInterface[Report]):
         self.delegate.ensure_index("status", name="reports_status")
         self.delegate.ensure_index("report_type", name="reports_report_type")
         self.delegate.ensure_index("created_at", name="reports_created_at")
-        self.delegate.ensure_index(
-            ["target_id", "target_type", "reporter_id"],
-            unique=True,
-            name="reports_unique_user_target",
-        )
 
     def save(self, data: Report):
         return self.delegate.save(data)
