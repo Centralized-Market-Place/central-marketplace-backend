@@ -1,7 +1,7 @@
+from typing import Dict, List
 from centeral_marketplace.categories.core import Category
 from centeral_marketplace.infrastructure.json import (
     PaginatedResponse,
-    Pagination,
 )
 from centeral_marketplace.categories.service import CategoryService
 from fastapi import APIRouter
@@ -18,5 +18,12 @@ async def get_categories(
     category_service: CategoryService = Injected(CategoryService),
 ):
     paginated = category_service.find_all()
-
     return paginated
+
+
+@category_router.get("/hierarchy", response_model=Dict[str, List[str]])
+async def get_category_hierarchy(
+    category_service: CategoryService = Injected(CategoryService),
+):
+    return category_service.get_category_hierarchy()
+
