@@ -10,6 +10,7 @@ from centeral_marketplace.infrastructure.json import (
 )
 from centeral_marketplace.products.core import ProductPublic, UpdateProduct
 from centeral_marketplace.products.service import ProductService
+from centeral_marketplace.categories.core import CategoryMapping
 from centeral_marketplace.users.core import User
 from fastapi import APIRouter, Depends, status, Query
 from fastapi_injector import Injected
@@ -34,35 +35,36 @@ async def get_products(
     query: str = None,
     min_price: Optional[float] = Query(None),
     max_price: Optional[float] = Query(None),
-    categories: List[str] = Query(default=[]),
+    categories: Optional[str] = Query(None),
     channel_ids: list[PyObjectId] = Query(default=[]),
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
 
-    # Filter by text search (only if query is provided)
+   
     if query:
         criteria["$text"] = {"$search": query}
-
-    # Filter by channel IDs
+ 
+    
     if channel_ids:
         criteria["channel_id"] = {"$in": channel_ids}
 
-    # Filter by price range
+    
+    if categories:
+        
+        if isinstance(categories, str):
+            category_list = [cat.strip() for cat in categories.split(',') if cat.strip()]
+        
+        if category_list:
+                criteria["categories"] = {"$in": category_list}
+
+    
     if min_price is not None or max_price is not None:
         criteria["price"] = {}
         if min_price is not None:
             criteria["price"]["$gte"] = min_price
         if max_price is not None:
             criteria["price"]["$lte"] = max_price
-
-    # Filter by categories (normalize to lowercase)
-    normalized_categories = []
-    if isinstance(categories, list) and categories:
-        normalized_categories = [cat.lower() for cat in categories if cat.strip()]
-    
-    if normalized_categories:
-        criteria["categories"] = {"$in": normalized_categories}
 
     user_id = current_user.id if current_user else None
 

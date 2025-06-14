@@ -31,6 +31,7 @@ class ProductRepository(RepositoryInterface[Product]):
         self.delegate.ensure_index("is_available", name="products_is_available")
         self.delegate.ensure_index("deleted_by_seller", name="products_deleted_by_seller")
         self.delegate.ensure_index("channel_id", name="products_channel_id")
+        self.delegate.ensure_index("categories", name="products_categories")
 
     def save(self, data: Product):
         return self.delegate.save(data)
