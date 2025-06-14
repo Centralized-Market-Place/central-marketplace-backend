@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, Optional, List
 from centeral_marketplace.comments.core import (
     CommentCreate,
     CommentPublic,
@@ -34,14 +34,37 @@ async def get_products(
     sort_by: str = None,
     sort_desc: bool = True,
     query: str = None,
-    channel_ids: List[PyObjectId] = Query(default=[]),
+    min_price: Optional[float] = Query(None),
+    max_price: Optional[float] = Query(None),
+    categories: List[str] = Query(default=[]),
+    channel_ids: list[PyObjectId] = Query(default=[]),
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
+
+    # Filter by text search (only if query is provided)
     if query:
         criteria["$text"] = {"$search": query}
+
+    # Filter by channel IDs
     if channel_ids:
         criteria["channel_id"] = {"$in": channel_ids}
+
+    # Filter by price range
+    if min_price is not None or max_price is not None:
+        criteria["price"] = {}
+        if min_price is not None:
+            criteria["price"]["$gte"] = min_price
+        if max_price is not None:
+            criteria["price"]["$lte"] = max_price
+
+    # Filter by categories (normalize to lowercase)
+    normalized_categories = []
+    if isinstance(categories, list) and categories:
+        normalized_categories = [cat.lower() for cat in categories if cat.strip()]
+    
+    if normalized_categories:
+        criteria["categories"] = {"$in": normalized_categories}
 
     user_id = current_user.id if current_user else None
 
