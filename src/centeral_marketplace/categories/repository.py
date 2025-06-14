@@ -19,7 +19,8 @@ class CategoryRepository(RepositoryInterface[Category]):
         self.delegate = MongoDBJsonRepositoryDelegate(
             collection_name="categories", model=Category, config=self.config
         )
-        self.delegate.ensure_index("category_name")
+        self.delegate.ensure_index("category_name", unique=True, name="categories_name_unique")
+        self.delegate.ensure_index("parent_category", name="categories_parent_category")
 
     def save(self, data: Category):
         return self.delegate.save(data)
