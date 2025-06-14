@@ -51,6 +51,15 @@ async def get_invitations(
     )
 
 
+@admin_invites_router.post("/{invitation_id}/resend", response_model=AdminInvitation)
+async def resend_admin_invitation(
+    invitation_id: PyObjectId,
+    admin_invitation_service: AdminInvitationService = Injected(AdminInvitationService),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+):
+    return admin_invitation_service.resend_invitation(invitation_id, background_tasks)
+
+
 @admin_invites_router.post("/{invitation_id}/cancel", response_model=AdminInvitation)
 async def cancel_admin_invitation(
     invitation_id: PyObjectId,

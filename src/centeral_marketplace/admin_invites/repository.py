@@ -61,6 +61,9 @@ class AdminInvitationRepository(RepositoryInterface[AdminInvitation]):
 
     def delete_one(self, id: PyObjectId):
         return self.delegate.delete_one(id)
+    
+    def delete_all(self):
+        return self.delegate.delete_all()
 
     def count_all_by_dict(self, criteria: dict) -> int:
         return self.delegate.count_all_by_dict(criteria)

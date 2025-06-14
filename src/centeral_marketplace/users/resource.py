@@ -54,7 +54,10 @@ async def get_users(
         criteria["$text"] = {"$search": query}
     criteria["role"] = role.value
     users = user_service.find_all(
-        pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+        criteria=criteria,
+        pagination=pagination, 
+        sort_by=sort_by, 
+        sort_desc=sort_desc
     )
 
     return users

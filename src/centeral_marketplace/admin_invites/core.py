@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 from centeral_marketplace.infrastructure.json import MongoBaseModel
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from core import PyObjectId
 from centeral_marketplace.users.core import Role
 
@@ -33,6 +33,12 @@ class AdminInvitation(MongoBaseModel):
 class AdminInvitationCreate(BaseModel):
     email: EmailStr
     role: Role = Role.ADMIN
+
+    @field_validator("role")
+    def validate_role(cls, v):
+        if v not in [Role.ADMIN]:
+            raise ValueError("Role can only be ADMIN")
+        return v
 
 
 class AdminInvitationAccept(BaseModel):

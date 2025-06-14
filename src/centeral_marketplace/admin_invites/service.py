@@ -61,10 +61,10 @@ class AdminInvitationService:
                     detail="There is already a pending invitation for this email",
                 )
 
-            if invitation_data.role not in [Role.ADMIN, Role.SUPER_ADMIN]:
+            if invitation_data.role not in [Role.ADMIN]:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Can only invite ADMIN or SUPER_ADMIN roles",
+                    detail="Can only invite ADMIN role",
                 )
 
             now = datetime.now(UTC)
@@ -84,7 +84,7 @@ class AdminInvitationService:
             saved_invitation = self.admin_invitation_repository.save(invitation)
 
             invitation_link = (
-                f"{self.config.web_app_url}/accept-admin-invitation?token={token}"
+                f"{self.config.web_app_url}/accept-invitation/{token}"
             )
 
             background_tasks.add_task(
@@ -166,6 +166,59 @@ class AdminInvitationService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable to cancel invitation",
             ) from e
+        
+    def resend_invitation(self, invitation_id: PyObjectId, background_tasks: BackgroundTasks) -> AdminInvitation:
+        try:
+            invitation = self.admin_invitation_repository.find_one(invitation_id)
+            if not invitation:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Invitation not found",
+                )
+            
+            if invitation.status == InvitationStatus.ACCEPTED:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invitation already accepted",
+                )
+            
+            now = datetime.now(UTC)
+            token = secrets.token_urlsafe(32)
+            expires_at = now + timedelta(hours=48)
+
+            invitation.token = token
+            invitation.expires_at = expires_at
+            invitation.updated_at = now
+            invitation.status = InvitationStatus.PENDING
+
+            invitation_link = (
+                f"{self.config.web_app_url}/accept-invitation/{token}"
+            )
+
+            updated_invitation = self.admin_invitation_repository.save(invitation)
+
+            background_tasks.add_task(
+                self.email_service.send_admin_invitation_email,
+                to_email=updated_invitation.email,
+                invitation_link=invitation_link,
+                role=updated_invitation.role.value,
+                invited_by_name=updated_invitation.invited_by_name,
+                expires_at=expires_at,
+            )
+
+
+            
+            logger.info(f"Admin invitation {invitation_id} resent")
+            return updated_invitation
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error resending invitation {invitation_id}: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to resend invitation",
+            ) from e
 
     def accept_admin_invitation(self, invitation_data: AdminInvitationAccept) -> User:
         try:
@@ -179,7 +232,7 @@ class AdminInvitationService:
                     detail="Invalid or expired invitation token",
                 )
 
-            if invitation.expires_at < datetime.now(UTC):
+            if invitation.expires_at.astimezone(UTC) < datetime.now(UTC):
                 invitation.status = InvitationStatus.EXPIRED
                 self.admin_invitation_repository.save(invitation)
                 raise HTTPException(
@@ -196,7 +249,6 @@ class AdminInvitationService:
                     detail="User with this email already exists",
                 )
 
-            # Create user
             now = datetime.now(UTC)
             hashed_password = hash_password(invitation_data.password)
             contact_info = ContactInfo(email=invitation.email)
