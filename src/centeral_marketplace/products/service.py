@@ -301,7 +301,7 @@ class ProductService:
             for key, value in product_data.model_dump(exclude_unset=True).items():
                 setattr(product, key, value)
 
-            product.updated_by_seller = True
+            product.is_updated = True
             self.product_repository.save(product)
             return self.find_one(product_id)
         except HTTPException:
@@ -331,7 +331,7 @@ class ProductService:
                     detail="You are not authorized to delete this product",
                 )
 
-            product.deleted_by_seller = True
+            product.is_deleted = True
             self.product_repository.save(product)
 
         except ValueError:

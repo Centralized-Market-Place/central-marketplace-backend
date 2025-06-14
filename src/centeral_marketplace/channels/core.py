@@ -18,6 +18,9 @@ class Channel(MongoBaseModel):
     scam: bool = False
     has_geo: bool = False
     has_link: bool = False
+    is_updated: bool = False
+    is_deleted: bool = False
+    is_suspended: bool = False
     date_created: Optional[datetime] = None
     broadcast: bool = False
 

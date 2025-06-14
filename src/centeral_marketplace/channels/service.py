@@ -108,6 +108,8 @@ class ChannelService:
             for key, value in update_data.model_dump(exclude_unset=True).items():
                 setattr(channel, key, value)
 
+            channel.is_deleted = True
+
             return self.channel_repository.save(channel)
         except HTTPException:
             raise

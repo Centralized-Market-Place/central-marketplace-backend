@@ -10,6 +10,8 @@ from centeral_marketplace.infrastructure.json import (
 )
 from centeral_marketplace.products.core import ProductPublic, UpdateProduct
 from centeral_marketplace.products.service import ProductService
+from centeral_marketplace.reports.core import Report, ReportCreate, ReportTarget, ReportType
+from centeral_marketplace.reports.service import ReportService
 from centeral_marketplace.users.core import User
 from fastapi import APIRouter, Depends, status, Query
 from fastapi_injector import Injected
@@ -80,6 +82,23 @@ async def get_product(
 ):
     user_id = current_user.id if current_user else None
     return product_service.find_one(product_id, user_id=user_id)
+
+
+@product_router.post("/{product_id}/report", response_model=Report, status_code=status.HTTP_201_CREATED)
+async def report_product(
+    product_id: PyObjectId,
+    report_type: ReportType,
+    current_user: Annotated[User, Depends(get_current_user)],
+    message: str = None,
+    report_service: ReportService = Injected(ReportService),
+):
+    report_data = ReportCreate(
+        target_id=product_id,
+        target_type=ReportTarget.PRODUCT,
+        report_type=report_type,
+        message=message,
+    )
+    return report_service.create_report(current_user, report_data)
 
 
 @product_router.get(

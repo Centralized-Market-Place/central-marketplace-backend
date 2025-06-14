@@ -6,9 +6,11 @@ from centeral_marketplace.infrastructure.json import (
 )
 from centeral_marketplace.channels.service import ChannelService
 from centeral_marketplace.products.service import ProductService
+from centeral_marketplace.reports.core import Report, ReportCreate, ReportTarget, ReportType
+from centeral_marketplace.reports.service import ReportService
 from centeral_marketplace.users.core import Role, User
 from core import PyObjectId
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi_injector import Injected
 from middleware import get_current_user, require_role
 
@@ -57,6 +59,23 @@ async def get_channel(
 ):
     channel = channel_service.find_one(channel_id)
     return channel
+
+
+@channel_router.post("/{channel_id}/report", response_model=Report, status_code=status.HTTP_201_CREATED)
+async def report_channel(
+    channel_id: PyObjectId,
+    report_type: ReportType,
+    current_user: Annotated[User, Depends(get_current_user)],
+    message: str = None,
+    report_service: ReportService = Injected(ReportService),
+):
+    report_data = ReportCreate(
+        target_id=channel_id,
+        target_type=ReportTarget.CHANNEL,
+        report_type=report_type,
+        message=message,
+    )
+    return report_service.create_report(current_user, report_data)
 
 
 @channel_router.post("/{channel_id}", response_model=Channel)
