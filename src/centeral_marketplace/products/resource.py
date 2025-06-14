@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, List
+from typing import Annotated, Optional
 from centeral_marketplace.comments.core import (
     CommentCreate,
     CommentPublic,
@@ -10,7 +10,6 @@ from centeral_marketplace.infrastructure.json import (
 )
 from centeral_marketplace.products.core import ProductPublic, UpdateProduct
 from centeral_marketplace.products.service import ProductService
-from centeral_marketplace.categories.core import CategoryMapping
 from centeral_marketplace.users.core import User
 from fastapi import APIRouter, Depends, status, Query
 from fastapi_injector import Injected
@@ -41,24 +40,21 @@ async def get_products(
 ):
     criteria: dict = {}
 
-   
     if query:
         criteria["$text"] = {"$search": query}
- 
-    
+
     if channel_ids:
         criteria["channel_id"] = {"$in": channel_ids}
 
-    
     if categories:
-        
         if isinstance(categories, str):
-            category_list = [cat.strip() for cat in categories.split(',') if cat.strip()]
-        
-        if category_list:
-                criteria["categories"] = {"$in": category_list}
+            category_list = [
+                cat.strip() for cat in categories.split(",") if cat.strip()
+            ]
 
-    
+        if category_list:
+            criteria["categories"] = {"$in": category_list}
+
     if min_price is not None or max_price is not None:
         criteria["price"] = {}
         if min_price is not None:

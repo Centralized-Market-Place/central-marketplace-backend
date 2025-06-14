@@ -61,7 +61,7 @@ class ChannelService:
         channel_ids = [
             seller_info.seller_info.channel_id for seller_info in seller_applications
         ]
-        
+
         channels = []
         for channel_id in channel_ids:
             channel = self.channel_repository.find_one_by_dict(
@@ -107,6 +107,8 @@ class ChannelService:
 
             for key, value in update_data.model_dump(exclude_unset=True).items():
                 setattr(channel, key, value)
+
+            channel.is_deleted = True
 
             return self.channel_repository.save(channel)
         except HTTPException:

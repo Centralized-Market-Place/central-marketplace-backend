@@ -5,7 +5,7 @@ from centeral_marketplace.email.core import (
     VerifyEmailRequest,
     VerifyEmailResponse,
 )
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, Query
 from fastapi_injector import Injected
 
 from centeral_marketplace.users.service import UserService
@@ -24,9 +24,11 @@ from centeral_marketplace.users.core import (
     UserProfileUpdate,
     TelegramEmailAddRequest,
     TelegramPasswordSetRequest,
+    UserRoleUpdate,
 )
 from centeral_marketplace.users.auth import create_access_token
 from middleware import get_current_user, require_role
+from core import PyObjectId
 
 
 users_router = APIRouter(
@@ -42,12 +44,17 @@ async def get_users(
     page_size: int = 10,
     sort_by: str = None,
     sort_desc: bool = True,
+    query: str = Query(None),
+    role: Role = Query(default=Role.USER),
     user_service: UserService = Injected(UserService),
 ):
     pagination = Pagination(page=page, size=page_size)
-
+    criteria = {}
+    if query:
+        criteria["$text"] = {"$search": query}
+    criteria["role"] = role.value
     users = user_service.find_all(
-        pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+        criteria=criteria, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
     )
 
     return users
@@ -145,3 +152,13 @@ async def complete_telegram_email_setup(
     return user_service.complete_telegram_email_password_setup(
         data.token, data.password
     )
+
+
+@users_router.patch("/admin/{user_id}/role", response_model=User)
+async def update_user_role(
+    user_id: PyObjectId,
+    role_data: UserRoleUpdate,
+    _: Annotated[User, Depends(require_role([Role.SUPER_ADMIN.value]))],
+    user_service: UserService = Injected(UserService),
+):
+    return user_service.update_user_role(user_id, role_data)

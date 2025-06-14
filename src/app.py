@@ -17,6 +17,8 @@ from centeral_marketplace.bookmarks.resource import bookmark_router
 from centeral_marketplace.files.resource import files_router
 from centeral_marketplace.notifications.resource import notifications_router
 from centeral_marketplace.passwordreset.resource import password_reset_router
+from centeral_marketplace.admin_invites.resource import admin_invites_router
+from centeral_marketplace.reports.resource import reports_router
 from centeral_marketplace.categories.resource import category_router
 
 
@@ -51,6 +53,8 @@ def create_app(injector: Injector | None = None) -> FastAPI:
     sub_api.include_router(files_router)
     sub_api.include_router(notifications_router)
     sub_api.include_router(password_reset_router)
+    sub_api.include_router(admin_invites_router)
+    sub_api.include_router(reports_router)
     sub_api.include_router(category_router)
     if injector is None:
         injector = create_injector()

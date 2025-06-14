@@ -43,7 +43,7 @@ async def check_bot_status(
 )
 async def apply_seller(
     application: SellerApplicationCreate,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_role([Role.USER, Role.SELLER]))],
     seller_service: SellerService = Injected(SellerService),
 ):
     return seller_service.save_seller_application(current_user, application)

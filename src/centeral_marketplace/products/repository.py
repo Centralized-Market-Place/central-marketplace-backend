@@ -29,7 +29,7 @@ class ProductRepository(RepositoryInterface[Product]):
         self.delegate.ensure_index("date", name="products_date")
         self.delegate.ensure_index("price", name="products_price")
         self.delegate.ensure_index("is_available", name="products_is_available")
-        self.delegate.ensure_index("deleted_by_seller", name="products_deleted_by_seller")
+        self.delegate.ensure_index("is_deleted", name="products_is_deleted")
         self.delegate.ensure_index("channel_id", name="products_channel_id")
         self.delegate.ensure_index("categories", name="products_categories")
 
@@ -49,7 +49,7 @@ class ProductRepository(RepositoryInterface[Product]):
         criteria: dict = None,
     ) -> PaginatedResponse[ProductPublic]:
         criteria = criteria or {}
-        criteria["deleted_by_seller"] = {"$ne": True}
+        criteria["is_deleted"] = {"$ne": True}
         if last_id:
             criteria["_id"] = {"$gt": ObjectId(str(last_id))}
 
@@ -150,7 +150,7 @@ class ProductRepository(RepositoryInterface[Product]):
         user_id: PyObjectId,
     ) -> ProductPublic | None:
         criteria = {"_id": ObjectId(str(product_id))}
-        criteria["deleted_by_seller"] = {"$ne": True}
+        criteria["is_deleted"] = {"$ne": True}
         pipeline = [
             {"$match": criteria},
             {
@@ -206,7 +206,7 @@ class ProductRepository(RepositoryInterface[Product]):
     def find_all(
         self, sort_by: str = None, sort_desc: bool = True, pagination: Pagination = None
     ) -> PaginatedResponse[ProductPublic]:
-        criteria = {"deleted_by_seller": {"$ne": True}}
+        criteria = {"is_deleted": {"$ne": True}}
         pipeline = [
             {"$match": criteria},
         ]
@@ -247,14 +247,14 @@ class ProductRepository(RepositoryInterface[Product]):
             total=total,
             items=items,
         )
-    
+
     def find_one_product(self, id: PyObjectId) -> Product:
-        criteria = {"_id": ObjectId(str(id)), "deleted_by_seller": {"$ne": True}}
+        criteria = {"_id": ObjectId(str(id)), "is_deleted": {"$ne": True}}
         return self.delegate.find_one_by_dict(criteria)
 
     def find_one(self, id: PyObjectId) -> ProductPublic | None:
         criteria = {"_id": ObjectId(str(id))}
-        criteria["deleted_by_seller"] = {"$ne": True}
+        criteria["is_deleted"] = {"$ne": True}
         pipeline = [
             {"$match": criteria},
             {
@@ -283,7 +283,7 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_desc: bool = True,
     ) -> PaginatedResponse[ProductPublic]:
         criteria: dict = {}
-        criteria["deleted_by_seller"] = {"$ne": True}
+        criteria["is_deleted"] = {"$ne": True}
         if query:
             criteria["$text"] = {"$search": query}
         if last_id:
@@ -386,7 +386,7 @@ class ProductRepository(RepositoryInterface[Product]):
         pagination: Pagination = None,
         **kwargs,
     ) -> PaginatedResponse[ProductPublic]:
-        kwargs["deleted_by_seller"] = {"$ne": True}
+        kwargs["is_deleted"] = {"$ne": True}
         pipeline = [{"$match": kwargs}]
 
         if sort_by:
@@ -427,7 +427,7 @@ class ProductRepository(RepositoryInterface[Product]):
         )
 
     def find_one_by_dict(self, criteria: dict) -> ProductPublic | None:
-        criteria["deleted_by_seller"] = {"$ne": True}
+        criteria["is_deleted"] = {"$ne": True}
         pipeline = [
             {"$match": criteria},
             {
@@ -456,7 +456,7 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_by: str | None = None,
         sort_desc: bool = True,
     ) -> PaginatedResponse[ProductPublic]:
-        criteria["deleted_by_seller"] = {"$ne": True}
+        criteria["is_deleted"] = {"$ne": True}
         pipeline = [{"$match": criteria}]
 
         if sort_by:
@@ -497,7 +497,7 @@ class ProductRepository(RepositoryInterface[Product]):
         )
 
     def count_all_by_dict(self, criteria):
-        criteria["deleted_by_seller"] = {"$ne": True}
+        criteria["is_deleted"] = {"$ne": True}
         return self.delegate.count_all_by_dict(criteria)
 
     def delete_all(self):
@@ -505,7 +505,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
     def get_channel_analytics(self, channel_id: PyObjectId) -> dict:
         criteria = {"channel_id": ObjectId(str(channel_id))}
-        criteria["deleted_by_seller"] = {"$ne": True}
+        criteria["is_deleted"] = {"$ne": True}
         pipeline = [
             {"$match": criteria},
             {

@@ -33,12 +33,24 @@ class ChannelRepository(RepositoryInterface[Channel]):
         return self.delegate.save_all(data)
 
     def find_all(self, sort_by: str = None, sort_desc: bool = True, pagination=None):
+        criteria = {
+            "is_deleted": {"$in": [False, None]},
+            "is_suspended": {"$in": [False, None]},
+        }
         return self.delegate.find_all(
-            pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+            criteria=criteria,
+            pagination=pagination,
+            sort_by=sort_by,
+            sort_desc=sort_desc,
         )
 
     def find_one(self, id: PyObjectId):
-        return self.delegate.find_one(id)
+        criteria = {
+            "is_deleted": {"$in": [False, None]},
+            "is_suspended": {"$in": [False, None]},
+            "_id": id,
+        }
+        return self.delegate.find_one_by_dict(criteria)
 
     def find_all_by(
         self,
@@ -47,11 +59,24 @@ class ChannelRepository(RepositoryInterface[Channel]):
         pagination=None,
         **kwargs,
     ):
+        criteria = {
+            "is_deleted": {"$in": [False, None]},
+            "is_suspended": {"$in": [False, None]},
+            **kwargs,
+        }
         return self.delegate.find_all_by_dict(
-            criteria=kwargs, pagination=pagination, sort_by=sort_by, sort_desc=sort_desc
+            criteria=criteria,
+            pagination=pagination,
+            sort_by=sort_by,
+            sort_desc=sort_desc,
         )
 
     def find_one_by_dict(self, criteria: dict):
+        criteria = {
+            "is_deleted": {"$in": [False, None]},
+            "is_suspended": {"$in": [False, None]},
+            **criteria,
+        }
         return self.delegate.find_one_by_dict(criteria)
 
     def delete_one(self, id: PyObjectId):
@@ -64,6 +89,11 @@ class ChannelRepository(RepositoryInterface[Channel]):
         sort_by: str | None = None,
         sort_desc: bool = True,
     ) -> PaginatedResponse[Channel]:
+        criteria = {
+            "is_deleted": {"$in": [False, None]},
+            "is_suspended": {"$in": [False, None]},
+            **criteria,
+        }
         return self.delegate.find_all_by_dict(
             criteria=criteria,
             pagination=pagination,
@@ -72,6 +102,11 @@ class ChannelRepository(RepositoryInterface[Channel]):
         )
 
     def count_all_by_dict(self, criteria):
+        criteria = {
+            "is_deleted": {"$in": [False, None]},
+            "is_suspended": {"$in": [False, None]},
+            **criteria,
+        }
         return self.delegate.count_all_by_dict(criteria)
 
     def delete_all(self):
