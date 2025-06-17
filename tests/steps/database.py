@@ -47,6 +47,8 @@ def database_repo_is_ready():
 
 def database_is_clean():
     def step(context):
+        if context.config.mongo_uri.contains("Cluster"):
+            raise Exception("Cannot delete database in production")
         context.repos.delete_all()
 
     return step
