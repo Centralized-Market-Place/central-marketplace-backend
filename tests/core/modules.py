@@ -12,7 +12,7 @@ def prepare_injector(modules=None):
         modules_final = mod_default + (modules or [])
         context.injector = Injector(modules=modules_final)
         config: Config = context.injector.get(Config)
-        config.mongo_uri = config.mongo_uri
+        config.mongo_uri = config.test_mongo_uri
         config.telegram_bot_token = config.test_telegram_bot_token
         config.telegram_bot_username = config.test_telegram_bot_username
 
