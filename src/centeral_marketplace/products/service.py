@@ -43,6 +43,7 @@ class ProductService:
     def find_all(
         self,
         user_id: PyObjectId | None = None,
+        query: str = None,
         pagination: Pagination = None,
         sort_by: str = None,
         sort_desc: bool = True,
@@ -55,6 +56,7 @@ class ProductService:
             if user_id:
                 paginated_product = self.product_repository.find_all_with_user_reaction(
                     user_id=user_id,
+                    query=query,
                     pagination=pagination,
                     sort_by=sort_by,
                     sort_desc=sort_desc,
@@ -68,6 +70,7 @@ class ProductService:
                 return paginated_product
             else:
                 return self.product_repository.find_all_by_dict(
+                    query=query,
                     pagination=pagination,
                     sort_by=sort_by,
                     sort_desc=sort_desc,

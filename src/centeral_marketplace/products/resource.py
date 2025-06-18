@@ -40,9 +40,6 @@ async def get_products(
 ):
     criteria: dict = {}
 
-    if query:
-        criteria["$text"] = {"$search": query}
-
     if channel_ids:
         criteria["channel_id"] = {"$in": channel_ids}
 
@@ -66,6 +63,7 @@ async def get_products(
 
     return product_service.find_all(
         user_id=user_id,
+        query=query,
         pagination=Pagination(page=page, size=page_size),
         sort_by=sort_by,
         sort_desc=sort_desc,

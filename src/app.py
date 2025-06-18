@@ -1,6 +1,7 @@
 import logging
 from centeral_marketplace.users.core import UserCreate
 from centeral_marketplace.users.service import UserService
+from centeral_marketplace.products.semantic_search import initialize_semantic_search_model
 from config import Config
 from fastapi import FastAPI
 from fastapi_injector import attach_injector
@@ -71,6 +72,7 @@ def create_app(injector: Injector | None = None) -> FastAPI:
 
     @app.on_event("startup")
     async def startup_event():
+        logger.info("Starting application initialization...")
         try:
             user_service.create_admin(
                 UserCreate(
@@ -83,5 +85,14 @@ def create_app(injector: Injector | None = None) -> FastAPI:
             logger.info(f"Admin user created with email: {config.admin_email}")
         except Exception as e:
             logger.error(f"Error creating admin user: {e}")
+        try:
+            logger.info("Initializing semantic search model...")
+            initialize_semantic_search_model()
+            logger.info("Semantic search model initialization completed")
+        except Exception as e:
+            logger.error(f"Error initializing semantic search model: {e}")
+            logger.warning("Application will continue without semantic search functionality")
+        
+        logger.info("Application initialization completed")
 
     return app
