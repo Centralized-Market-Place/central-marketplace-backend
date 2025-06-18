@@ -67,10 +67,11 @@ class ChannelService:
             channel = self.channel_repository.find_one_by_dict(
                 {"$or": [{"username": channel_id}, {"telegram_id": channel_id}]}
             )
-            product_count = self.product_repository.count_all_by_dict(
+            
+            if channel:
+                product_count = self.product_repository.count_all_by_dict(
                 {"channel_id": ObjectId(str(channel.id))}
             )
-            if channel:
                 channel.total_products = product_count
                 channels.append(channel)
 
@@ -108,7 +109,7 @@ class ChannelService:
             for key, value in update_data.model_dump(exclude_unset=True).items():
                 setattr(channel, key, value)
 
-            channel.is_deleted = True
+            channel.is_updated = True
 
             return self.channel_repository.save(channel)
         except HTTPException:

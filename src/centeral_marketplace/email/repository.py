@@ -35,7 +35,7 @@ class EmailVerificationTokenRepository:
         tokens = self.delegate.find_all_by_dict({"user_id": user_id})
         deleted_count = 0
 
-        for token in tokens:
+        for token in tokens.items:
             self.delegate.delete_one(token.id)
             deleted_count += 1
 

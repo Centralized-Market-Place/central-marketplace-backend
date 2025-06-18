@@ -21,7 +21,7 @@ class UserRepository(RepositoryInterface[User]):
         self.delegate.ensure_text_index(
             ["email", "first_name", "last_name"], name="users_text_search"
         )
-        self.delegate.ensure_index("email", unique=True, name="users_email")
+        self.delegate.ensure_index("email", name="users_email")
         self.delegate.ensure_index("created_at", name="users_created_at")
 
     def save(self, data: User):
