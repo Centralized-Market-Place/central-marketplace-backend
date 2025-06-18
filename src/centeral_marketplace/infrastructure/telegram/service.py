@@ -149,6 +149,15 @@ class TelegramService:
                             member_count = member_count_data.get("result", 0)
                 except Exception as e:
                     logger.error(f"Error getting member count: {e}")
+                    
+                telegram_id = str(result.get("id")) if result.get("id") else "0"
+
+                if telegram_id.startswith("-100"):
+                    telegram_id = telegram_id[len("-100"):]
+                
+                telegram_id = int(telegram_id)
+                
+
 
                 channel = Channel(
                     title=result.get("title", ""),
@@ -162,7 +171,7 @@ class TelegramService:
                     has_geo=result.get("has_protected_content", False),
                     has_link=result.get("invite_link") is not None,
                     broadcast=result.get("type") == "channel",
-                    telegram_id=result.get("id") if result.get("id") else 0,
+                    telegram_id=telegram_id,
                 )
 
                 if result.get("photo"):

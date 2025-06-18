@@ -338,7 +338,7 @@ class SellerService:
                     application.seller_info.channel_id
                 )
                 if channel:
-                    channel.verified = True
+                    channel.is_seller_verified = True
                     self.channel_repo.save(channel)
                 user = self.user_repository.find_one(application.user_id)
                 if user:

@@ -23,6 +23,7 @@ class Channel(MongoBaseModel):
     is_suspended: bool = False
     date_created: Optional[datetime] = None
     broadcast: bool = False
+    is_seller_verified: bool = False
 
     class Config:
         from_attributes = True
