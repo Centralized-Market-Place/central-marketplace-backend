@@ -58,80 +58,93 @@ class ProductRepository(RepositoryInterface[Product]):
         pipeline = []
         pipeline.append({"$match": criteria})
 
+        pipeline.append({
+            "$lookup": {
+                "from": "channels",
+                "localField": "channel_id",
+                "foreignField": "_id",
+                "as": "channel",
+            }
+        })
+        pipeline.append({"$unwind": "$channel"})
+        
+        pipeline.append({
+            "$match": {
+                "$or": [
+                    {"channel.is_suspended": {"$exists": False}},
+                    {"channel.is_suspended": {"$ne": True}}
+                ]
+            }
+        })
+
         if sort_by:
             order = DESCENDING if sort_desc else ASCENDING
             pipeline.append({"$sort": {sort_by: order}})
 
-        if pagination:
-            pipeline.append({"$limit": size})
 
-        pipeline.extend(
-            [
-                {
-                    "$facet": {
-                        "items": [
-                            {
-                                "$lookup": {
-                                    "from": "channels",
-                                    "localField": "channel_id",
-                                    "foreignField": "_id",
-                                    "as": "channel",
-                                }
-                            },
-                            {"$unwind": "$channel"},
-                            {
-                                "$lookup": {
-                                    "from": "reactions",
-                                    "let": {"pid": "$_id"},
-                                    "pipeline": [
-                                        {
-                                            "$match": {
-                                                "$expr": {
-                                                    "$and": [
-                                                        {
-                                                            "$eq": [
-                                                                "$target_id",
-                                                                "$$pid",
-                                                            ]
-                                                        },
-                                                        {
-                                                            "$eq": [
-                                                                "$user_id",
-                                                                ObjectId(str(user_id)),
-                                                            ]
-                                                        },
-                                                        {
-                                                            "$eq": [
-                                                                "$target_type",
-                                                                ReactionTarget.PRODUCT.value,
-                                                            ]
-                                                        },
+        facet_pipeline = {
+            "$facet": {
+                "items": [
+                    {
+                        "$lookup": {
+                            "from": "reactions",
+                            "let": {"pid": "$_id"},
+                            "pipeline": [
+                                {
+                                    "$match": {
+                                        "$expr": {
+                                            "$and": [
+                                                {
+                                                    "$eq": [
+                                                        "$target_id",
+                                                        "$$pid",
                                                     ]
-                                                }
-                                            }
-                                        },
-                                        {"$project": {"reaction_type": 1, "_id": 0}},
-                                    ],
-                                    "as": "userReaction",
-                                }
-                            },
-                            {
-                                "$addFields": {
-                                    "user_reaction": {
-                                        "$arrayElemAt": [
-                                            "$userReaction.reaction_type",
-                                            0,
-                                        ]
+                                                },
+                                                {
+                                                    "$eq": [
+                                                        "$user_id",
+                                                        ObjectId(str(user_id)),
+                                                    ]
+                                                },
+                                                {
+                                                    "$eq": [
+                                                        "$target_type",
+                                                        ReactionTarget.PRODUCT.value,
+                                                    ]
+                                                },
+                                            ]
+                                        }
                                     }
-                                }
-                            },
-                            {"$project": {"userReaction": 0}},
-                        ],
-                        "total": [{"$count": "count"}],
-                    }
-                }
-            ]
-        )
+                                },
+                                {"$project": {"reaction_type": 1, "_id": 0}},
+                            ],
+                            "as": "userReaction",
+                        }
+                    },
+                    {
+                        "$addFields": {
+                            "user_reaction": {
+                                "$arrayElemAt": [
+                                    "$userReaction.reaction_type",
+                                    0,
+                                ]
+                            }
+                        }
+                    },
+                    {"$project": {"userReaction": 0}},
+                ],
+                "total": [{"$count": "count"}],
+            }
+        }
+
+        if pagination:
+            skip = (page - 1) * size
+            facet_pipeline["$facet"]["items"].extend([
+                {"$skip": skip},
+                {"$limit": size}
+            ])
+
+        pipeline.append(facet_pipeline)
 
         result = list(self.delegate.collection.aggregate(pipeline))[0]
         items = [ProductPublic.model_validate(doc) for doc in result["items"]]
@@ -162,6 +175,14 @@ class ProductRepository(RepositoryInterface[Product]):
                 }
             },
             {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
             {
                 "$lookup": {
                     "from": "reactions",
@@ -209,19 +230,6 @@ class ProductRepository(RepositoryInterface[Product]):
         criteria = {"is_deleted": {"$ne": True}}
         pipeline = [
             {"$match": criteria},
-        ]
-
-        if sort_by:
-            order = DESCENDING if sort_desc else ASCENDING
-            pipeline.append({"$sort": {sort_by: order}})
-
-        if pagination:
-            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-            skip = (page - 1) * size
-            pipeline.append({"$skip": skip})
-            pipeline.append({"$limit": size})
-
-        pipeline.append(
             {
                 "$lookup": {
                     "from": "channels",
@@ -229,15 +237,42 @@ class ProductRepository(RepositoryInterface[Product]):
                     "foreignField": "_id",
                     "as": "channel",
                 }
+            },
+            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
+        ]
+
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        facet_pipeline = {
+            "$facet": {
+                "items": [],
+                "total": [{"$count": "count"}]
             }
-        )
+        }
 
-        pipeline.append({"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}})
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            facet_pipeline["$facet"]["items"].extend([
+                {"$skip": skip},
+                {"$limit": size}
+            ])
 
-        cursor = self.delegate.collection.aggregate(pipeline)
-        items = [ProductPublic.model_validate(doc) for doc in cursor]
+        pipeline.append(facet_pipeline)
 
-        total = self.delegate.collection.count_documents(criteria)
+        result = list(self.delegate.collection.aggregate(pipeline))[0]
+        items = [ProductPublic.model_validate(doc) for doc in result["items"]]
+        total = result["total"][0]["count"] if result["total"] else 0
 
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
 
@@ -266,6 +301,14 @@ class ProductRepository(RepositoryInterface[Product]):
                 }
             },
             {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
         ]
 
         docs = list(self.delegate.collection.aggregate(pipeline))
@@ -292,78 +335,115 @@ class ProductRepository(RepositoryInterface[Product]):
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
         order = DESCENDING if sort_desc else ASCENDING
 
+        items_pipeline = [
+            {"$match": criteria},
+            {
+                "$lookup": {
+                    "from": "bookmarks",
+                    "let": {"pid": "$_id"},
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "$expr": {
+                                    "$and": [
+                                        {"$eq": ["$product_id", "$$pid"]},
+                                        {
+                                            "$eq": [
+                                                "$user_id",
+                                                ObjectId(str(user_id)),
+                                            ]
+                                        },
+                                    ]
+                                }
+                            }
+                        },
+                    ],
+                    "as": "userBookmark",
+                }
+            },
+            {"$match": {"userBookmark.0": {"$exists": True}}},
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            },
+            {"$unwind": "$channel"},
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
+            {"$project": {"userBookmark": 0}},
+            {"$sort": {sort_by if sort_by else "_id": order}},
+        ]
+
+        if pagination:
+            skip = (page - 1) * size
+            items_pipeline.extend([
+                {"$skip": skip},
+                {"$limit": size}
+            ])
+        else:
+            items_pipeline.append({"$limit": 1000})
+
+        total_pipeline = [
+            {"$match": criteria},
+            {
+                "$lookup": {
+                    "from": "bookmarks",
+                    "let": {"pid": "$_id"},
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "$expr": {
+                                    "$and": [
+                                        {"$eq": ["$product_id", "$$pid"]},
+                                        {
+                                            "$eq": [
+                                                "$user_id",
+                                                ObjectId(str(user_id)),
+                                            ]
+                                        },
+                                    ]
+                                }
+                            }
+                        },
+                    ],
+                    "as": "userBookmark",
+                }
+            },
+            {"$match": {"userBookmark.0": {"$exists": True}}},
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            },
+            {"$unwind": "$channel"},
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
+            {"$count": "count"},
+        ]
+
         pipeline = [
             {
                 "$facet": {
-                    "items": [
-                        {"$match": criteria},
-                        {
-                            "$lookup": {
-                                "from": "bookmarks",
-                                "let": {"pid": "$_id"},
-                                "pipeline": [
-                                    {
-                                        "$match": {
-                                            "$expr": {
-                                                "$and": [
-                                                    {"$eq": ["$product_id", "$$pid"]},
-                                                    {
-                                                        "$eq": [
-                                                            "$user_id",
-                                                            ObjectId(str(user_id)),
-                                                        ]
-                                                    },
-                                                ]
-                                            }
-                                        }
-                                    },
-                                ],
-                                "as": "userBookmark",
-                            }
-                        },
-                        {"$match": {"userBookmark.0": {"$exists": True}}},
-                        {
-                            "$lookup": {
-                                "from": "channels",
-                                "localField": "channel_id",
-                                "foreignField": "_id",
-                                "as": "channel",
-                            }
-                        },
-                        {"$unwind": "$channel"},
-                        {"$project": {"userBookmark": 0}},
-                        {"$sort": {sort_by if sort_by else "_id": order}},
-                        {"$limit": size if pagination else 1000},
-                    ],
-                    "total": [
-                        {"$match": criteria},
-                        {
-                            "$lookup": {
-                                "from": "bookmarks",
-                                "let": {"pid": "$_id"},
-                                "pipeline": [
-                                    {
-                                        "$match": {
-                                            "$expr": {
-                                                "$and": [
-                                                    {"$eq": ["$product_id", "$$pid"]},
-                                                    {
-                                                        "$eq": [
-                                                            "$user_id",
-                                                            ObjectId(str(user_id)),
-                                                        ]
-                                                    },
-                                                ]
-                                            }
-                                        }
-                                    },
-                                ],
-                                "as": "userBookmark",
-                            }
-                        },
-                        {"$match": {"userBookmark.0": {"$exists": True}}},
-                        {"$count": "count"},
-                    ],
+                    "items": items_pipeline,
+                    "total": total_pipeline,
                 }
             }
         ]
@@ -387,19 +467,8 @@ class ProductRepository(RepositoryInterface[Product]):
         **kwargs,
     ) -> PaginatedResponse[ProductPublic]:
         kwargs["is_deleted"] = {"$ne": True}
-        pipeline = [{"$match": kwargs}]
-
-        if sort_by:
-            order = DESCENDING if sort_desc else ASCENDING
-            pipeline.append({"$sort": {sort_by: order}})
-
-        if pagination:
-            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-            skip = (page - 1) * size
-            pipeline.append({"$skip": skip})
-            pipeline.append({"$limit": size})
-
-        pipeline.append(
+        pipeline = [
+            {"$match": kwargs},
             {
                 "$lookup": {
                     "from": "channels",
@@ -407,15 +476,43 @@ class ProductRepository(RepositoryInterface[Product]):
                     "foreignField": "_id",
                     "as": "channel",
                 }
+            },
+            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
+            # Filter out products from suspended channels
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
+        ]
+
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        facet_pipeline = {
+            "$facet": {
+                "items": [],
+                "total": [{"$count": "count"}]
             }
-        )
+        }
 
-        pipeline.append({"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}})
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            facet_pipeline["$facet"]["items"].extend([
+                {"$skip": skip},
+                {"$limit": size}
+            ])
 
-        cursor = self.delegate.collection.aggregate(pipeline)
-        items = [ProductPublic.model_validate(doc) for doc in cursor]
+        pipeline.append(facet_pipeline)
 
-        total = self.delegate.collection.count_documents(kwargs)
+        result = list(self.delegate.collection.aggregate(pipeline))[0]
+        items = [ProductPublic.model_validate(doc) for doc in result["items"]]
+        total = result["total"][0]["count"] if result["total"] else 0
 
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
 
@@ -439,6 +536,14 @@ class ProductRepository(RepositoryInterface[Product]):
                 }
             },
             {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
         ]
 
         docs = list(self.delegate.collection.aggregate(pipeline))
@@ -457,19 +562,8 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_desc: bool = True,
     ) -> PaginatedResponse[ProductPublic]:
         criteria["is_deleted"] = {"$ne": True}
-        pipeline = [{"$match": criteria}]
-
-        if sort_by:
-            order = DESCENDING if sort_desc else ASCENDING
-            pipeline.append({"$sort": {sort_by: order}})
-
-        if pagination:
-            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
-            skip = (page - 1) * size
-            pipeline.append({"$skip": skip})
-            pipeline.append({"$limit": size})
-
-        pipeline.append(
+        pipeline = [
+            {"$match": criteria},
             {
                 "$lookup": {
                     "from": "channels",
@@ -477,15 +571,42 @@ class ProductRepository(RepositoryInterface[Product]):
                     "foreignField": "_id",
                     "as": "channel",
                 }
+            },
+            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
+        ]
+
+        if sort_by:
+            order = DESCENDING if sort_desc else ASCENDING
+            pipeline.append({"$sort": {sort_by: order}})
+
+        facet_pipeline = {
+            "$facet": {
+                "items": [],
+                "total": [{"$count": "count"}]
             }
-        )
+        }
 
-        pipeline.append({"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}})
+        if pagination:
+            page, size = (pagination.page, pagination.size) if pagination else (1, 0)
+            skip = (page - 1) * size
+            facet_pipeline["$facet"]["items"].extend([
+                {"$skip": skip},
+                {"$limit": size}
+            ])
 
-        cursor = self.delegate.collection.aggregate(pipeline)
-        items = [ProductPublic.model_validate(doc) for doc in cursor]
+        pipeline.append(facet_pipeline)
 
-        total = self.delegate.collection.count_documents(criteria)
+        result = list(self.delegate.collection.aggregate(pipeline))[0]
+        items = [ProductPublic.model_validate(doc) for doc in result["items"]]
+        total = result["total"][0]["count"] if result["total"] else 0
 
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
 
@@ -498,7 +619,31 @@ class ProductRepository(RepositoryInterface[Product]):
 
     def count_all_by_dict(self, criteria):
         criteria["is_deleted"] = {"$ne": True}
-        return self.delegate.count_all_by_dict(criteria)
+        
+        pipeline = [
+            {"$match": criteria},
+            {
+                "$lookup": {
+                    "from": "channels",
+                    "localField": "channel_id",
+                    "foreignField": "_id",
+                    "as": "channel",
+                }
+            },
+            {"$addFields": {"channel": {"$arrayElemAt": ["$channel", 0]}}},
+            {
+                "$match": {
+                    "$or": [
+                        {"channel.is_suspended": {"$exists": False}},
+                        {"channel.is_suspended": {"$ne": True}}
+                    ]
+                }
+            },
+            {"$count": "count"}
+        ]
+        
+        result = list(self.delegate.collection.aggregate(pipeline))
+        return result[0]["count"] if result else 0
 
     def delete_all(self):
         return self.delegate.delete_all()
