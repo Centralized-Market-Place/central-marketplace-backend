@@ -66,9 +66,13 @@ class ProductRepository(RepositoryInterface[Product]):
         pagination: Pagination | None = None,
         sort_by: str = None,
         sort_desc: bool = True,
-        criteria: dict = None,
+        criteria: dict | None = None,
     ) -> PaginatedResponse[ProductPublic]:
-        criteria = criteria or ProductPipelineBuilder.base_product_criteria()
+        if criteria is None:
+            criteria = {}
+        
+        criteria["is_deleted"] = {"$ne": True}
+
         if last_id:
             criteria["_id"] = {"$gt": ObjectId(str(last_id))}
 
