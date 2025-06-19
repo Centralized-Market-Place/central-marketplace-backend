@@ -22,7 +22,7 @@ class ChannelRepository(RepositoryInterface[Channel]):
         self.delegate.ensure_index("telegram_id")
         self.delegate.ensure_index("username")
         self.delegate.ensure_text_index(
-            ["name", "description"], name="channels_text_search"
+            ["title", "description"], name="channels_text_search"
         )
         self.delegate.ensure_index("created_at", name="channels_created_at")
 
