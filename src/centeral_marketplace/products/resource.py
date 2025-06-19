@@ -36,6 +36,7 @@ async def get_products(
     max_price: Optional[float] = Query(None),
     categories: Optional[str] = Query(None),
     channel_ids: list[PyObjectId] = Query(default=[]),
+    apply_recency_boost: bool = Query(default=True, description="Apply recency boost sorting based on date and engagement"),
     product_service: ProductService = Injected(ProductService),
 ):
     criteria: dict = {}
@@ -68,6 +69,7 @@ async def get_products(
         sort_by=sort_by,
         sort_desc=sort_desc,
         criteria=criteria,
+        apply_recency_boost=apply_recency_boost,
     )
 
 
@@ -80,6 +82,7 @@ async def get_product_bookmarks(
     sort_desc: bool = True,
     sort_by: str = "created_at",
     query: str = None,
+    apply_recency_boost: bool = Query(default=False, description="Apply recency boost sorting based on date and engagement"),
 ):
     pagination = Pagination(page=page, size=page_size)
     return product_service.find_bookmarked_products(
@@ -88,6 +91,7 @@ async def get_product_bookmarks(
         sort_desc=sort_desc,
         sort_by=sort_by,
         query=query,
+        apply_recency_boost=apply_recency_boost,
     )
 
 

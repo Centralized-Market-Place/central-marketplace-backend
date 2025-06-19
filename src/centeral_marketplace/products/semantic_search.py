@@ -94,13 +94,10 @@ class SemanticSearchService:
     def calculate_relevance_score(self, doc: dict) -> float:
         base_score = doc.get("search_score", 0)
         
-        recency_score = self._calculate_recency_boost(doc.get("created_at"))
+        date_field = doc.get("date") or doc.get("created_at")
+        recency_score = self._calculate_recency_boost(date_field)
         
-        engagement_score = self._calculate_engagement_boost(
-            doc.get("forwards", 0),
-            doc.get("views", 0), 
-            doc.get("reactions", [])
-        )
+        engagement_score = self._calculate_product_engagement_boost(doc)
         
         return base_score + recency_score + engagement_score
 
@@ -127,7 +124,39 @@ class SemanticSearchService:
             logger.warning(f"Error calculating recency boost: {e}")
             return 0
 
+    def _calculate_product_engagement_boost(self, doc: dict) -> float:
+        """
+        Calculate engagement boost for Product model using individual engagement fields.
+        """
+        try:
+            forwards = doc.get("forwards", 0)
+            views = doc.get("views", 0)
+            upvotes = doc.get("upvotes", 0)
+            downvotes = doc.get("downvotes", 0)
+            comments = doc.get("comments", 0)
+            clicks = doc.get("clicks", 0)
+            shares = doc.get("shares", 0)
+            
+            # Weight different engagement types
+            engagement_score = (
+                forwards * 0.3 +     # High weight for forwards (indicates strong user interest)
+                views * 0.05 +       # Lower weight for views (passive engagement)
+                upvotes * 0.2 +      # High weight for upvotes (positive feedback)
+                comments * 0.25 +    # High weight for comments (active engagement)
+                clicks * 0.1 +       # Medium weight for clicks
+                shares * 0.2 +       # High weight for shares
+                max(0, upvotes - downvotes) * 0.1  # Net positive reactions
+            )
+            
+            return engagement_score
+        except Exception as e:
+            logger.warning(f"Error calculating product engagement boost: {e}")
+            return 0
+
     def _calculate_engagement_boost(self, forwards: int, views: int, reactions: list) -> float:
+        """
+        Original engagement boost calculation for backward compatibility.
+        """
         try:
             reaction_count = sum(count for _, count in reactions) if reactions else 0
             return (forwards * 0.2 + views * 0.1 + reaction_count * 0.1)

@@ -44,11 +44,32 @@ class ProductRepository(RepositoryInterface[Product]):
     def save_all(self, data: list[Product]):
         return self.delegate.save_all(data)
 
-    def _execute_pipeline_with_pagination(self, pipeline: list, page: int = 1, size: int = 0) -> tuple:
+    def _execute_pipeline_with_pagination(self, pipeline: list, page: int = 1, size: int = 0, apply_recency_boost: bool = False) -> tuple:
         result = list(self.delegate.collection.aggregate(pipeline))[0]
         items = [ProductPublic.model_validate(doc) for doc in result["items"]]
+        
+        if apply_recency_boost:
+            items = self._apply_recency_boost_sorting(items)
+        
         total = result["total"][0]["count"] if result["total"] else 0
         return items, total
+
+    def _apply_recency_boost_sorting(self, items: list[ProductPublic]) -> list[ProductPublic]:
+        if not items or not self.semantic_search_service.is_available:
+            return items
+        
+        for item in items:
+            item_dict = item.model_dump()
+            relevance_score = self.semantic_search_service.calculate_relevance_score(item_dict)
+            setattr(item, '_relevance_score', relevance_score)
+        
+        sorted_items = sorted(items, key=lambda x: getattr(x, '_relevance_score', 0), reverse=True)
+        
+        for item in sorted_items:
+            if hasattr(item, '_relevance_score'):
+                delattr(item, '_relevance_score')
+        
+        return sorted_items
 
     def _should_use_semantic_search(self, query: str) -> bool:
         return (
@@ -67,6 +88,7 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_by: str = None,
         sort_desc: bool = True,
         criteria: dict | None = None,
+        apply_recency_boost: bool = False,
     ) -> PaginatedResponse[ProductPublic]:
         if criteria is None:
             criteria = {}
@@ -134,7 +156,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
         pipeline.pipeline.append(facet_stage)
         
-        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size)
+        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size, apply_recency_boost)
 
         return PaginatedResponse(
             page=page,
@@ -167,7 +189,8 @@ class ProductRepository(RepositoryInterface[Product]):
         query: str = None,
         sort_by: str = None, 
         sort_desc: bool = True, 
-        pagination: Pagination = None
+        pagination: Pagination = None,
+        apply_recency_boost: bool = False,
     ) -> PaginatedResponse[ProductPublic]:
         criteria = ProductPipelineBuilder.base_product_criteria()
         page, size = (pagination.page, pagination.size) if pagination else (1, 0)
@@ -185,7 +208,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
         pipeline.create_facet_with_pagination(page, size)
         
-        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size)
+        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size, apply_recency_boost)
 
         return PaginatedResponse(
             page=page,
@@ -220,6 +243,7 @@ class ProductRepository(RepositoryInterface[Product]):
         pagination: Pagination | None = None,
         sort_by: str | None = None,
         sort_desc: bool = True,
+        apply_recency_boost: bool = False,
     ) -> PaginatedResponse[ProductPublic]:
         criteria = ProductPipelineBuilder.base_product_criteria()
         if last_id:
@@ -244,7 +268,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
         pipeline.create_facet_with_pagination(page, size)
         
-        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size)
+        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size, apply_recency_boost)
 
         return PaginatedResponse(
             page=page,
@@ -259,6 +283,7 @@ class ProductRepository(RepositoryInterface[Product]):
         sort_by: str = None,
         sort_desc: bool = True,
         pagination: Pagination = None,
+        apply_recency_boost: bool = False,
         **kwargs,
     ) -> PaginatedResponse[ProductPublic]:
         kwargs.update(ProductPipelineBuilder.base_product_criteria())
@@ -278,7 +303,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
         pipeline.create_facet_with_pagination(page, size)
         
-        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size)
+        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size, apply_recency_boost)
 
         return PaginatedResponse(
             page=page,
@@ -310,6 +335,7 @@ class ProductRepository(RepositoryInterface[Product]):
         pagination: Pagination | None = None,
         sort_by: str | None = None,
         sort_desc: bool = True,
+        apply_recency_boost: bool = False,
     ) -> PaginatedResponse[ProductPublic]:
         criteria = dict(criteria)  # Make a copy
         criteria.update(ProductPipelineBuilder.base_product_criteria())
@@ -330,7 +356,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
         pipeline.create_facet_with_pagination(page, size)
         
-        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size)
+        items, total = self._execute_pipeline_with_pagination(pipeline.build(), page, size, apply_recency_boost)
 
         return PaginatedResponse(
             page=page,

@@ -48,6 +48,7 @@ class ProductService:
         sort_by: str = None,
         sort_desc: bool = True,
         criteria: dict | None = None,
+        apply_recency_boost: bool = False,
     ) -> PaginatedResponse[ProductPublic]:
         try:
             if criteria is None:
@@ -61,6 +62,7 @@ class ProductService:
                     sort_by=sort_by,
                     sort_desc=sort_desc,
                     criteria=criteria,
+                    apply_recency_boost=apply_recency_boost,
                 )
 
                 paginated_product.items = [
@@ -75,6 +77,7 @@ class ProductService:
                     sort_by=sort_by,
                     sort_desc=sort_desc,
                     criteria=criteria,
+                    apply_recency_boost=apply_recency_boost,
                 )
         except Exception as e:
             logger.error(f"Error finding products: {traceback.format_exc()}")
@@ -232,6 +235,7 @@ class ProductService:
         sort_by: str = "created_at",
         sort_desc: bool = True,
         query: str = None,
+        apply_recency_boost: bool = False,
     ) -> PaginatedResponse[ProductPublic]:
         try:
             paginated_products = self.product_repository.find_bookmarked_with_query(
@@ -240,6 +244,7 @@ class ProductService:
                 sort_by=sort_by,
                 sort_desc=sort_desc,
                 query=query,
+                apply_recency_boost=apply_recency_boost,
             )
             paginated_products.items = [
                 self.build_product(product, user_id=user_id)
