@@ -157,5 +157,6 @@ class ProductPipelineBuilder:
     @classmethod
     def create_text_search_criteria(cls, query: str, base_criteria: dict = None) -> dict:
         criteria = base_criteria.copy() if base_criteria else cls.base_product_criteria()
-        criteria["$text"] = {"$search": query}
+        if query:
+            criteria["$text"] = {"$search": query}
         return criteria 
