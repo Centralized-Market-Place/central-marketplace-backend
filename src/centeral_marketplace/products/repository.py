@@ -80,14 +80,8 @@ class ProductRepository(RepositoryInterface[Product]):
 
         builder = ProductPipelineBuilder()
 
-        if self._should_use_semantic_search(query):
-            query_vector = self.semantic_search_service.encode_query(query)
-            if query_vector:
-                builder.add_semantic_search(query_vector)
-                builder.add_search_score()
-                criteria.pop("$text", None)
-        elif query:
-            criteria = ProductPipelineBuilder.create_text_search_criteria(query, criteria)
+    
+        criteria = ProductPipelineBuilder.create_text_search_criteria(query, criteria)
 
         pipeline = (builder
                    .match_criteria(criteria)
@@ -180,13 +174,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
         builder = ProductPipelineBuilder()
 
-        if self._should_use_semantic_search(query):
-            query_vector = self.semantic_search_service.encode_query(query)
-            if query_vector:
-                builder.add_semantic_search(query_vector)
-                builder.add_search_score()
-        elif query:
-            criteria = ProductPipelineBuilder.create_text_search_criteria(query, criteria)
+        criteria = ProductPipelineBuilder.create_text_search_criteria(query, criteria)
 
         pipeline = (builder
                    .match_criteria(criteria)
@@ -241,13 +229,7 @@ class ProductRepository(RepositoryInterface[Product]):
 
         builder = ProductPipelineBuilder()
 
-        if self._should_use_semantic_search(query):
-            query_vector = self.semantic_search_service.encode_query(query)
-            if query_vector:
-                builder.add_semantic_search(query_vector)
-                builder.add_search_score()
-        elif query:
-            criteria = ProductPipelineBuilder.create_text_search_criteria(query, criteria)
+        criteria = ProductPipelineBuilder.create_text_search_criteria(query, criteria)
 
         pipeline = (builder
                    .match_criteria(criteria)
@@ -284,13 +266,8 @@ class ProductRepository(RepositoryInterface[Product]):
 
         builder = ProductPipelineBuilder()
 
-        if self._should_use_semantic_search(query):
-            query_vector = self.semantic_search_service.encode_query(query)
-            if query_vector:
-                builder.add_semantic_search(query_vector)
-                builder.add_search_score()
-        elif query:
-            kwargs = ProductPipelineBuilder.create_text_search_criteria(query, kwargs)
+
+        kwargs = ProductPipelineBuilder.create_text_search_criteria(query, kwargs)
 
         pipeline = (builder
                    .match_criteria(kwargs)
@@ -341,13 +318,8 @@ class ProductRepository(RepositoryInterface[Product]):
 
         builder = ProductPipelineBuilder()
 
-        if self._should_use_semantic_search(query):
-            query_vector = self.semantic_search_service.encode_query(query)
-            if query_vector:
-                builder.add_semantic_search(query_vector)
-                builder.add_search_score()
-        elif query:
-            criteria = ProductPipelineBuilder.create_text_search_criteria(query, criteria)
+
+        criteria = ProductPipelineBuilder.create_text_search_criteria(query, criteria)
 
         pipeline = (builder
                    .match_criteria(criteria)
